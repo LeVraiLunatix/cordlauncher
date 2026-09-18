@@ -1,0 +1,29 @@
+<!doctype html>
+<html lang="fr" data-theme="dark">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="color-scheme" content="dark light" />
+    <link rel="icon" type="image/png" href="/logos/cordsuite.png" />
+    <title>CordLauncher</title>
+    <script>
+      // Pose le thème AVANT la première peinture : sans ça, un utilisateur en
+      // mode clair voit un flash sombre au lancement.
+      (function () {
+        try {
+          var s = JSON.parse(localStorage.getItem("cordlauncher:settings") || "{}");
+          var pref = s.theme || "system";
+          var dark = pref === "dark" || (pref === "system" && matchMedia("(prefers-color-scheme: dark)").matches);
+          document.documentElement.dataset.theme = dark ? "dark" : "light";
+          document.documentElement.style.backgroundColor = dark ? "#07060c" : "#eeecf6";
+        } catch (e) {
+          document.documentElement.style.backgroundColor = "#07060c";
+        }
+      })();
+    </script>
+  </head>
+  <body>
+    <div id="root"></div>
+    <script type="module" src="/src/main.tsx"></script>
+  </body>
+</html>

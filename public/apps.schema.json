@@ -1,0 +1,92 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://cordsuite.app/api/apps.schema.json",
+  "title": "Catalogue CordLauncher",
+  "description": "Liste des apps de la suite Cord, telle que CordLauncher la lit. Miroir de src/lib/catalog/types.ts.",
+  "type": "object",
+  "required": ["schemaVersion", "apps"],
+  "properties": {
+    "$schema": { "type": "string" },
+    "schemaVersion": { "const": 1 },
+    "generatedAt": { "type": "string", "format": "date-time" },
+    "featured": { "type": "string", "description": "id de l'app mise en avant sur l'accueil" },
+    "apps": { "type": "array", "items": { "$ref": "#/$defs/app" } }
+  },
+  "$defs": {
+    "hexColor": { "type": "string", "pattern": "^#[0-9a-fA-F]{6}$" },
+    "app": {
+      "type": "object",
+      "required": ["id", "name", "description", "status", "iconGradient"],
+      "properties": {
+        "id": { "type": "string", "pattern": "^[a-z0-9-]+$" },
+        "name": { "type": "string" },
+        "tagline": { "type": "string" },
+        "description": { "type": "string", "description": "Une phrase, affichée sur la carte" },
+        "longDescription": { "type": "string", "description": "Présentation complète, affichée dans la fiche" },
+        "status": { "enum": ["available", "closed-beta", "coming-soon"] },
+        "version": { "type": "string", "pattern": "^\\d+\\.\\d+\\.\\d+" },
+        "releaseDate": { "type": "string", "format": "date" },
+        "downloadUrl": { "type": "string", "format": "uri", "description": "Figée sur une version (pas « latest ») pour que sha256 colle" },
+        "downloadSize": { "type": "integer", "minimum": 0 },
+        "sha256": { "type": "string", "pattern": "^[0-9a-f]{64}$" },
+        "installer": {
+          "type": "object",
+          "required": ["type", "scope"],
+          "properties": {
+            "type": { "enum": ["nsis", "msi", "exe"] },
+            "silentArgs": { "type": "array", "items": { "type": "string" } },
+            "scope": { "enum": ["user", "machine"] }
+          }
+        },
+        "detect": {
+          "type": "object",
+          "properties": {
+            "uninstallKey": {
+              "type": "string",
+              "description": "Sous-clé de HKCU\\Software\\Microsoft\\Windows\\CurrentVersion\\Uninstall"
+            },
+            "exe": { "type": "string", "description": "Exécutable, relatif au dossier d'installation" }
+          }
+        },
+        "icon": { "type": "string", "description": "URL du logo ; relative = résolue contre l'URL du catalogue" },
+        "iconGradient": {
+          "type": "array",
+          "prefixItems": [{ "$ref": "#/$defs/hexColor" }, { "$ref": "#/$defs/hexColor" }],
+          "minItems": 2,
+          "maxItems": 2
+        },
+        "website": { "type": "string", "format": "uri" },
+        "betaUrl": { "type": "string", "format": "uri" },
+        "eta": { "type": "string" },
+        "requirements": { "type": "string" },
+        "highlights": { "type": "array", "items": { "type": "string" }, "maxItems": 6 },
+        "changelog": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": ["version", "notes"],
+            "properties": {
+              "version": { "type": "string" },
+              "date": { "type": "string", "format": "date" },
+              "notes": { "type": "array", "items": { "type": "string" } }
+            }
+          }
+        },
+        "screenshots": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": ["src"],
+            "properties": { "src": { "type": "string" }, "caption": { "type": "string" } }
+          }
+        }
+      },
+      "allOf": [
+        {
+          "if": { "properties": { "status": { "const": "available" } } },
+          "then": { "required": ["version", "downloadUrl", "installer"] }
+        }
+      ]
+    }
+  }
+}
