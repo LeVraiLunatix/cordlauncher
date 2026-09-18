@@ -3,7 +3,7 @@ import { fileURLToPath } from 'node:url';
 import { dirname, resolve } from 'node:path';
 import { mkdirSync } from 'node:fs';
 import { createService, migrate } from './lib/service.mjs';
-import { pgliteSql } from './lib/db.mjs';
+import { pgliteSql } from './lib/db-pglite.mjs';
 import { readClients, readOidcKey, makeSendVerification } from './lib/config.mjs';
 
 /**

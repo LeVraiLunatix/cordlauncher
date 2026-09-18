@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import http from 'node:http';
 import { createHash, generateKeyPairSync, randomBytes, sign, createPublicKey, verify } from 'node:crypto';
 import { createService, migrate } from './lib/service.mjs';
-import { pgliteSql } from './lib/db.mjs';
+import { pgliteSql } from './lib/db-pglite.mjs';
 
 const issuer = 'http://127.0.0.1:4319';
 const oidcKey = generateKeyPairSync('rsa', {

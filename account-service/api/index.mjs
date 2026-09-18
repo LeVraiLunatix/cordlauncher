@@ -1,5 +1,5 @@
 import { createService, migrate } from '../lib/service.mjs';
-import { neonSql } from '../lib/db.mjs';
+import { neonSql } from '../lib/db-neon.mjs';
 import { readClients, readOidcKey, makeSendVerification } from '../lib/config.mjs';
 
 /**
