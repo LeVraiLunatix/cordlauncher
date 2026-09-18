@@ -225,7 +225,8 @@ export function createAccountService({ database = ':memory:', issuer = 'http://1
   return { server, close: () => { server.close(); db.close(); } };
 }
 
-if (process.argv[1] && resolve(process.argv[1]) === fileURLToPath(import.meta.url)) {
+/** Démarre le service à partir des variables d'environnement (PORT, CORD_*…). */
+export function startFromEnv() {
   const port = Number(process.env.PORT ?? 4319);
   const host = process.env.HOST ?? '127.0.0.1';
   const issuer = process.env.CORD_ISSUER ?? `http://127.0.0.1:${port}`;
@@ -249,3 +250,7 @@ if (process.argv[1] && resolve(process.argv[1]) === fileURLToPath(import.meta.ur
   const app = createAccountService({ database: process.env.CORD_DATABASE ?? fileURLToPath(new URL('./data/cord.sqlite', import.meta.url)), issuer, clients, sendVerification, trustProxy: process.env.CORD_TRUST_PROXY === '1' });
   app.server.listen(port, host, () => console.log(`Compte Cord : ${issuer}`));
 }
+
+// Lancé directement (`node server.mjs`). Sous PM2, argv[1] est le conteneur
+// de PM2 : c'est start.mjs qui appelle startFromEnv().
+if (process.argv[1] && resolve(process.argv[1]) === fileURLToPath(import.meta.url)) startFromEnv();

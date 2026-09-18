@@ -62,11 +62,30 @@ Le service autonome `account-service` fournit une identité commune pour la suit
 En développement :
 
 ```bash
-npm run account:dev
-# optionnel : CORD_DEV_MAIL=1 pour afficher les liens de confirmation dans le terminal
+npm run account:dev   # http://127.0.0.1:4319 ; les liens de confirmation s'affichent dans le terminal
 ```
 
-En production, configure `CORD_ISSUER` en HTTPS, `CORD_CLIENTS` avec les URI de retour autorisées de Drivecord, et `RESEND_API_KEY` + `CORD_MAIL_FROM` pour les confirmations email. Dans Drivecord, renseigne `AUTH_CORD_ISSUER`, `AUTH_CORD_ID` et `AUTH_CORD_SECRET`.
+### Production : `https://compte.cordsuite.app`
+
+- **Hébergement** : VPS Oracle (`ubuntu@141.253.108.13`, le même que Drivebot
+  et Sona), process PM2 `cord-account` lancé par `start.mjs` avec un Node 24
+  installé à part (`~/.local/node-v24.21.0`) — le Node 20 du système sert
+  aux autres bots. Base SQLite dans `~/cord-account/data/`.
+- **HTTPS** : Caddy (`/etc/caddy/Caddyfile`) → `127.0.0.1:4319`, certificat
+  Let's Encrypt automatique. Il faut les ports 80 et 443 ouverts dans le
+  pare-feu de la machine (fait, persistant) ET dans la liste de sécurité du
+  réseau Oracle Cloud (console Oracle).
+- **Configuration** : `~/cord-account/.env` sur le VPS (jamais dans git) —
+  `CORD_ISSUER`, `HOST=127.0.0.1`, `PORT`, `CORD_TRUST_PROXY=1` (IP réelle via
+  Caddy), `CORD_DATABASE`, `CORD_CLIENTS` (client `drivecord` et ses URI de
+  retour), `RESEND_API_KEY`, `CORD_MAIL_FROM`.
+- **DNS** (Vercel) : `compte` A → IP du VPS ; domaine d'envoi `cordsuite.app`
+  vérifié chez Resend (DKIM `resend._domainkey`, SPF sur `send`).
+- **Déployer une nouvelle version** : `bash account-service/deploy.sh`
+  (tests, envoi des fichiers, redémarrage PM2).
+- **Drivecord** : `AUTH_CORD_ISSUER`, `AUTH_CORD_ID`, `AUTH_CORD_SECRET` et
+  `NEXT_PUBLIC_CORD_ACCOUNT_URL` dans ses variables Vercel ; valeurs dans
+  `account-service/.env.drivecord.local` (ignoré par git).
 
 Le service refuse les redirections OAuth inconnues, impose PKCE S256, expire les codes, empêche leur réutilisation et ne permet pas à Passcord d'approuver une connexion sans signature de sa clé privée.
 
