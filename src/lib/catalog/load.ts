@@ -78,6 +78,9 @@ export function normalizeCatalog(raw: unknown, baseUrl: string): Catalog {
       ...(app as CatalogApp),
       icon: resolveUrl(app.icon, baseUrl),
       screenshots: app.screenshots?.map((s) => ({ ...s, src: resolveUrl(s.src, baseUrl) ?? s.src })),
+      // Une version iPhone sans statut reconnu est ignorée plutôt que de
+      // proposer une installation qui échouerait.
+      ios: app.ios && (app.ios.status === "available" || app.ios.status === "closed-beta") ? app.ios : undefined,
     });
   }
   // Tri stable : dispo → bêta → bientôt, ordre du fichier ensuite.

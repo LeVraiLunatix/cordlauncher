@@ -9,6 +9,7 @@ import { itemVariants } from "../../lib/motion";
 import { GlassCard, Skeleton } from "../glass";
 import { AppActionButton, JobProgress } from "./AppAction";
 import { AppIcon } from "./AppIcon";
+import { IphoneQuickButton, PlatformChips } from "./Platforms";
 import { StatusBadge } from "./StatusBadge";
 
 type AppCardProps = {
@@ -52,7 +53,7 @@ export function AppCard({ ref, app, onOpen }: AppCardProps) {
       onKeyDown={onKeyDown}
       whileHover={{ y: -5 }}
       whileTap={{ scale: 0.985 }}
-      className={cn("group flex min-h-[238px] flex-col rounded-[24px] p-5", soon && "[--tint-mix:7%]")}
+      className={cn("group flex min-h-[262px] flex-col rounded-[24px] p-5", soon && "[--tint-mix:7%]")}
     >
       <div className="relative z-[3] flex items-start justify-between gap-3">
         <AppIcon app={app} size={54} dim={soon} layoutId={`icon-${app.id}`} />
@@ -65,6 +66,7 @@ export function AppCard({ ref, app, onOpen }: AppCardProps) {
         <p className={cn("mt-2 clamp-2 text-[13px] leading-relaxed", soon ? "text-fg-subtle" : "text-fg-muted")}>
           {app.description}
         </p>
+        <PlatformChips app={app} className="mt-3" />
       </div>
 
       <div className="relative z-[3] mt-auto pt-4">
@@ -96,7 +98,10 @@ export function AppCard({ ref, app, onOpen }: AppCardProps) {
                 ) : (
                   <>
                     <FooterMeta app={app} action={action} />
-                    <AppActionButton app={app} />
+                    <div className="flex items-center gap-2">
+                      <IphoneQuickButton app={app} />
+                      <AppActionButton app={app} />
+                    </div>
                   </>
                 )}
               </motion.div>
@@ -152,7 +157,7 @@ function FooterMeta({ app, action }: { app: CatalogApp; action: AppAction }) {
 /** Carte fantôme pendant le chargement du catalogue. */
 export function AppCardSkeleton() {
   return (
-    <GlassCard variants={itemVariants} className="flex min-h-[238px] flex-col rounded-[24px] p-5">
+    <GlassCard variants={itemVariants} className="flex min-h-[262px] flex-col rounded-[24px] p-5">
       <div className="flex items-start justify-between">
         <div className="skeleton size-[54px] rounded-[12px]" />
         <Skeleton className="h-6 w-20" />

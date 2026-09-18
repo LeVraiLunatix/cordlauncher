@@ -1,10 +1,11 @@
-import { ArrowUpRight, Check, CircleCheck, Globe, Trash2 } from "lucide-react";
+import { ArrowUpRight, Check, CircleCheck, Globe, LockKeyhole, Smartphone, Trash2 } from "lucide-react";
 import { motion } from "motion/react";
 import { useEffect, useRef, useState, type ReactNode } from "react";
 import { useAmbient } from "../../lib/ambient";
 import type { CatalogApp } from "../../lib/catalog/types";
 import { formatBytes, formatDate } from "../../lib/format";
 import { uninstallApp, useAppAction, useInstalled } from "../../lib/installer";
+import { canInstallOnIphone, openIphoneInstall } from "../../lib/iphone";
 import { openExternal } from "../../lib/platform";
 import { GlassButton, GlassModal } from "../glass";
 import { AppActionButton, JobProgress } from "./AppAction";
@@ -82,6 +83,16 @@ function DetailBody({ app }: { app: CatalogApp }) {
             ) : (
               <>
                 <AppActionButton app={app} size="md" />
+                {canInstallOnIphone(app.ios) && (
+                  <GlassButton
+                    variant="glass"
+                    size="md"
+                    icon={<Smartphone className="size-4 transition-transform duration-300 group-hover:-rotate-12" />}
+                    onClick={() => openIphoneInstall(app)}
+                  >
+                    Sur iPhone
+                  </GlassButton>
+                )}
                 {app.website && app.status !== "closed-beta" && (
                   <GlassButton
                     variant="glass"
@@ -118,6 +129,8 @@ function DetailBody({ app }: { app: CatalogApp }) {
             {app.longDescription ?? app.description}
           </p>
         </Section>
+
+        {app.ios && <IphoneSection app={app} />}
 
         {app.highlights && app.highlights.length > 0 && (
           <Section title={app.status === "available" ? "Points forts" : "Au programme"}>
@@ -177,7 +190,13 @@ function DetailBody({ app }: { app: CatalogApp }) {
             <Info label="Éditeur" value="Cordsuite" />
             <Info label="Version" value={app.version ? `v${app.version}` : "—"} mono />
             <Info label="Taille" value={app.downloadSize ? formatBytes(app.downloadSize) : "—"} mono />
-            <Info label="Compatibilité" value={app.requirements ?? "—"} />
+            <Info
+              label="Compatibilité"
+              value={
+                app.requirements ??
+                (app.ios?.minOS ? `iPhone, iOS ${app.ios.minOS.replace(/\.0$/, "")} ou plus` : "—")
+              }
+            />
             <Info
               label="Installation"
               value={
@@ -226,6 +245,46 @@ function DetailBody({ app }: { app: CatalogApp }) {
         }}
       />
     </>
+  );
+}
+
+function IphoneSection({ app }: { app: CatalogApp }) {
+  const ios = app.ios!;
+  const installable = canInstallOnIphone(ios);
+  const meta = [
+    ios.version && `v${ios.version}`,
+    ios.ipaSize && formatBytes(ios.ipaSize),
+    ios.minOS && `iOS ${ios.minOS.replace(/.0$/, "")} ou plus`,
+    installable && "via AltStore",
+  ].filter(Boolean);
+  return (
+    <Section title="Sur iPhone">
+      <div className="flex items-center gap-4 rounded-2xl bg-[var(--control)] p-4 ring-1 ring-[var(--line)] ring-inset">
+        <span className="tint-fill grid size-11 shrink-0 place-items-center rounded-[14px] text-white">
+          <Smartphone className="size-5" />
+        </span>
+        <div className="min-w-0 flex-1">
+          <p className="text-[14px] font-semibold">
+            {installable ? `${app.name} pour iPhone` : `${app.name} pour iPhone — bêta fermée`}
+          </p>
+          {meta.length > 0 && <p className="mt-0.5 font-mono text-[11.5px] text-fg-subtle">{meta.join("  ·  ")}</p>}
+        </div>
+        {installable ? (
+          <GlassButton
+            variant="primary"
+            tint={app.iconGradient}
+            icon={<Smartphone className="size-4" />}
+            onClick={() => openIphoneInstall(app)}
+          >
+            Installer sur iPhone
+          </GlassButton>
+        ) : (
+          <span className="inline-flex items-center gap-1.5 text-[12px] text-fg-subtle">
+            <LockKeyhole className="size-3.5" /> Sur invitation
+          </span>
+        )}
+      </div>
+    </Section>
   );
 }
 

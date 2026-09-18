@@ -1,9 +1,10 @@
-import { ChevronRight, Sparkles } from "lucide-react";
+import { ChevronRight, Smartphone, Sparkles } from "lucide-react";
 import { motion, useTransform } from "motion/react";
 import { useAmbient } from "../../lib/ambient";
 import type { CatalogApp } from "../../lib/catalog/types";
 import { formatBytes, formatDate } from "../../lib/format";
 import { useAppAction } from "../../lib/installer";
+import { canInstallOnIphone, openIphoneInstall } from "../../lib/iphone";
 import { itemVariants } from "../../lib/motion";
 import { Badge, GlassButton, GlassCard } from "../glass";
 import { AppActionButton, JobProgress } from "./AppAction";
@@ -64,6 +65,17 @@ export function FeaturedHero({ app, onOpen }: { app: CatalogApp; onOpen: (id: st
           ) : (
             <>
               <AppActionButton app={app} size="md" />
+              {canInstallOnIphone(app.ios) && (
+                <GlassButton
+                  variant="glass"
+                  size="md"
+                  tint={app.iconGradient}
+                  icon={<Smartphone className="size-4 transition-transform duration-300 group-hover:-rotate-12" />}
+                  onClick={() => openIphoneInstall(app)}
+                >
+                  Sur iPhone
+                </GlassButton>
+              )}
               <GlassButton
                 variant="ghost"
                 size="md"

@@ -1,6 +1,7 @@
 import { AnimatePresence, LayoutGroup, MotionConfig } from "motion/react";
 import { useCallback, useEffect, useRef, useState, type CSSProperties } from "react";
 import { AppDetail } from "./components/apps/AppDetail";
+import { IphoneInstallSheet } from "./components/apps/IphoneInstallSheet";
 import { AnimatedGradientBackground } from "./components/glass";
 import { Sidebar, type Route } from "./components/shell/Sidebar";
 import { SplashIntro } from "./components/shell/SplashIntro";
@@ -134,6 +135,7 @@ function Shell() {
         </main>
       </div>
       <AppDetail app={selected} onClose={closeDetail} />
+      <IphoneInstallSheet apps={apps} />
     </div>
   );
 }

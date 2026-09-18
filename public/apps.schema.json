@@ -72,6 +72,22 @@
             }
           }
         },
+        "ios": {
+          "type": "object",
+          "description": "Version iPhone, installée via AltStore (qui re-signe l'IPA avec le compte Apple de l'utilisateur)",
+          "required": ["status"],
+          "properties": {
+            "status": { "enum": ["available", "closed-beta"] },
+            "version": { "type": "string" },
+            "releaseDate": { "type": "string", "format": "date" },
+            "bundleId": { "type": "string" },
+            "ipaUrl": { "type": "string", "format": "uri", "description": "IPA publique, téléchargée par AltStore depuis l'iPhone" },
+            "ipaSize": { "type": "integer", "minimum": 0 },
+            "altstoreSource": { "type": "string", "format": "uri", "description": "Source AltStore (mises à jour automatiques)" },
+            "minOS": { "type": "string", "pattern": "^\\d+(\\.\\d+)*$" },
+            "guideUrl": { "type": "string", "format": "uri" }
+          }
+        },
         "screenshots": {
           "type": "array",
           "items": {

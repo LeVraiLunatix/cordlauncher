@@ -113,6 +113,41 @@ valider côté serveur).
 }
 ```
 
+### Version iPhone (`ios`)
+
+iOS refuse une app qui n'est pas signée par Apple ou par le compte de
+l'utilisateur : CordLauncher ne pousse donc pas l'IPA lui-même. Il affiche un
+QR code que l'iPhone scanne ; **AltStore** s'ouvre, télécharge l'IPA et la
+fait signer par **AltServer** (sur le PC), puis la re-signe seul tous les
+7 jours. C'est aussi la méthode qui garde les droits de partage dont Passcord
+a besoin (Sideloadly les retire).
+
+```jsonc
+"ios": {
+  "status": "available",           // available | closed-beta
+  "version": "1.0.49",
+  "bundleId": "com.lunatix.drivecord",
+  "ipaUrl": "https://…/v1.0.49/Drivecord.ipa",   // PUBLIQUE : c'est l'iPhone qui la télécharge
+  "ipaSize": 947714,
+  "altstoreSource": "https://…/source.json",     // mode « Ajouter la source » (mises à jour)
+  "minOS": "15.0",
+  "guideUrl": "https://drivecord.app/install"
+}
+```
+
+- `altstore://install?url=<ipa>` installe tout de suite ;
+  `altstore://source?url=<source>` ajoute la source (AltStore propose ensuite
+  chaque mise à jour).
+- Le QR est dessiné à la main (`components/apps/QrCode.tsx`, lib `uqr`) :
+  modules en carrés arrondis — des points ronds ne se décodent plus en petit
+  (vérifié au décodeur) — niveau de correction Q pour le logo central.
+- Côté PC, `altserver_status` / `altserver_launch` (Rust, `src-tauri/src/iphone.rs`)
+  disent si AltServer tourne et le lancent via son raccourci du menu Démarrer
+  (son MSI ne renseigne pas le dossier d'installation).
+- Pour ouvrir une app en bêta fermée sur iPhone (Passcord) : publier ses IPA à
+  une adresse publique (comme `drivecord-releases`), puis remplir `ipaUrl` /
+  `altstoreSource` et passer `status` à `available`.
+
 `detect.uninstallKey` est le nom de la sous-clé
 `HKCU\Software\Microsoft\Windows\CurrentVersion\Uninstall\…` que crée
 l'installateur : pour une app Tauri en NSIS, c'est son `productName`

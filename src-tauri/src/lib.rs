@@ -2,6 +2,8 @@ use std::time::Duration;
 
 use tauri::Manager;
 
+mod iphone;
+
 /// Délai au-delà duquel on affiche la fenêtre même si le front ne l'a pas
 /// demandé. La fenêtre démarre cachée (`visible: false`) pour éviter le flash
 /// blanc de WebView2 : c'est le front qui appelle `show()` après sa première
@@ -27,6 +29,10 @@ pub fn run() {
 
     builder
         .plugin(tauri_plugin_opener::init())
+        .invoke_handler(tauri::generate_handler![
+            iphone::altserver_status,
+            iphone::altserver_launch,
+        ])
         .setup(|app| {
             let handle = app.handle().clone();
             std::thread::spawn(move || {

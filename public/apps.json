@@ -22,6 +22,17 @@
       "iconGradient": ["#6D64F2", "#C64BF1"],
       "website": "https://drivecord.app",
       "requirements": "Windows 10 et 11, 64 bits",
+      "ios": {
+        "status": "available",
+        "version": "1.0.49",
+        "releaseDate": "2026-09-17",
+        "bundleId": "com.lunatix.drivecord",
+        "ipaUrl": "https://github.com/LeVraiLunatix/drivecord-releases/releases/download/v1.0.49/Drivecord.ipa",
+        "ipaSize": 947714,
+        "altstoreSource": "https://raw.githubusercontent.com/LeVraiLunatix/drivecord-releases/main/source.json",
+        "minOS": "15.0",
+        "guideUrl": "https://drivecord.app/install"
+      },
       "highlights": [
         "Fichiers chiffrés avant l'envoi : Discord ne voit que du bruit.",
         "Fichiers fantômes dans l'explorateur, téléchargés à l'ouverture.",
@@ -65,6 +76,11 @@
       "website": "https://cordsuite.app/bientot/passcord",
       "betaUrl": "https://cordsuite.app/bientot/passcord",
       "eta": "courant novembre 2026",
+      "ios": {
+        "status": "closed-beta",
+        "bundleId": "com.lvnatixx.passcord",
+        "minOS": "26.0"
+      },
       "highlights": [
         "Chiffrement de bout en bout : la clé ne quitte jamais ton appareil.",
         "Déverrouillage Face ID, remplissage dans Safari et clavier Passcord pour les autres apps.",

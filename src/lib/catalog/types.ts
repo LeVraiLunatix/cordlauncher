@@ -36,6 +36,29 @@ export type DetectSpec = {
   exe?: string;
 };
 
+/**
+ * Version iPhone d'une app. iOS n'accepte pas d'installation directe depuis
+ * un PC sans signature Apple : on passe par AltStore, qui re-signe l'IPA
+ * avec le compte Apple de l'utilisateur (AltServer tourne sur le PC).
+ */
+export type IosSpec = {
+  /** available = IPA publique · closed-beta = pas encore distribuée. */
+  status: "available" | "closed-beta";
+  version?: string;
+  releaseDate?: string;
+  /** Identifiant de bundle (« com.lunatix.drivecord »). */
+  bundleId?: string;
+  /** IPA à installer — publique, AltStore la télécharge depuis l'iPhone. */
+  ipaUrl?: string;
+  ipaSize?: number;
+  /** Source AltStore : ajoutée une fois, AltStore propose ensuite chaque mise à jour. */
+  altstoreSource?: string;
+  /** Version minimale d'iOS (« 15.0 »). */
+  minOS?: string;
+  /** Guide d'installation détaillé, sur le site de l'app. */
+  guideUrl?: string;
+};
+
 export type Screenshot = {
   src: string;
   caption?: string;
@@ -78,6 +101,8 @@ export type CatalogApp = {
   screenshots?: Screenshot[];
   /** Compatibilité affichée (« Windows 10 et 11, 64 bits »). */
   requirements?: string;
+  /** Version iPhone, si elle existe. */
+  ios?: IosSpec;
 };
 
 export type Catalog = {
