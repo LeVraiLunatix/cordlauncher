@@ -1,98 +1,173 @@
+<div align="center">
+
+<img src="public/logos/cordsuite.png" alt="CordLauncher" width="112" height="112" />
+
 # CordLauncher
 
-Hub d'installation Windows de la suite Cord : une sorte de mini App Store qui
-installe, met à jour et lance les apps de [cordsuite.app](https://cordsuite.app),
-sans droits administrateur.
+**Le magasin d'applications de la suite [Cord](https://cordsuite.app), pour Windows.**
 
-**Stack** : Tauri 2 (Rust) · React 19 + TypeScript · Tailwind CSS 4 ·
-Motion (ex-Framer Motion) · Lucide.
+Installe, met à jour et lance toutes les apps Cord depuis une seule fenêtre —
+sans droits administrateur, et jusque sur ton iPhone.
 
-## Lancer
+Tauri 2 · React 19 · TypeScript · Tailwind CSS 4 · Motion · Rust
+
+</div>
+
+---
+
+## En bref
+
+CordLauncher est une application Windows native, légère et soignée, qui joue
+pour la suite Cord le rôle d'un mini App Store :
+
+- **Découvrir** la suite — Drivecord, Passcord, et les apps à venir — dans une
+  grille de cartes en verre animées.
+- **Installer, mettre à jour et désinstaller** les apps Windows en un clic,
+  dans le profil utilisateur (jamais d'invite administrateur).
+- **Installer sur l'iPhone** par câble avec ton compte Apple, ou via AltStore.
+- **Se connecter avec le Compte Cord**, l'identité commune de la suite, et en
+  faire ta clé grâce à Passcord.
+
+Toute l'interface suit une direction artistique « Liquid Glass » : fond dégradé
+vivant, panneaux de verre flouté, reflets qui suivent le curseur,
+micro-interactions partout.
+
+## Démarrer
 
 ```bash
 npm install
-npm run app:dev      # fenêtre Tauri + Vite (port 1430)
-npm run dev          # front seul, dans un navigateur
+npm run app:dev      # fenêtre Tauri + serveur Vite (port 1430)
 npm run app:build    # installateur NSIS (profil utilisateur, sans UAC)
+
+npm run dev          # front seul dans un navigateur (installation simulée)
+npm run typecheck    # tsc --noEmit
 ```
 
-Paramètres d'URL utiles en dev (navigateur) :
+Prérequis : Node 24+, Rust stable (MSVC) et la charge « Développement Desktop
+en C++ » de Visual Studio. Le premier `cargo build` prend quelques minutes
+(le moteur d'installation iPhone est volumineux) ; les suivants sont rapides.
 
-- `?intro=0` : saute l'animation d'ouverture ;
-- `?scenario=update` / `installed` / `fresh` : état simulé de Drivecord sur le PC.
+Paramètres d'URL utiles en développement navigateur :
 
-## Structure
+| Paramètre | Effet |
+| --- | --- |
+| `?intro=0` | saute l'animation d'ouverture |
+| `?scenario=fresh \| installed \| update` | état simulé de Drivecord sur le PC |
+
+## Fonctionnalités
+
+### Installation Windows
+
+Tout se passe au niveau utilisateur, sans droits administrateur
+(`src-tauri/src/apps.rs`) :
+
+- **Détection** des apps déjà installées via le registre
+  (`HKCU`/`HKLM\…\Uninstall\<clé>`), avec résolution de l'exécutable à lancer.
+- **Téléchargement en flux** avec barre de progression, débit et temps
+  restant, et **vérification SHA-256** de l'installateur avant exécution.
+- **Choix du dossier** d'installation (une fenêtre le demande, avec un
+  emplacement par défaut réglable) ; une mise à jour reste là où l'app est.
+- **Installation silencieuse** (NSIS `/S /D=`, ou MSI `/qn`), **désinstallation**
+  silencieuse, et **lancement** détaché de l'app.
+- Les apps installées apparaissent dans la barre latérale : un clic les lance.
+
+### Installation iPhone
+
+iOS refuse toute app non signée par Apple ou par ton compte. CordLauncher
+propose donc **trois** chemins, selon l'app :
+
+1. **Depuis ce PC** (`src-tauri/src/sideload.rs`, moteur
+   [`isideload`](https://github.com/nab138/isideload)) — branche un iPhone
+   autorisé en USB, connecte ton compte Apple (code de validation demandé dans
+   l'app), et CordLauncher télécharge l'IPA, la signe et l'installe par câble,
+   façon Sideloadly. Le renouvellement (tous les 7 jours pour un compte gratuit)
+   passe par le même compte.
+2. **Choisir un fichier `.ipa`** — pour une app en bêta fermée dont l'IPA n'est
+   pas publique (Passcord), tu télécharges son `.ipa` depuis tes releases, tu le
+   choisis, et il est signé + installé comme ci-dessus.
+3. **Avec AltStore** — CordLauncher affiche un QR code aux couleurs de l'app ;
+   l'iPhone le scanne, **AltStore** télécharge l'IPA et la fait signer par
+   **AltServer** (sur le PC), puis la re-signe seul chaque semaine. Ce mode
+   conserve les droits de partage dont les extensions de Passcord ont besoin.
+
+> Le mode direct demande un iPhone déverrouillé, l'autorisation « Se fier à cet
+> ordinateur » et, selon la version d'iOS, le mode développeur activé. Le
+> service Apple Mobile Device (installé avec iTunes ou « Appareils Apple ») doit
+> être présent.
+
+### Compte Cord
+
+Une identité unique pour toute la suite, servie par le service autonome
+`account-service` (voir plus bas). Depuis l'onglet **Compte** : création de
+compte, connexion, confirmation d'email, et **association de Passcord** — ton
+iPhone devient alors ta clé, et tu valides tes connexions avec Face ID.
+
+## Architecture
 
 ```
 src/
   styles.css                 D.A. « Liquid Glass » : tokens clair/sombre + utilitaires glass*
-  components/glass/          Briques réutilisables
-    AnimatedGradientBackground   fond vivant (taches qui dérivent, parallaxe, grain)
-    GlassCard                    vitre de base (reflet qui suit le curseur, inclinaison 3D)
-    GlassButton                  primaire / verre / discret / danger, onde au clic
-    GlassModal                   modale en verre épais (Échap, voile, pile de modales)
-    GlassToggle, GlassSegmented, GlassProgress, Skeleton, Badge
-  components/shell/          Barre de titre maison, barre latérale, ouverture, toasts
-  components/apps/           Carte, bandeau « À la une », fiche détaillée, actions
-  views/                     Découvrir · Bibliothèque · Réglages
-  lib/catalog/               Contrat + chargement du catalogue (apps.json)
-  lib/installer/             État d'installation + pilote Windows ou simulé
-  lib/account.ts             Session Compte Cord dans le coffre Windows
-  lib/apple.ts               Compte Apple, 2FA et installation iPhone par câble
-  views/AccountView.tsx      Compte Cord + association Passcord
-src-tauri/                   Coquille Rust (fenêtre sans bordure, instance unique)
-account-service/             Service OIDC du Compte Cord + portail + tests
-public/apps.json             Maquette du catalogue
-public/apps.schema.json      Schéma JSON du catalogue
+  App.tsx                    coquille : splash, navigation, vues, modales
+  components/
+    glass/                   briques réutilisables
+      AnimatedGradientBackground  fond vivant (taches qui dérivent, parallaxe, grain)
+      GlassCard                   vitre de base (reflet au curseur, inclinaison 3D)
+      GlassButton                 primaire / verre / discret / danger, onde au clic
+      GlassModal                  modale en verre épais (Échap, voile, pile de modales)
+      GlassToggle · GlassSegmented · GlassProgress · Skeleton · Badge
+    shell/                   barre de titre maison, barre latérale, ouverture, toasts
+    apps/                    carte, bandeau « À la une », fiche, QR code, fenêtres iPhone
+  views/                     Découvrir · Bibliothèque · Compte · Réglages
+  lib/
+    catalog/                 contrat + chargement du catalogue (apps.json)
+    installer/               état d'installation + pilote (tauri-driver | mock-driver)
+    apple.ts                 compte Apple, 2FA, installation iPhone
+    iphone.ts                liens AltStore, état d'AltServer, fenêtre iPhone
+    account.ts               session Compte Cord (coffre Windows)
+    settings.ts              réglages persistés + autostart
+src-tauri/
+  src/apps.rs                moteur d'installation Windows (registre, DL+SHA-256, /S)
+  src/sideload.rs            compte Apple + signature + installation iPhone
+  src/iphone.rs              détection et lancement d'AltServer
+  src/account.rs             relais HTTP vers le service Compte Cord
+  vendor/isideload/          copie corrigée d'isideload (voir « Connexion Apple »)
+account-service/             service OIDC du Compte Cord + portail + tests
+public/apps.json             catalogue (maquette, embarquée dans l'exe)
+public/apps.schema.json      schéma JSON du catalogue
 ```
+
+### Le pilote d'installation
+
+L'interface ne parle qu'à une interface, `InstallerDriver`
+(`src/lib/installer/types.ts`). Deux implémentations :
+
+- **`tauriDriver`** — le vrai, dans l'app Windows, relaie vers les commandes
+  Rust ;
+- **`mockDriver`** — simule tout quand le front tourne dans un navigateur
+  (`npm run dev`), pour développer l'UI sans rien installer.
 
 ### Le piège du verre
 
 Dans Chromium (donc WebView2), un ancêtre avec `opacity < 1`, `filter`,
-`mask`, `clip-path` ou `backdrop-filter` coupe le flou de ses descendants :
-leur `backdrop-filter` ne voit plus le fond de la fenêtre. D'où la règle
-suivie partout : **on anime l'opacité des vitres elles-mêmes, jamais d'un
-conteneur qui les englobe**. Les conteneurs de vues (`viewVariants`) ne font
-que cadencer leurs enfants.
+`mask`, `clip-path` ou `backdrop-filter` devient la racine de fond de ses
+descendants : leur `backdrop-filter` ne voit plus le fond de la fenêtre, et le
+verre paraît plat. D'où la règle suivie partout : **on anime l'opacité des
+vitres elles-mêmes, jamais d'un conteneur qui les englobe**. Les conteneurs de
+vues (`viewVariants`) ne font que cadencer leurs enfants.
 
-## Compte Cord
+### Connexion Apple : le correctif isideload
 
-Le service autonome `account-service` fournit une identité commune pour la suite : mot de passe, confirmation d'email, sessions dans le coffre Windows, OIDC PKCE pour Drivecord et association Passcord par clé Ed25519. Les clés privées restent dans le trousseau de l'iPhone et le mot de passe Passcord n'est jamais envoyé au service.
-
-En développement :
-
-```bash
-npm run account:dev   # http://127.0.0.1:4319 ; les liens de confirmation s'affichent dans le terminal
-```
-
-### Production : `https://compte.cordsuite.app`
-
-- **Hébergement** : VPS Oracle (`ubuntu@141.253.108.13`, le même que Drivebot
-  et Sona), process PM2 `cord-account` lancé par `start.mjs` avec un Node 24
-  installé à part (`~/.local/node-v24.21.0`) — le Node 20 du système sert
-  aux autres bots. Base SQLite dans `~/cord-account/data/`.
-- **HTTPS** : Caddy (`/etc/caddy/Caddyfile`) → `127.0.0.1:4319`, certificat
-  Let's Encrypt automatique. Il faut les ports 80 et 443 ouverts dans le
-  pare-feu de la machine (fait, persistant) ET dans la liste de sécurité du
-  réseau Oracle Cloud (console Oracle).
-- **Configuration** : `~/cord-account/.env` sur le VPS (jamais dans git) —
-  `CORD_ISSUER`, `HOST=127.0.0.1`, `PORT`, `CORD_TRUST_PROXY=1` (IP réelle via
-  Caddy), `CORD_DATABASE`, `CORD_CLIENTS` (client `drivecord` et ses URI de
-  retour), `RESEND_API_KEY`, `CORD_MAIL_FROM`.
-- **DNS** (Vercel) : `compte` A → IP du VPS ; domaine d'envoi `cordsuite.app`
-  vérifié chez Resend (DKIM `resend._domainkey`, SPF sur `send`).
-- **Déployer une nouvelle version** : `bash account-service/deploy.sh`
-  (tests, envoi des fichiers, redémarrage PM2).
-- **Drivecord** : `AUTH_CORD_ISSUER`, `AUTH_CORD_ID`, `AUTH_CORD_SECRET` et
-  `NEXT_PUBLIC_CORD_ACCOUNT_URL` dans ses variables Vercel ; valeurs dans
-  `account-service/.env.drivecord.local` (ignoré par git).
-
-Le service refuse les redirections OAuth inconnues, impose PKCE S256, expire les codes, empêche leur réutilisation et ne permet pas à Passcord d'approuver une connexion sans signature de sa clé privée.
+`isideload` 0.3.17 annonce Xcode dans l'en-tête `X-Mme-Client-Info` ; le
+serveur d'authentification Apple (`gsa.apple.com`) répond alors **503** à toute
+requête (constaté le 2026-09-18, sur toutes les versions de Xcode testées).
+On copie donc la bibliothèque dans `src-tauri/vendor/isideload/` et on annonce
+le même Mac/macOS mais via **akd** (comme akd/AltServer) — accepté. Le patch
+est branché par `[patch.crates-io]` dans `src-tauri/Cargo.toml`.
 
 ## Catalogue d'apps
 
-Le launcher lit une liste d'apps au format JSON. Aujourd'hui c'est la
-maquette `public/apps.json`, embarquée dans l'exe. Pour brancher la vraie API :
+Le launcher lit une liste d'apps au format JSON. Aujourd'hui c'est la maquette
+`public/apps.json`, embarquée dans l'exe. Pour brancher une vraie API :
 
 ```bash
 # .env.local
@@ -100,109 +175,111 @@ VITE_CATALOG_URL=https://cordsuite.app/api/apps.json
 ```
 
 Ordre de repli : URL configurée → dernière copie valide en cache → maquette
-embarquée. Une entrée mal formée est ignorée (avec un avertissement), elle ne
-fait pas tomber l'écran.
+embarquée. Une entrée mal formée est ignorée (avec un avertissement) sans faire
+tomber l'écran.
 
-> Côté API : la fenêtre Tauri a pour origine `http://tauri.localhost`. Soit la
-> route renvoie `Access-Control-Allow-Origin` pour cette origine, soit le
-> téléchargement du catalogue passe par Rust (prévu avec le vrai pilote).
+> La fenêtre Tauri a pour origine `http://tauri.localhost` : soit l'API renvoie
+> `Access-Control-Allow-Origin` pour cette origine, soit le téléchargement du
+> catalogue passera par Rust.
 
 ### Forme attendue
 
-Référence : `src/lib/catalog/types.ts` (et `public/apps.schema.json` pour
-valider côté serveur).
+Référence : `src/lib/catalog/types.ts` ; schéma de validation :
+`public/apps.schema.json`.
 
 ```jsonc
 {
   "schemaVersion": 1,
-  "featured": "drivecord",               // app du bandeau « À la une »
+  "featured": "drivecord",                  // app du bandeau « À la une »
   "apps": [
     {
-      "id": "drivecord",                 // requis
-      "name": "Drivecord",               // requis
-      "tagline": "Stockage sans limite",
-      "description": "Une phrase pour la carte.",           // requis
-      "longDescription": "Le texte de la fiche.",
-      "status": "available",             // requis : available | closed-beta | coming-soon
+      "id": "drivecord",                    // requis
+      "name": "Drivecord",                  // requis
+      "description": "Une phrase pour la carte.",       // requis
+      "status": "available",                // requis : available | closed-beta | coming-soon
+      "iconGradient": ["#6D64F2", "#C64BF1"],           // requis : dégradé du logo
       "version": "0.2.0",
-      "releaseDate": "2026-09-16",
       "downloadUrl": "https://…/v0.2.0/Drivecord-Setup-x64.exe",  // figée sur la version
       "downloadSize": 4636975,
-      "sha256": "60f13a44…",             // vérifié avant d'exécuter l'installateur
+      "sha256": "60f13a44…",                // vérifié avant d'exécuter l'installateur
       "installer": { "type": "nsis", "silentArgs": ["/S"], "scope": "user" },
       "detect": { "uninstallKey": "Drivecord", "exe": "drivecord-desktop.exe" },
-      "icon": "/logos/drivecord.png",    // relatif = résolu contre l'URL du catalogue
-      "iconGradient": ["#6D64F2", "#C64BF1"],               // requis
+      "icon": "/logos/drivecord.png",
       "website": "https://drivecord.app",
-      "requirements": "Windows 10 et 11, 64 bits",
-      "highlights": ["…"],
       "changelog": [{ "version": "0.2.0", "date": "2026-09-16", "notes": ["…"] }],
-      "screenshots": [{ "src": "/screenshots/drivecord-1.png", "caption": "…" }]
-    },
-    {
-      "id": "passcord",
-      "name": "Passcord",
-      "description": "…",
-      "status": "closed-beta",
-      "betaUrl": "https://cordsuite.app/bientot/passcord",
-      "iconGradient": ["#126A84", "#1CC3E0"]
+      "ios": {
+        "status": "available",              // available | closed-beta
+        "version": "1.0.49",
+        "ipaUrl": "https://…/v1.0.49/Drivecord.ipa",    // PUBLIQUE (téléchargée par l'iPhone / le PC)
+        "altstoreSource": "https://…/source.json",       // mode « Ajouter la source »
+        "minOS": "15.0"
+      }
     }
   ]
 }
 ```
 
-### Version iPhone (`ios`)
-
-iOS refuse une app qui n'est pas signée par Apple ou par le compte de
-l'utilisateur. CordLauncher propose donc deux modes :
-
-- **Depuis ce PC** : connecte un iPhone autorisé par USB, renseigne le compte
-  Apple dans Réglages, puis CordLauncher télécharge l'IPA, la signe et
-  l'installe. Le renouvellement utilise le même compte Apple.
-- **Avec AltStore** : CordLauncher affiche un QR code que l'iPhone scanne ;
-  **AltStore** télécharge l'IPA et la fait signer par **AltServer** (sur le
-  PC), puis la re-signe seul tous les 7 jours. Ce mode conserve les droits de
-  partage dont Passcord a besoin.
-
-Le mode direct nécessite un iPhone déverrouillé, l'autorisation « Faire
-  confiance » et, selon la version d'iOS, le mode développeur activé.
-
-```jsonc
-"ios": {
-  "status": "available",           // available | closed-beta
-  "version": "1.0.49",
-  "bundleId": "com.lunatix.drivecord",
-  "ipaUrl": "https://…/v1.0.49/Drivecord.ipa",   // PUBLIQUE : c'est l'iPhone qui la télécharge
-  "ipaSize": 947714,
-  "altstoreSource": "https://…/source.json",     // mode « Ajouter la source » (mises à jour)
-  "minOS": "15.0",
-  "guideUrl": "https://drivecord.app/install"
-}
-```
-
-- `altstore://install?url=<ipa>` installe tout de suite ;
-  `altstore://source?url=<source>` ajoute la source (AltStore propose ensuite
-  chaque mise à jour).
-- Le QR est dessiné à la main (`components/apps/QrCode.tsx`, lib `uqr`) :
-  modules en carrés arrondis — des points ronds ne se décodent plus en petit
-  (vérifié au décodeur) — niveau de correction Q pour le logo central.
-- Côté PC, `altserver_status` / `altserver_launch` (Rust, `src-tauri/src/iphone.rs`)
-  disent si AltServer tourne et le lancent via son raccourci du menu Démarrer
-  (son MSI ne renseigne pas le dossier d'installation).
-- Pour ouvrir une app en bêta fermée sur iPhone (Passcord) : publier ses IPA à
-  une adresse publique (comme `drivecord-releases`), puis remplir `ipaUrl` /
-  `altstoreSource` et passer `status` à `available`.
-
 `detect.uninstallKey` est le nom de la sous-clé
 `HKCU\Software\Microsoft\Windows\CurrentVersion\Uninstall\…` que crée
-l'installateur : pour une app Tauri en NSIS, c'est son `productName`
-(vérifié : `Drivecord`).
+l'installateur : pour une app Tauri en NSIS, c'est son `productName`.
+
+Le QR code AltStore est dessiné à la main (`components/apps/QrCode.tsx`, lib
+`uqr`) : modules en carrés arrondis — des points ronds ne se décodent plus en
+petit (vérifié au décodeur) — et niveau de correction Q pour loger le logo au
+centre.
+
+## Compte Cord (`account-service/`)
+
+Service Node autonome (Node 24, `node:sqlite`, sans dépendance externe) qui
+fournit l'identité commune de la suite :
+
+- inscription mot de passe (scrypt), confirmation d'email, sessions ;
+- **OIDC** (PKCE S256) pour « Continuer avec mon compte Cord » dans Drivecord ;
+- **association Passcord** par clé Ed25519 : l'iPhone signe les demandes de
+  connexion, validées par Face ID. Les clés privées ne quittent jamais le
+  trousseau de l'iPhone, et le mot de passe du coffre Passcord n'est jamais
+  envoyé au service.
+
+Il refuse les redirections OAuth inconnues, impose PKCE, expire les codes et
+empêche leur réutilisation, et n'accepte une connexion Passcord que si sa
+signature est valide (`account-service/server.test.mjs`).
+
+```bash
+npm run account:dev    # http://127.0.0.1:4319 ; liens de confirmation dans le terminal
+npm run account:test   # tests (node --test)
+```
+
+### Production — `https://compte.cordsuite.app`
+
+- **Hébergement** : VPS Oracle (le même que Drivebot et Sona), process PM2
+  `cord-account` lancé par `start.mjs` avec un Node 24 installé à part
+  (`~/.local/node-v24.x`) pour ne pas toucher au Node 20 des autres bots.
+  Base SQLite dans `~/cord-account/data/`.
+- **HTTPS** : Caddy → `127.0.0.1:4319`, certificat Let's Encrypt automatique.
+  Ports 80 et 443 à ouvrir dans le pare-feu de la machine **et** dans la liste
+  de sécurité du réseau Oracle Cloud (console).
+- **Config** : `~/cord-account/.env` (hors git) — `CORD_ISSUER`,
+  `HOST=127.0.0.1`, `PORT`, `CORD_TRUST_PROXY=1` (IP réelle derrière Caddy),
+  `CORD_DATABASE`, `CORD_CLIENTS`, `RESEND_API_KEY`, `CORD_MAIL_FROM`.
+- **DNS** (Vercel) : `compte` A → IP du VPS ; domaine d'envoi `cordsuite.app`
+  vérifié chez Resend (DKIM `resend._domainkey`, SPF sur `send`).
+- **Déployer** : `bash account-service/deploy.sh` (tests → envoi des fichiers
+  → redémarrage PM2).
+- **Drivecord** : poser `AUTH_CORD_ISSUER`, `AUTH_CORD_ID`, `AUTH_CORD_SECRET`
+  et `NEXT_PUBLIC_CORD_ACCOUNT_URL` dans ses variables Vercel.
 
 ## Feuille de route
 
-- [x] Setup Tauri 2 + React + TS + Tailwind, D.A. glass, composants de base
-- [x] Écran principal, fiche, bibliothèque, réglages, animations (pilote simulé)
-- [x] Pilote Tauri : registre Windows, téléchargement en flux + SHA-256,
-      choix du dossier, installation silencieuse, lancement, désinstallation
-- [x] Démarrage avec Windows (`tauri-plugin-autostart`) et installation iPhone
-- [ ] Mise à jour de CordLauncher (`tauri-plugin-updater`) et CSP stricte
+- [x] Setup Tauri 2 + React + TS + Tailwind, D.A. Liquid Glass, composants
+- [x] Découvrir · Bibliothèque · Réglages, fiche détaillée, animations
+- [x] Moteur Windows réel : registre, téléchargement + SHA-256, choix du
+      dossier, installation/désinstallation silencieuse, lancement
+- [x] Installation iPhone : compte Apple par câble, fichier `.ipa` local, AltStore
+- [x] Démarrage avec Windows (`tauri-plugin-autostart`)
+- [x] Compte Cord (service OIDC + Passcord), déployé
+- [ ] Mise à jour automatique de CordLauncher (`tauri-plugin-updater`)
+- [ ] CSP stricte, signature de l'installateur
+
+## Licence
+
+Projet personnel de la suite Cord — tous droits réservés.

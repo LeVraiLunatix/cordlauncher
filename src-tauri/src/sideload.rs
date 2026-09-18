@@ -245,12 +245,16 @@ struct IphoneProgress<'a> {
     progress: f32,
 }
 
+/// Installe une app sur l'iPhone : soit depuis `ipa_url` (téléchargée), soit
+/// depuis `ipa_path` (fichier .ipa local choisi par l'utilisateur — sert aux
+/// apps en bêta fermée dont l'IPA n'est pas publique, comme Passcord).
 #[tauri::command]
 pub async fn iphone_sideload(
     app: AppHandle,
     state: State<'_, AppleState>,
     id: String,
-    ipa_url: String,
+    ipa_url: Option<String>,
+    ipa_path: Option<String>,
     udid: String,
 ) -> Result<(), String> {
     crate::apps::validate_id(&id)?;
@@ -263,15 +267,30 @@ pub async fn iphone_sideload(
     }
     let email = state.email.lock().unwrap().clone().unwrap_or_default();
 
-    // 1. IPA
-    let ipa = std::env::temp_dir().join("CordLauncher").join(format!("{id}.ipa"));
-    std::fs::create_dir_all(ipa.parent().unwrap()).map_err(|e| e.to_string())?;
-    let never = AtomicBool::new(false);
-    crate::apps::download(&ipa_url, None, &ipa, &never, |r, t| {
-        let progress = if t > 0 { r as f32 / t as f32 } else { -1.0 };
-        let _ = app.emit(PROGRESS_EVENT, IphoneProgress { id: &id, phase: "downloading", progress });
-    })
-    .await?;
+    // 1. IPA : fichier local fourni, sinon téléchargement. Le fichier local
+    //    n'est jamais supprimé (il appartient à l'utilisateur).
+    let (ipa, remove_after) = match (ipa_path, ipa_url) {
+        (Some(path), _) => {
+            let p = PathBuf::from(&path);
+            if !p.is_file() || !path.to_ascii_lowercase().ends_with(".ipa") {
+                return Err("Fichier .ipa introuvable.".into());
+            }
+            (p, false)
+        }
+        (None, Some(url)) => {
+            let dest = std::env::temp_dir().join("CordLauncher").join(format!("{id}.ipa"));
+            std::fs::create_dir_all(dest.parent().unwrap()).map_err(|e| e.to_string())?;
+            let never = AtomicBool::new(false);
+            let (a, i) = (app.clone(), id.clone());
+            crate::apps::download(&url, None, &dest, &never, move |r, t| {
+                let progress = if t > 0 { r as f32 / t as f32 } else { -1.0 };
+                let _ = a.emit(PROGRESS_EVENT, IphoneProgress { id: &i, phase: "downloading", progress });
+            })
+            .await?;
+            (dest, true)
+        }
+        (None, None) => return Err("Aucune app à installer : fournis une URL ou un fichier .ipa.".into()),
+    };
 
     // 2 + 3. Signature et envoi, sur un fil dédié. Le compte y part et revient.
     let account = guard.take().expect("session ouverte ci-dessus");
@@ -282,7 +301,9 @@ pub async fn iphone_sideload(
     })
     .await?;
     *guard = account;
-    let _ = std::fs::remove_file(&ipa);
+    if remove_after {
+        let _ = std::fs::remove_file(&ipa);
+    }
     result
 }
 

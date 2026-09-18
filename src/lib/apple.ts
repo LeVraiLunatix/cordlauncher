@@ -41,10 +41,10 @@ export async function respondApple(response: string | { SubmitCode: string } | {
   try { await invoke("apple_2fa_respond", { response }); patch({ twoFactor: null }); }
   catch (error) { patch({ error: String(error) }); }
 }
-export async function sideloadIphone(id: string, name: string, ipaUrl: string, udid: string) {
+export async function sideloadIphone(id: string, name: string, source: { ipaUrl?: string; ipaPath?: string }, udid: string) {
   await operation(async () => {
-    patch({ progress: { id, phase: "downloading", progress: -1 } });
-    await invoke("iphone_sideload", { id, ipaUrl, udid });
+    patch({ progress: { id, phase: source.ipaPath ? "signing" : "downloading", progress: -1 } });
+    await invoke("iphone_sideload", { id, ipaUrl: source.ipaUrl ?? null, ipaPath: source.ipaPath ?? null, udid });
     toast({ tone: "ok", title: `${name} installé sur l’iPhone`, description: "Active le mode développeur et autorise le profil dans les réglages iOS si nécessaire." });
   });
 }

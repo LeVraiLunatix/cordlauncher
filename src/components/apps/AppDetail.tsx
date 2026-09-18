@@ -270,20 +270,16 @@ function IphoneSection({ app }: { app: CatalogApp }) {
           </p>
           {meta.length > 0 && <p className="mt-0.5 font-mono text-[11.5px] text-fg-subtle">{meta.join("  ·  ")}</p>}
         </div>
-        {installable ? (
-          <GlassButton
-            variant="primary"
-            tint={app.iconGradient}
-            icon={<Smartphone className="size-4" />}
-            onClick={() => openIphoneInstall(app)}
-          >
-            Installer sur iPhone
-          </GlassButton>
-        ) : (
-          <span className="inline-flex items-center gap-1.5 text-[12px] text-fg-subtle">
-            <LockKeyhole className="size-3.5" /> Sur invitation
-          </span>
-        )}
+        {/* Même en bêta fermée : si tu as le .ipa, tu peux l'installer par
+            câble depuis ce PC. */}
+        <GlassButton
+          variant={installable ? "primary" : "glass"}
+          tint={app.iconGradient}
+          icon={installable ? <Smartphone className="size-4" /> : <LockKeyhole className="size-4" />}
+          onClick={() => openIphoneInstall(app)}
+        >
+          {installable ? "Installer sur iPhone" : "Installer un .ipa"}
+        </GlassButton>
       </div>
     </Section>
   );

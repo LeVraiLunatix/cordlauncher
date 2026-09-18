@@ -16,9 +16,9 @@ import { cn } from "../../lib/cn";
 import { formatBytes, formatDate } from "../../lib/format";
 import {
   altstoreLink,
-  canInstallOnIphone,
   closeIphoneInstall,
   getAltServerStatus,
+  hasIphoneVersion,
   launchAltServer,
   useIphoneSheet,
   type AltServerStatus,
@@ -56,13 +56,16 @@ export function IphoneInstallSheet({ apps }: { apps: CatalogApp[] }) {
       width={800}
       labelledBy="iphone-install-title"
     >
-      {shown && canInstallOnIphone(shown.ios) && <SheetBody app={shown} ios={shown.ios} />}
+      {shown && hasIphoneVersion(shown.ios) && <SheetBody app={shown} ios={shown.ios} />}
     </GlassModal>
   );
 }
 
 function SheetBody({ app, ios }: { app: CatalogApp; ios: IosSpec }) {
-  const [method, setMethod] = useState<"direct" | "altstore">(ios.ipaUrl ? "direct" : "altstore");
+  // AltStore n'est possible qu'avec une IPA publique ou une source. Sans ça
+  // (Passcord en bêta fermée), seul le mode « Depuis ce PC » est proposé.
+  const altstorePossible = !!(ios.ipaUrl || ios.altstoreSource);
+  const [method, setMethod] = useState<"direct" | "altstore">("direct");
   const apple = useApple();
   const [mode, setMode] = useState<IosInstallMode>(ios.ipaUrl ? "install" : "source");
   const link = altstoreLink(ios, mode);
@@ -90,8 +93,10 @@ function SheetBody({ app, ios }: { app: CatalogApp; ios: IosSpec }) {
         </div>
       </header>
 
-      <div className="px-8 pb-5"><GlassSegmented<"direct" | "altstore"> label="Méthode d’installation" value={method} onChange={value => { if (!apple.busy) setMethod(value); }} options={[{ value: "direct", label: "Depuis ce PC" }, { value: "altstore", label: "Avec AltStore" }]} /></div>
-      {method === "direct" ? <DirectIphoneInstall app={app} /> : <div className="grid grid-cols-[300px_minmax(0,1fr)] gap-8 px-8 pb-7">
+      {altstorePossible && (
+        <div className="px-8 pb-5"><GlassSegmented<"direct" | "altstore"> label="Méthode d’installation" value={method} onChange={value => { if (!apple.busy) setMethod(value); }} options={[{ value: "direct", label: "Depuis ce PC" }, { value: "altstore", label: "Avec AltStore" }]} /></div>
+      )}
+      {method === "direct" || !altstorePossible ? <DirectIphoneInstall app={app} /> : <div className="grid grid-cols-[300px_minmax(0,1fr)] gap-8 px-8 pb-7">
         {/* ── QR ─────────────────────────────────────────────────────────── */}
         <div className="flex flex-col items-center">
           {ios.ipaUrl && ios.altstoreSource && (

@@ -38,6 +38,18 @@ export async function pickFolder(title: string, defaultPath?: string): Promise<s
   return typeof picked === "string" ? picked : null;
 }
 
+/** Sélecteur de fichier .ipa. `null` si l'utilisateur annule. */
+export async function pickIpaFile(): Promise<string | null> {
+  if (!IS_TAURI) return null;
+  const { open } = await import("@tauri-apps/plugin-dialog");
+  const picked = await open({
+    multiple: false,
+    title: "Choisir un fichier .ipa",
+    filters: [{ name: "Application iPhone", extensions: ["ipa"] }],
+  });
+  return typeof picked === "string" ? picked : null;
+}
+
 /** %LOCALAPPDATA%, dossier par défaut des installateurs « utilisateur ». */
 export async function defaultAppsDir(): Promise<string | null> {
   if (!IS_TAURI) return null;

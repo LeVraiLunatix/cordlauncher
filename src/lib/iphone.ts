@@ -20,9 +20,18 @@ import { createStore, useStore } from "./store";
 
 export type IosInstallMode = "install" | "source";
 
-/** L'app a-t-elle une version iPhone installable dès maintenant ? */
+/** L'app a-t-elle une version iPhone installable en un clic (IPA publique ou source AltStore) ? */
 export function canInstallOnIphone(ios: IosSpec | undefined): ios is IosSpec {
   return !!ios && ios.status === "available" && !!(ios.ipaUrl || ios.altstoreSource);
+}
+
+/**
+ * L'app a-t-elle une version iPhone tout court ? Même en bêta fermée, si tu as
+ * son fichier .ipa (Passcord depuis tes releases privées, par exemple), tu peux
+ * l'installer par câble depuis ce PC avec ton compte Apple.
+ */
+export function hasIphoneVersion(ios: IosSpec | undefined): ios is IosSpec {
+  return !!ios;
 }
 
 /**
