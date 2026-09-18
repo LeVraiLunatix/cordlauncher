@@ -16,7 +16,7 @@ const error = (status, message) => Object.assign(new Error(message), { status })
 const publicUser = u => ({ id: u.id, email: u.email, name: u.name, createdAt: u.created_at, emailVerified: Boolean(u.email_verified_at) });
 const safeEqual = (a, b) => { const aa = Buffer.from(a); const bb = Buffer.from(b); return aa.length === bb.length && timingSafeEqual(aa, bb); };
 
-export function createAccountService({ database = ':memory:', issuer = 'http://127.0.0.1:4319', clients = {}, sendVerification } = {}) {
+export function createAccountService({ database = ':memory:', issuer = 'http://127.0.0.1:4319', clients = {}, sendVerification, trustProxy = false } = {}) {
   const origin = new URL(issuer);
   if (origin.protocol !== 'https:' && !['127.0.0.1', 'localhost', '[::1]'].includes(origin.hostname)) throw new Error('HTTPS obligatoire hors localhost.');
   if (origin.pathname !== '/' || origin.search || origin.hash || origin.username || origin.password) throw new Error('L’issuer doit être une origine sans chemin.');
@@ -98,7 +98,11 @@ export function createAccountService({ database = ':memory:', issuer = 'http://1
       if (method === 'GET' && path === '/api/client') { const client = clients[url.searchParams.get('id')]; if (!client) throw error(404, 'Application inconnue.'); return json({ name: client.name }); }
       if (method === 'GET' && path === '/api/me') { const { user } = session(req); return json({ user: publicUser(user), keys: db.prepare('SELECT id, name, created_at AS createdAt FROM passcord_keys WHERE user_id=?').all(user.id) }); }
       if (!['POST', 'PATCH', 'DELETE'].includes(method)) throw error(404, 'Introuvable.');
-      const ip = req.socket.remoteAddress ?? 'unknown';
+      // Derrière Caddy, toutes les requêtes arrivent de 127.0.0.1 : sans l'IP
+      // transmise par le proxy, tout le monde partagerait le même compteur.
+      // On ne lit X-Forwarded-For que si on a été configuré derrière un proxy.
+      const forwarded = trustProxy ? req.headers['x-forwarded-for']?.split(',')[0]?.trim() : undefined;
+      const ip = forwarded || req.socket.remoteAddress || 'unknown';
       const bucket = buckets.get(ip) ?? { count: 0, expires: now() + 60_000 };
       buckets.set(ip, bucket);
       if (++bucket.count > 120) throw error(429, 'Trop de demandes. Réessaie dans une minute.');
@@ -242,6 +246,6 @@ if (process.argv[1] && resolve(process.argv[1]) === fileURLToPath(import.meta.ur
       return { devUrl: url };
     };
   }
-  const app = createAccountService({ database: process.env.CORD_DATABASE ?? fileURLToPath(new URL('./data/cord.sqlite', import.meta.url)), issuer, clients, sendVerification });
+  const app = createAccountService({ database: process.env.CORD_DATABASE ?? fileURLToPath(new URL('./data/cord.sqlite', import.meta.url)), issuer, clients, sendVerification, trustProxy: process.env.CORD_TRUST_PROXY === '1' });
   app.server.listen(port, host, () => console.log(`Compte Cord : ${issuer}`));
 }

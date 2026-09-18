@@ -95,3 +95,14 @@ test('OIDC restricts redirects, requires PKCE, signs identity, and consumes code
   assert.equal((await request('/api/me', { token: result.data.access_token })).status, 401, 'an app token cannot manage the Cord account');
   assert.equal((await request('/oauth/token', { body: grant })).status, 400);
 });
+
+test('behind a trusted proxy, rate limits follow the client address from X-Forwarded-For', async t => {
+  const app = createAccountService({ trustProxy: true });
+  await new Promise(resolve => app.server.listen(0, '127.0.0.1', resolve));
+  t.after(() => app.close());
+  const base = `http://127.0.0.1:${app.server.address().port}`;
+  const attempt = ip => fetch(base + '/api/login', { method: 'POST', headers: { 'Content-Type': 'application/json', 'X-Forwarded-For': ip }, body: JSON.stringify({ email: 'nobody@example.test', password: 'x' }) });
+  for (let i = 0; i < 20; i++) assert.equal((await attempt('203.0.113.7')).status, 401);
+  assert.equal((await attempt('203.0.113.7')).status, 429, 'the noisy client is throttled');
+  assert.equal((await attempt('198.51.100.9')).status, 401, 'another client is not');
+});

@@ -5,7 +5,9 @@ import { createStore, useStore } from "./store";
 export type CordUser = { id: string; name: string; email: string; createdAt: number; emailVerified: boolean };
 export type CordKey = { id: string; name: string; createdAt: number };
 export type CordChallenge = { id: string; url: string; pollToken?: string; expiresAt: number };
-const initialServer = localStorage.getItem("cordlauncher:account-server") ?? import.meta.env.VITE_CORD_ACCOUNT_URL ?? (import.meta.env.DEV ? "http://127.0.0.1:4319" : "");
+/** Service Compte Cord en production (VPS, derrière Caddy). */
+const PRODUCTION_SERVER = "https://compte.cordsuite.app";
+const initialServer = localStorage.getItem("cordlauncher:account-server") ?? import.meta.env.VITE_CORD_ACCOUNT_URL ?? (import.meta.env.DEV ? "http://127.0.0.1:4319" : PRODUCTION_SERVER);
 const account = createStore<{ server: string; user: CordUser | null; keys: CordKey[] }>({ server: initialServer, user: null, keys: [] });
 export const useCordAccount = () => useStore(account, s => s);
 export function setCordServer(server: string) {
