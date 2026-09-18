@@ -1,6 +1,8 @@
 import { AnimatePresence, LayoutGroup, MotionConfig } from "motion/react";
 import { useCallback, useEffect, useRef, useState, type CSSProperties } from "react";
 import { AppDetail } from "./components/apps/AppDetail";
+import { InstallSheet } from "./components/apps/InstallSheet";
+import { AppleVerification } from "./components/apps/AppleAccount";
 import { IphoneInstallSheet } from "./components/apps/IphoneInstallSheet";
 import { AnimatedGradientBackground } from "./components/glass";
 import { Sidebar, type Route } from "./components/shell/Sidebar";
@@ -15,6 +17,7 @@ import { useSettings } from "./lib/settings";
 import { DiscoverView } from "./views/DiscoverView";
 import { LibraryView } from "./views/LibraryView";
 import { SettingsView } from "./views/SettingsView";
+import { AccountView } from "./views/AccountView";
 
 /** `?intro=0` saute l'animation d'ouverture (pratique en développement). */
 const SKIP_INTRO = new URLSearchParams(window.location.search).get("intro") === "0";
@@ -131,11 +134,14 @@ function Shell() {
               <LibraryView key="library" apps={apps} onOpen={setSelectedId} onDiscover={() => setRoute("discover")} />
             )}
             {route === "settings" && <SettingsView key="settings" />}
+            {route === "account" && <AccountView key="account" />}
           </AnimatePresence>
         </main>
       </div>
       <AppDetail app={selected} onClose={closeDetail} />
       <IphoneInstallSheet apps={apps} />
+      <InstallSheet />
+      <AppleVerification />
     </div>
   );
 }

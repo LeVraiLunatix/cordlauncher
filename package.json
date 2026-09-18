@@ -5,6 +5,8 @@
   "type": "module",
   "description": "Hub d'installation Windows de la suite Cord.",
   "scripts": {
+    "account:dev": "node account-service/server.mjs",
+    "account:test": "node --test account-service/server.test.mjs",
     "dev": "vite",
     "build": "tsc --noEmit && vite build",
     "preview": "vite preview",
@@ -15,6 +17,8 @@
   },
   "dependencies": {
     "@tauri-apps/api": "^2.11.1",
+    "@tauri-apps/plugin-autostart": "^2.5.1",
+    "@tauri-apps/plugin-dialog": "^2.7.3",
     "@tauri-apps/plugin-opener": "^2.5.5",
     "lucide-react": "^1.47.0",
     "motion": "^13.4.0",

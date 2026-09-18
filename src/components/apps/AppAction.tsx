@@ -6,6 +6,7 @@ import { formatBytes, formatEta, formatPercent, formatSpeed } from "../../lib/fo
 import { cancelJob, installApp, launchApp, useAppAction, type Job } from "../../lib/installer";
 import { openExternal } from "../../lib/platform";
 import { GlassButton, GlassProgress, Skeleton } from "../glass";
+import { requestInstall } from "./InstallSheet";
 
 type Size = "sm" | "md" | "lg";
 
@@ -61,7 +62,7 @@ export function AppActionButton({
           className={className}
           tint={app.iconGradient}
           icon={<Download className="size-4" />}
-          onClick={stop(() => void installApp(app))}
+          onClick={stop(() => requestInstall(app))}
         >
           Installer
         </GlassButton>

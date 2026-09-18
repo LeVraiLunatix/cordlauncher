@@ -11,3 +11,4 @@ src-tauri/gen/schemas
 .DS_Store
 Thumbs.db
 *.log
+account-service/data/

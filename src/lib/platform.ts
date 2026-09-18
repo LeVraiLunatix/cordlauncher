@@ -13,12 +13,36 @@ async function currentWindow() {
   return getCurrentWindow();
 }
 
-/** La fenêtre démarre cachée (anti-flash blanc) : on l'affiche une fois peinte. */
-export async function revealWindow(): Promise<void> {
+/**
+ * La fenêtre démarre cachée (anti-flash blanc) : on l'affiche une fois
+ * peinte. Lancée avec Windows (`--minimized`) et si l'utilisateur l'a
+ * demandé, elle s'ouvre directement réduite dans la barre des tâches.
+ */
+export async function revealWindow(allowMinimized: boolean): Promise<void> {
   if (!IS_TAURI) return;
+  const { invoke } = await import("@tauri-apps/api/core");
   const w = await currentWindow();
   await w.show();
-  await w.setFocus();
+  if (allowMinimized && (await invoke<boolean>("launch_minimized"))) {
+    await w.minimize();
+  } else {
+    await w.setFocus();
+  }
+}
+
+/** Sélecteur de dossier Windows. `null` si l'utilisateur annule. */
+export async function pickFolder(title: string, defaultPath?: string): Promise<string | null> {
+  if (!IS_TAURI) return null;
+  const { open } = await import("@tauri-apps/plugin-dialog");
+  const picked = await open({ directory: true, multiple: false, title, defaultPath });
+  return typeof picked === "string" ? picked : null;
+}
+
+/** %LOCALAPPDATA%, dossier par défaut des installateurs « utilisateur ». */
+export async function defaultAppsDir(): Promise<string | null> {
+  if (!IS_TAURI) return null;
+  const { invoke } = await import("@tauri-apps/api/core");
+  return invoke<string | null>("apps_default_dir");
 }
 
 export async function minimizeWindow(): Promise<void> {

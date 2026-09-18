@@ -17,7 +17,8 @@ import { useState, type ReactNode } from "react";
 import { GlassButton, GlassCard, GlassSegmented, GlassToggle } from "../components/glass";
 import { LAUNCHER_VERSION } from "../components/shell/Sidebar";
 import { itemVariants, viewVariants } from "../lib/motion";
-import { openExternal } from "../lib/platform";
+import { IS_TAURI, openExternal, pickFolder } from "../lib/platform";
+import { AppleAccount } from "../components/apps/AppleAccount";
 import { updateSettings, useSettings, type ThemePref } from "../lib/settings";
 import { toast } from "../lib/toast";
 
@@ -105,7 +106,7 @@ export function SettingsView() {
               transition={{ type: "spring", stiffness: 300, damping: 32 }}
               className="overflow-hidden"
             >
-              <Row nested title="Démarrer réduit" description="Reste discret dans la zone de notification.">
+              <Row nested title="Démarrer réduit" description="S’ouvre réduit dans la barre des tâches.">
                 <GlassToggle
                   label="Démarrer réduit"
                   checked={s.startMinimized}
@@ -141,12 +142,13 @@ export function SettingsView() {
             onChange={(v) => updateSettings({ autoInstallUpdates: v })}
           />
         </Row>
-        <Row icon={FolderDown} title="Emplacement" description="Chaque app s'installe dans ton profil Windows — jamais de droits admin.">
-          <code className="rounded-lg bg-[var(--control)] px-2.5 py-1.5 font-mono text-[11.5px] text-fg-muted ring-1 ring-[var(--line)] ring-inset">
-            %LOCALAPPDATA%
-          </code>
+        <Row icon={FolderDown} title="Dossier des nouvelles apps" description={s.installBase ?? "Emplacement par défaut : ton profil Windows. Tu peux le modifier à chaque installation."}>
+          <GlassButton variant="glass" disabled={!IS_TAURI} onClick={() => void pickFolder("Dossier des apps Cord", s.installBase ?? undefined).then(installBase => { if (installBase) updateSettings({ installBase }); }).catch(error => toast({ tone: "error", title: "Dossier inaccessible", description: String(error) }))}>Choisir…</GlassButton>
+          {s.installBase && <GlassButton variant="ghost" onClick={() => updateSettings({ installBase: null })}>Réinitialiser</GlassButton>}
         </Row>
       </Group>
+
+      <GlassCard variants={itemVariants} className="rounded-[26px] p-6"><div className="relative z-[3]"><AppleAccount /></div></GlassCard>
 
       <GlassCard variants={itemVariants} className="flex items-center gap-5 rounded-[26px] p-5">
         <img src="/logos/cordsuite.png" alt="" draggable={false} className="relative z-[3] size-14 rounded-[16px]" />

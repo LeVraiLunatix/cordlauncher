@@ -1,19 +1,20 @@
-import { ArrowUpRight, Compass, LayoutGrid, Settings2, type LucideIcon } from "lucide-react";
+import { ArrowUpRight, Compass, LayoutGrid, Settings2, UserRound, type LucideIcon } from "lucide-react";
 import { AnimatePresence, motion } from "motion/react";
 import type { CatalogApp } from "../../lib/catalog/types";
 import { cn } from "../../lib/cn";
-import { useActiveJobCount, useJob, useUpdateCount } from "../../lib/installer";
+import { launchApp, useInstalledMap, useActiveJobCount, useJob, useUpdateCount } from "../../lib/installer";
 import { springSoft } from "../../lib/motion";
 import { openExternal } from "../../lib/platform";
 import { JobProgress } from "../apps/AppAction";
 import { AppIcon } from "../apps/AppIcon";
 import { GlassCard } from "../glass";
 
-export type Route = "discover" | "library" | "settings";
+export type Route = "discover" | "library" | "settings" | "account";
 
 const NAV: { id: Route; label: string; icon: LucideIcon }[] = [
   { id: "discover", label: "Découvrir", icon: Compass },
   { id: "library", label: "Bibliothèque", icon: LayoutGrid },
+  { id: "account", label: "Compte Cord", icon: UserRound },
   { id: "settings", label: "Réglages", icon: Settings2 },
 ];
 
@@ -33,11 +34,12 @@ type SidebarProps = {
 export function Sidebar({ route, onRoute, apps }: SidebarProps) {
   const updates = useUpdateCount(apps);
   const activeJobs = useActiveJobCount();
+  const installed = useInstalledMap();
 
   return (
     <GlassCard
       rimAngle={170}
-      className="flex w-[236px] shrink-0 flex-col rounded-[28px] p-3"
+      className="scroll-glass flex w-[236px] shrink-0 flex-col overflow-y-auto rounded-[28px] p-3"
       initial={{ opacity: 0, x: -28, scale: 0.97 }}
       animate={{ opacity: 1, x: 0, scale: 1, transition: { ...springSoft, delay: 0.12 } }}
     >
@@ -100,6 +102,12 @@ export function Sidebar({ route, onRoute, apps }: SidebarProps) {
         })}
       </nav>
 
+      <section className="relative z-[3] my-5" aria-label="Apps installées">
+        <p className="px-3 pb-2 text-[10.5px] font-semibold tracking-[0.14em] text-fg-subtle uppercase">Mes apps</p>
+        {apps.filter(app => installed[app.id]).map(app => <SidebarApp key={app.id} app={app} />)}
+        {!apps.some(app => installed[app.id]) && <p className="px-3 text-xs text-fg-subtle">Tes apps apparaîtront ici après installation.</p>}
+      </section>
+
       <AnimatePresence>
         {activeJobs > 0 && (
           <motion.div
@@ -157,4 +165,11 @@ function SidebarJob({ app }: { app: CatalogApp }) {
       </div>
     </div>
   );
+}
+
+function SidebarApp({ app }: { app: CatalogApp }) {
+  const job = useJob(app.id);
+  return <button type="button" disabled={!!job} onClick={() => void launchApp(app)} title={`Ouvrir ${app.name}`} className="flex w-full items-center gap-3 rounded-2xl p-2.5 text-left text-sm hover:bg-[var(--control)] disabled:opacity-50">
+    <AppIcon app={app} size={30} glow={false} /><span className="truncate">{app.name}</span>
+  </button>;
 }

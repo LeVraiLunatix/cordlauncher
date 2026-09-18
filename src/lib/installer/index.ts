@@ -1,8 +1,13 @@
 import type { CatalogApp } from "../catalog/types";
 import { compareVersions } from "../format";
+import { IS_TAURI } from "../platform";
+import { getSettings } from "../settings";
 import { createStore, useStore } from "../store";
+import { useCordAccount } from "../account";
+import { hasBetaAdminAccess } from "../catalog/access";
 import { toast } from "../toast";
 import { mockDriver } from "./mock-driver";
+import { tauriDriver } from "./tauri-driver";
 import type { InstalledInfo, InstallerDriver, Job, JobKind, ProgressPatch } from "./types";
 
 export type { InstalledInfo, Job, JobPhase } from "./types";
@@ -10,10 +15,21 @@ export type { InstalledInfo, Job, JobPhase } from "./types";
 /**
  * État d'installation de toute la suite + actions.
  *
- * Le pilote est choisi ici et nulle part ailleurs. Étape suivante :
- * `const driver = IS_TAURI ? tauriDriver : mockDriver;`
+ * Le pilote est choisi ici et nulle part ailleurs : le vrai dans l'app
+ * Windows, le simulé quand le front tourne dans un navigateur.
  */
-const driver: InstallerDriver = mockDriver;
+const driver: InstallerDriver = IS_TAURI ? tauriDriver : mockDriver;
+
+/**
+ * Dossier d'installation : une mise à jour reste là où l'app est déjà ;
+ * sinon le dossier choisi dans les réglages + le nom de l'app ; sinon
+ * celui que propose l'installateur (%LOCALAPPDATA%\<Nom>).
+ */
+function installDirFor(app: CatalogApp, current: InstalledInfo | null | undefined): string | null {
+  if (current?.location) return current.location;
+  const base = getSettings().installBase;
+  return base ? `${base.replace(/[\\/]+$/, "")}\\${app.name}` : null;
+}
 
 type InstallerState = {
   /** Vrai tant que la première détection n'est pas revenue. */
@@ -55,9 +71,10 @@ export async function detectInstalled(apps: CatalogApp[]): Promise<void> {
   }
 }
 
-export async function installApp(app: CatalogApp): Promise<void> {
+export async function installApp(app: CatalogApp, installDir?: string | null): Promise<void> {
   if (store.get().jobs[app.id]) return;
-  const kind: JobKind = store.get().installed[app.id] ? "update" : "install";
+  const current = store.get().installed[app.id];
+  const kind: JobKind = current ? "update" : "install";
   const ctrl = new AbortController();
   controllers.set(app.id, ctrl);
   setJob(app.id, {
@@ -71,7 +88,8 @@ export async function installApp(app: CatalogApp): Promise<void> {
   });
 
   try {
-    const info = await driver.install(app, (p) => patchJob(app.id, p), ctrl.signal);
+    const options = { installDir: current?.location ?? installDir ?? installDirFor(app, current), desktopShortcut: getSettings().desktopShortcut };
+    const info = await driver.install(app, options, (p) => patchJob(app.id, p), ctrl.signal);
     setInstalled(app.id, info);
     patchJob(app.id, { phase: "done", eta: null });
     toast({
@@ -125,9 +143,14 @@ export async function uninstallApp(app: CatalogApp): Promise<void> {
 }
 
 export async function launchApp(app: CatalogApp): Promise<void> {
+  const installed = store.get().installed[app.id];
+  if (!installed) {
+    toast({ tone: "error", title: `${app.name} n'est pas installé` });
+    return;
+  }
   toast({ tone: "ok", title: `Lancement de ${app.name}…`, tint: app.iconGradient });
   try {
-    await driver.launch(app);
+    await driver.launch(app, installed);
   } catch (err) {
     const message = err instanceof Error ? err.message : String(err);
     toast({ tone: "error", title: `${app.name} ne s'est pas lancé`, description: message });
@@ -183,12 +206,13 @@ export type AppAction =
 
 /** Ce que propose le bouton principal d'une app, selon son état. */
 export function useAppAction(app: CatalogApp): AppAction {
+  const account = useCordAccount();
   const detecting = useDetecting();
   const installed = useInstalled(app.id);
   const job = useJob(app.id);
 
   if (app.status === "coming-soon") return { kind: "none" };
-  if (app.status === "closed-beta") {
+  if (app.status === "closed-beta" && !hasBetaAdminAccess(app, account.user?.email)) {
     return { kind: "join-beta", url: app.betaUrl ?? app.website ?? "https://cordsuite.app" };
   }
   if (job) return { kind: "busy", job };

@@ -588,3 +588,16 @@
   animation-duration: 0.001ms !important;
   animation-iteration-count: 1 !important;
 }
+/* Shared form fields for installation, account and Apple authentication. */
+.cord-input {
+  display: block;
+  width: 100%;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  background: var(--control);
+  color: var(--fg);
+  padding: 10px 12px;
+  font-size: 14px;
+  user-select: text;
+}
+.cord-input:focus-visible { outline: 2px solid var(--tint-a); outline-offset: 2px; }

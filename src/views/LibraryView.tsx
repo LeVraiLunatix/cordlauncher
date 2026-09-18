@@ -1,14 +1,16 @@
-import { Compass, PackageOpen, RefreshCw } from "lucide-react";
+import { Compass, PackageOpen, RefreshCw, Trash2 } from "lucide-react";
 import { AnimatePresence, motion } from "motion/react";
-import type { Ref } from "react";
+import { useState, type MouseEvent, type Ref } from "react";
 import { AppActionButton, JobProgress } from "../components/apps/AppAction";
 import { AppIcon } from "../components/apps/AppIcon";
 import { StatusBadge } from "../components/apps/StatusBadge";
+import { UninstallConfirm } from "../components/apps/UninstallConfirm";
 import { GlassButton, GlassCard, Skeleton } from "../components/glass";
 import type { CatalogApp } from "../lib/catalog/types";
 import {
   hasUpdate,
   installApp,
+  uninstallApp,
   useAppAction,
   useDetecting,
   useInstalled,
@@ -153,6 +155,7 @@ function InstalledRow({
 }) {
   const action = useAppAction(app);
   const installed = useInstalled(app.id);
+  const [confirming, setConfirming] = useState(false);
   return (
     <GlassCard
       ref={ref}
@@ -180,9 +183,40 @@ function InstalledRow({
           {installed?.location && `  ·  ${installed.location}`}
         </p>
       </div>
-      <div className="relative z-[3] flex w-[300px] shrink-0 justify-end">
-        {action.kind === "busy" ? <JobProgress app={app} job={action.job} /> : <AppActionButton app={app} size="md" />}
+      <div className="relative z-[3] flex w-[340px] shrink-0 items-center justify-end gap-2">
+        {action.kind === "busy" ? (
+          <JobProgress app={app} job={action.job} />
+        ) : (
+          <>
+            <AppActionButton app={app} size="md" />
+            <GlassButton
+              variant="danger"
+              size="icon"
+              aria-label={`Désinstaller ${app.name}`}
+              title="Désinstaller"
+              onClick={(e: MouseEvent) => {
+                e.stopPropagation();
+                setConfirming(true);
+              }}
+            >
+              <Trash2 className="size-4" />
+            </GlassButton>
+          </>
+        )}
       </div>
+      {/* La modale est dans un portail, mais React fait remonter ses clics
+          jusqu'à cette ligne cliquable : on les arrête ici. */}
+      <span className="contents" onClick={(e) => e.stopPropagation()}>
+        <UninstallConfirm
+          app={app}
+          open={confirming}
+          onCancel={() => setConfirming(false)}
+          onConfirm={() => {
+            setConfirming(false);
+            void uninstallApp(app);
+          }}
+        />
+      </span>
     </GlassCard>
   );
 }

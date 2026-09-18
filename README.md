@@ -36,8 +36,12 @@ src/
   components/apps/           Carte, bandeau « À la une », fiche détaillée, actions
   views/                     Découvrir · Bibliothèque · Réglages
   lib/catalog/               Contrat + chargement du catalogue (apps.json)
-  lib/installer/             État d'installation + pilote (simulé pour l'instant)
+  lib/installer/             État d'installation + pilote Windows ou simulé
+  lib/account.ts             Session Compte Cord dans le coffre Windows
+  lib/apple.ts               Compte Apple, 2FA et installation iPhone par câble
+  views/AccountView.tsx      Compte Cord + association Passcord
 src-tauri/                   Coquille Rust (fenêtre sans bordure, instance unique)
+account-service/             Service OIDC du Compte Cord + portail + tests
 public/apps.json             Maquette du catalogue
 public/apps.schema.json      Schéma JSON du catalogue
 ```
@@ -50,6 +54,21 @@ leur `backdrop-filter` ne voit plus le fond de la fenêtre. D'où la règle
 suivie partout : **on anime l'opacité des vitres elles-mêmes, jamais d'un
 conteneur qui les englobe**. Les conteneurs de vues (`viewVariants`) ne font
 que cadencer leurs enfants.
+
+## Compte Cord
+
+Le service autonome `account-service` fournit une identité commune pour la suite : mot de passe, confirmation d'email, sessions dans le coffre Windows, OIDC PKCE pour Drivecord et association Passcord par clé Ed25519. Les clés privées restent dans le trousseau de l'iPhone et le mot de passe Passcord n'est jamais envoyé au service.
+
+En développement :
+
+```bash
+npm run account:dev
+# optionnel : CORD_DEV_MAIL=1 pour afficher les liens de confirmation dans le terminal
+```
+
+En production, configure `CORD_ISSUER` en HTTPS, `CORD_CLIENTS` avec les URI de retour autorisées de Drivecord, et `RESEND_API_KEY` + `CORD_MAIL_FROM` pour les confirmations email. Dans Drivecord, renseigne `AUTH_CORD_ISSUER`, `AUTH_CORD_ID` et `AUTH_CORD_SECRET`.
+
+Le service refuse les redirections OAuth inconnues, impose PKCE S256, expire les codes, empêche leur réutilisation et ne permet pas à Passcord d'approuver une connexion sans signature de sa clé privée.
 
 ## Catalogue d'apps
 
@@ -116,11 +135,18 @@ valider côté serveur).
 ### Version iPhone (`ios`)
 
 iOS refuse une app qui n'est pas signée par Apple ou par le compte de
-l'utilisateur : CordLauncher ne pousse donc pas l'IPA lui-même. Il affiche un
-QR code que l'iPhone scanne ; **AltStore** s'ouvre, télécharge l'IPA et la
-fait signer par **AltServer** (sur le PC), puis la re-signe seul tous les
-7 jours. C'est aussi la méthode qui garde les droits de partage dont Passcord
-a besoin (Sideloadly les retire).
+l'utilisateur. CordLauncher propose donc deux modes :
+
+- **Depuis ce PC** : connecte un iPhone autorisé par USB, renseigne le compte
+  Apple dans Réglages, puis CordLauncher télécharge l'IPA, la signe et
+  l'installe. Le renouvellement utilise le même compte Apple.
+- **Avec AltStore** : CordLauncher affiche un QR code que l'iPhone scanne ;
+  **AltStore** télécharge l'IPA et la fait signer par **AltServer** (sur le
+  PC), puis la re-signe seul tous les 7 jours. Ce mode conserve les droits de
+  partage dont Passcord a besoin.
+
+Le mode direct nécessite un iPhone déverrouillé, l'autorisation « Faire
+  confiance » et, selon la version d'iOS, le mode développeur activé.
 
 ```jsonc
 "ios": {
@@ -157,7 +183,7 @@ l'installateur : pour une app Tauri en NSIS, c'est son `productName`
 
 - [x] Setup Tauri 2 + React + TS + Tailwind, D.A. glass, composants de base
 - [x] Écran principal, fiche, bibliothèque, réglages, animations (pilote simulé)
-- [ ] Pilote Tauri : lecture du registre, téléchargement en flux + SHA-256,
-      installation silencieuse, lancement, désinstallation
-- [ ] Démarrage avec Windows (`tauri-plugin-autostart`), mise à jour de
-      CordLauncher (`tauri-plugin-updater`), CSP stricte
+- [x] Pilote Tauri : registre Windows, téléchargement en flux + SHA-256,
+      choix du dossier, installation silencieuse, lancement, désinstallation
+- [x] Démarrage avec Windows (`tauri-plugin-autostart`) et installation iPhone
+- [ ] Mise à jour de CordLauncher (`tauri-plugin-updater`) et CSP stricte

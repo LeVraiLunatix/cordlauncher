@@ -29,6 +29,8 @@ import { toast } from "../../lib/toast";
 import { GlassButton, GlassModal, GlassSegmented } from "../glass";
 import { AppIcon } from "./AppIcon";
 import { QrCode } from "./QrCode";
+import { DirectIphoneInstall } from "./DirectIphoneInstall";
+import { useApple } from "../../lib/apple";
 
 const ALTSTORE_SITE = "https://altstore.io";
 const POLL_MS = 3000;
@@ -38,6 +40,7 @@ const POLL_MS = 3000;
  * coquille ; n'importe quel bouton l'ouvre via `openIphoneInstall(app)`.
  */
 export function IphoneInstallSheet({ apps }: { apps: CatalogApp[] }) {
+  const apple = useApple();
   const openId = useIphoneSheet();
   const app = apps.find((a) => a.id === openId) ?? null;
   // Garde l'app affichée pendant l'animation de fermeture.
@@ -48,7 +51,7 @@ export function IphoneInstallSheet({ apps }: { apps: CatalogApp[] }) {
   return (
     <GlassModal
       open={!!app}
-      onClose={closeIphoneInstall}
+      onClose={() => { if (!apple.busy) closeIphoneInstall(); }}
       tint={shown?.iconGradient}
       width={800}
       labelledBy="iphone-install-title"
@@ -59,6 +62,8 @@ export function IphoneInstallSheet({ apps }: { apps: CatalogApp[] }) {
 }
 
 function SheetBody({ app, ios }: { app: CatalogApp; ios: IosSpec }) {
+  const [method, setMethod] = useState<"direct" | "altstore">(ios.ipaUrl ? "direct" : "altstore");
+  const apple = useApple();
   const [mode, setMode] = useState<IosInstallMode>(ios.ipaUrl ? "install" : "source");
   const link = altstoreLink(ios, mode);
   const altServer = useAltServerStatus();
@@ -85,7 +90,8 @@ function SheetBody({ app, ios }: { app: CatalogApp; ios: IosSpec }) {
         </div>
       </header>
 
-      <div className="grid grid-cols-[300px_minmax(0,1fr)] gap-8 px-8 pb-7">
+      <div className="px-8 pb-5"><GlassSegmented<"direct" | "altstore"> label="Méthode d’installation" value={method} onChange={value => { if (!apple.busy) setMethod(value); }} options={[{ value: "direct", label: "Depuis ce PC" }, { value: "altstore", label: "Avec AltStore" }]} /></div>
+      {method === "direct" ? <DirectIphoneInstall app={app} /> : <div className="grid grid-cols-[300px_minmax(0,1fr)] gap-8 px-8 pb-7">
         {/* ── QR ─────────────────────────────────────────────────────────── */}
         <div className="flex flex-col items-center">
           {ios.ipaUrl && ios.altstoreSource && (
@@ -154,9 +160,9 @@ function SheetBody({ app, ios }: { app: CatalogApp; ios: IosSpec }) {
             )}
           </Step>
         </ol>
-      </div>
+      </div>}
 
-      <footer className="mx-8 mb-7 flex items-center gap-4 rounded-[20px] bg-[var(--control)] px-4 py-3 ring-1 ring-[var(--line)] ring-inset">
+      {method === "altstore" && <footer className="mx-8 mb-7 flex items-center gap-4 rounded-[20px] bg-[var(--control)] px-4 py-3 ring-1 ring-[var(--line)] ring-inset">
         <MonitorSmartphone className="size-5 shrink-0 text-fg-subtle" />
         <p className="flex-1 text-[12px] leading-relaxed text-fg-muted">
           Avec un compte Apple gratuit, AltStore re-signe l'app tous les 7 jours : laisse AltServer tourner sur ce PC.
@@ -184,7 +190,7 @@ function SheetBody({ app, ios }: { app: CatalogApp; ios: IosSpec }) {
             </GlassButton>
           )}
         </div>
-      </footer>
+      </footer>}
     </div>
   );
 }

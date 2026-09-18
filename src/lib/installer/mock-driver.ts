@@ -53,7 +53,7 @@ export const mockDriver: InstallerDriver = {
     return out;
   },
 
-  async install(app, onProgress, signal) {
+  async install(app, options, onProgress, signal) {
     const total = app.downloadSize ?? 5_000_000;
     let received = 0;
     let speed = 0;
@@ -70,7 +70,10 @@ export const mockDriver: InstallerDriver = {
     await sleep(550, signal);
     onProgress({ phase: "installing" });
     await sleep(1500, signal);
-    return { version: app.version ?? "0.0.0", location: fakeLocation(app.name) };
+    return {
+      version: app.version ?? "0.0.0",
+      location: options.installDir ?? fakeLocation(app.name),
+    };
   },
 
   async uninstall(_app, onProgress) {

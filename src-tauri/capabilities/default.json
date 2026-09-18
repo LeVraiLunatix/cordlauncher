@@ -1,7 +1,7 @@
 {
   "$schema": "../gen/schemas/desktop-schema.json",
   "identifier": "default",
-  "description": "Fenêtre principale de CordLauncher (barre de titre maison + liens externes)",
+  "description": "Fenêtre principale de CordLauncher (barre de titre maison, liens, dossiers, démarrage)",
   "windows": ["main"],
   "permissions": [
     "core:default",
@@ -12,6 +12,10 @@
     "core:window:allow-internal-toggle-maximize",
     "core:window:allow-close",
     "core:window:allow-start-dragging",
-    "opener:default"
+    "opener:default",
+    "dialog:allow-open",
+    "autostart:allow-enable",
+    "autostart:allow-disable",
+    "autostart:allow-is-enabled"
   ]
 }

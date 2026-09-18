@@ -17,11 +17,28 @@ tauri-build = { version = "2", features = [] }
 [dependencies]
 tauri = { version = "2", features = [] }
 tauri-plugin-opener = "2"
+tauri-plugin-dialog = "2"
 serde = { version = "1", features = ["derive"] }
 serde_json = "1"
+tokio = { version = "1", features = ["rt-multi-thread", "sync", "time", "fs", "macros", "io-util"] }
+futures-util = "0.3"
+hex = "0.4"
+# Mêmes versions qu'isideload (reqwest 0.13 + native-tls sous Windows,
+# sha2 0.11) : une seule copie de chaque dans le binaire.
+reqwest = { version = "0.13", default-features = false, features = ["native-tls", "stream", "http2", "system-proxy"] }
+sha2 = "0.11"
+keyring = { version = "3", features = ["windows-native"] }
+
+# ── iPhone : compte Apple, signature, installation par câble ────────────────
+isideload = "0.3.17"
+idevice = { version = "0.1.68", default-features = false, features = ["ring", "usbmuxd"] }
+
+[target.'cfg(windows)'.dependencies]
+winreg = "0.55"
 
 [target.'cfg(not(any(target_os = "android", target_os = "ios")))'.dependencies]
 tauri-plugin-single-instance = "2"
+tauri-plugin-autostart = "2"
 
 [profile.release]
 opt-level = "s"
