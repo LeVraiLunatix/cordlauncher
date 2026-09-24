@@ -75,6 +75,15 @@ test('account identity persists; wrong passwords, origins and expired sessions a
   assert.equal((await request('/api/me', { token })).status, 401);
 });
 
+test('a member can delete their own account', async (t) => {
+  const { request, credentials } = await fixture(t);
+  const fresh = await request('/api/login', { body: credentials });
+  const token = fresh.data.token;
+  assert.equal((await request('/api/me', { token, method: 'DELETE', body: {} })).status, 200);
+  assert.equal((await request('/api/me', { token })).status, 401, 'session invalidée');
+  assert.equal((await request('/api/login', { body: credentials })).status, 401, 'compte supprimé');
+});
+
 test('Passcord pairing proves possession, prevents replay, supports login and revocation', async (t) => {
   const { request, token, user, issuer } = await fixture(t);
   const pair = (await request('/api/passcord/pair', { token, body: {} })).data;

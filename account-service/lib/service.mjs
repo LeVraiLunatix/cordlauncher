@@ -334,6 +334,15 @@ export function createService({ sql, issuer, clients = {}, sendVerification, oid
         await sql('UPDATE users SET name = $1 WHERE id = $2', [field(data, 'name', 60), user.id]);
         return json({ user: publicUser(await one('SELECT * FROM users WHERE id = $1', [user.id])) });
       }
+      if (path === '/api/me' && method === 'DELETE') {
+        const { user } = await session(req);
+        for (const table of ['sessions', 'challenges', 'codes', 'passcord_keys']) {
+          await sql(`DELETE FROM ${table} WHERE user_id = $1`, [user.id]);
+        }
+        await sql('DELETE FROM users WHERE id = $1', [user.id]);
+        res.setHeader('Set-Cookie', sessionCookie('', 0));
+        return json({ ok: true });
+      }
       if (path === '/api/passcord/pair' && method === 'POST') {
         const { user } = await session(req);
         const id = secret();

@@ -10,7 +10,7 @@ pub async fn cord_request(server: String, path: String, method: String, body: Op
     let local = matches!(base.host_str(), Some("127.0.0.1" | "localhost" | "[::1]"));
     if base.scheme() != "https" && !(base.scheme() == "http" && local) { return Err("Le service Cord doit utiliser HTTPS.".into()); }
     let allowed = matches!((method.as_str(), path.as_str()),
-        ("GET", "/api/me") | ("PATCH", "/api/me") |
+        ("GET", "/api/me") | ("PATCH", "/api/me") | ("DELETE", "/api/me") |
         ("POST", "/api/register" | "/api/login" | "/api/logout" | "/api/email/send" | "/api/passcord/pair" | "/api/passcord/login" | "/api/passcord/poll") |
         ("DELETE", "/api/passcord/keys"));
     if !allowed { return Err("Opération Cord inconnue.".into()); }
