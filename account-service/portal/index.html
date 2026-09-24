@@ -1,0 +1,41 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Compte Cord</title>
+<meta name="description" content="Compte Cord : une seule identité pour toute la suite Cord — Drivecord, Passcord, Tunecord et les suivantes. Connexion par Passcord, passkeys et double authentification.">
+<meta name="theme-color" content="#08070f" media="(prefers-color-scheme: dark)">
+<meta name="theme-color" content="#f4f2fb" media="(prefers-color-scheme: light)">
+<meta name="color-scheme" content="dark light">
+<meta name="referrer" content="no-referrer">
+<meta property="og:title" content="Compte Cord">
+<meta property="og:description" content="Un compte. Toute la suite Cord.">
+<link rel="icon" href="/assets/icon-32.png" type="image/png">
+<link rel="apple-touch-icon" href="/assets/icon-180.png">
+<link rel="preload" href="/assets/fonts/inter.woff2" as="font" type="font/woff2" crossorigin>
+<link rel="preload" href="/assets/fonts/space-grotesk.woff2" as="font" type="font/woff2" crossorigin>
+<link rel="stylesheet" href="/portal.css?v={{VERSION}}">
+<script type="module" src="/portal.js?v={{VERSION}}"></script>
+</head>
+<body>
+{{ICONS}}
+<a class="skip-link" href="#main">Aller au contenu</a>
+<div class="backdrop" aria-hidden="true">
+  <div class="orb orb-a"></div>
+  <div class="orb orb-b"></div>
+  <div class="orb orb-c"></div>
+  <div class="orb orb-d"></div>
+  <div class="backdrop-grid"></div>
+  <div class="grain"></div>
+</div>
+<div id="app" class="app" aria-busy="true">
+  <div class="boot" role="progressbar" aria-label="Chargement du Compte Cord">
+    <img class="boot-mark" src="/assets/icon-180.png" alt="" width="64" height="64">
+    <span class="boot-bar"><span></span></span>
+  </div>
+</div>
+<div id="toasts" class="toasts" role="status" aria-live="polite" aria-atomic="false"></div>
+<noscript><div class="noscript">Le Compte Cord a besoin de JavaScript pour fonctionner.</div></noscript>
+</body>
+</html>

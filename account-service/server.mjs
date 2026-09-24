@@ -1,10 +1,10 @@
 import http from 'node:http';
 import { fileURLToPath } from 'node:url';
 import { dirname, resolve } from 'node:path';
-import { mkdirSync } from 'node:fs';
+import { mkdirSync, existsSync, readFileSync, writeFileSync } from 'node:fs';
 import { createService, migrate } from './lib/service.mjs';
 import { pgliteSql } from './lib/db-pglite.mjs';
-import { readClients, readOidcKey, makeSendVerification } from './lib/config.mjs';
+import { readClients, readOidcKey, readAdmins, makeSendMail } from './lib/config.mjs';
 
 /**
  * Entrée de développement local : Postgres embarqué (PGlite) + serveur HTTP,
@@ -24,12 +24,24 @@ export async function startFromEnv() {
   const sql = await pgliteSql(dbDir === ':memory:' ? undefined : dbDir);
   await migrate(sql);
 
+  // En local sans CORD_OIDC_KEY : la clé de développement est gardée à côté de
+  // la base, sinon chaque redémarrage invaliderait jetons et secrets 2FA.
+  let oidcKey;
+  const devKeyFile = dbDir === ':memory:' ? null : resolve(dirname(resolve(dbDir)), 'oidc-dev.pem');
+  if (!process.env.CORD_OIDC_KEY && localhost && devKeyFile && existsSync(devKeyFile)) oidcKey = readFileSync(devKeyFile, 'utf8');
+  else {
+    oidcKey = readOidcKey({ allowEphemeral: localhost });
+    if (!process.env.CORD_OIDC_KEY && devKeyFile) writeFileSync(devKeyFile, oidcKey, { mode: 0o600 });
+  }
+
   const { handle } = createService({
     sql,
     issuer,
     clients: readClients(),
-    sendVerification: makeSendVerification({ localDev: localhost }),
-    oidcKey: readOidcKey({ allowEphemeral: localhost }),
+    sendMail: makeSendMail({ localDev: localhost }),
+    admins: readAdmins(),
+    dataKey: process.env.CORD_DATA_KEY,
+    oidcKey,
   });
 
   const server = http.createServer(handle);

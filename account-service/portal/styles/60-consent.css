@@ -1,0 +1,44 @@
+/* ── Écran de consentement OAuth (/authorize) ─────────────────────────── */
+.consent-page { min-height: 100dvh; display: grid; place-items: center; padding: 28px 16px calc(28px + env(safe-area-inset-bottom)); }
+.consent { width: min(460px, 100%); padding: 34px; border-radius: 30px; display: grid; gap: 24px; }
+.link-visual { display: flex; align-items: center; justify-content: center; gap: 0; padding-top: 4px; }
+.link-visual .logo { position: relative; width: 68px; height: 68px; border-radius: 20px; flex: none; box-shadow: 0 18px 40px -16px var(--accent-glow); }
+.link-visual .logo img { width: 100%; height: 100%; border-radius: inherit; }
+.link-visual .logo .fallback { width: 100%; height: 100%; border-radius: inherit; display: grid; place-items: center; background: var(--grad); color: #fff; font: 600 28px/1 var(--font-display); }
+.link-visual .wire { position: relative; width: 92px; height: 2px; margin: 0 -2px; background: repeating-linear-gradient(90deg, var(--line-strong) 0 6px, transparent 6px 12px); }
+.link-visual .wire::after { content: ""; position: absolute; top: -3px; left: 0; width: 8px; height: 8px; border-radius: 50%; background: var(--accent); box-shadow: 0 0 14px var(--accent-glow); animation: wire 1.8s var(--ease) infinite; }
+.link-visual .wire .lock { position: absolute; inset: 0; margin: auto; display: grid; place-items: center; width: 30px; height: 30px; top: -14px; border-radius: 50%; background: var(--glass-strong); border: 1px solid var(--line-strong); color: var(--ok); }
+.link-visual .wire .lock .i { width: 14px; height: 14px; }
+@keyframes wire { 0% { left: 0; opacity: 0; } 20% { opacity: 1; } 80% { opacity: 1; } 100% { left: calc(100% - 8px); opacity: 0; } }
+.consent h1 { font-size: 23px; text-align: center; letter-spacing: -0.025em; }
+.consent h1 strong { font-weight: 600; }
+.consent .sub { text-align: center; color: var(--fg-muted); font-size: 14.5px; margin-top: 8px; }
+.account-chip { display: flex; align-items: center; gap: 12px; padding: 10px 10px 10px 12px; border-radius: 16px; background: var(--control); border: 1px solid var(--line); }
+.account-chip .who { flex: 1; min-width: 0; }
+.account-chip strong { display: block; font-size: 14px; }
+.account-chip span { display: block; font-size: 12.5px; color: var(--fg-subtle); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.grants { display: grid; gap: 4px; margin: 0; padding: 0; list-style: none; }
+.grants li { display: flex; align-items: center; gap: 12px; padding: 10px 0; font-size: 14.5px; }
+.grants li + li { border-top: 1px solid var(--line); }
+.grants li .icon-badge { width: 32px; height: 32px; border-radius: 10px; }
+.grants li .icon-badge .i { width: 15px; height: 15px; }
+.grants li small { display: block; color: var(--fg-subtle); font-size: 12.5px; }
+.assure { display: flex; gap: 10px; align-items: flex-start; padding: 12px 14px; border-radius: 14px; background: var(--ok-soft); color: var(--fg-muted); font-size: 13px; }
+.assure .i { color: var(--ok); margin-top: 1px; }
+.consent .actions { display: grid; grid-template-columns: 1fr 1.4fr; gap: 10px; }
+.consent .foot { text-align: center; font-size: 12.5px; color: var(--fg-subtle); }
+.consent .foot code { color: var(--fg-muted); }
+.consent .auth-card { padding: 0; max-width: none; background: none; border: 0; box-shadow: none; -webkit-backdrop-filter: none; backdrop-filter: none; }
+.consent .auth-card::before, .consent .auth-card::after { display: none; }
+.consent-loading { display: grid; gap: 16px; justify-items: center; text-align: center; padding: 20px 0; }
+@media (max-width: 480px) {
+  .consent { padding: 24px 20px; border-radius: 26px; }
+  .consent .actions { grid-template-columns: 1fr; }
+  .consent .actions .btn-primary { order: -1; }
+}
+
+/* ── Mouvement réduit ─────────────────────────────────────────────────── */
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { animation-duration: 1ms !important; animation-iteration-count: 1 !important; transition-duration: 1ms !important; scroll-behavior: auto !important; }
+  .orb, .grain, .qr-scan, .link-visual .wire::after, .pulse-dot::after { animation: none !important; }
+}

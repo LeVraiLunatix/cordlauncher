@@ -14,6 +14,9 @@ export function readClients() {
   }
 }
 
+/** Emails des administrateurs (`CORD_ADMINS`, séparés par des virgules). */
+export const readAdmins = () => (process.env.CORD_ADMINS ?? '').split(',').map((s) => s.trim()).filter(Boolean);
+
 /**
  * Clé de signature OIDC (PEM privé RSA). En production elle vient de
  * `CORD_OIDC_KEY` (posée une fois pour toutes) : sans ça, deux instances
@@ -35,28 +38,27 @@ export function readOidcKey({ allowEphemeral = false } = {}) {
   }).privateKey;
 }
 
-/** Envoi d'email via Resend, si configuré ; sinon lien affiché (dev local). */
-export function makeSendVerification({ localDev }) {
+/**
+ * Envoi d'email via Resend si configuré ; sinon, en local, le lien est
+ * affiché dans le terminal et renvoyé au portail (`devUrl`).
+ * Reçoit { to, kind, subject, html, text, url }.
+ */
+export function makeSendMail({ localDev }) {
   if (process.env.RESEND_API_KEY && process.env.CORD_MAIL_FROM) {
-    return async ({ email, url }) => {
+    return async ({ to, subject, html, text }) => {
       const response = await fetch('https://api.resend.com/emails', {
         method: 'POST',
         signal: AbortSignal.timeout(15_000),
         headers: { Authorization: `Bearer ${process.env.RESEND_API_KEY}`, 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          from: process.env.CORD_MAIL_FROM,
-          to: [email],
-          subject: 'Confirme ton compte Cord',
-          text: `Confirme ton adresse en ouvrant ce lien (valable 15 minutes) :\n${url}\n\nSi tu n’as pas demandé cette confirmation, ignore cet email.`,
-        }),
+        body: JSON.stringify({ from: process.env.CORD_MAIL_FROM, to: [to], subject, html, text }),
       });
-      if (!response.ok) throw new Error('Email delivery failed');
+      if (!response.ok) throw new Error(`Resend a répondu ${response.status}`);
     };
   }
   if (localDev) {
-    return async ({ url }) => {
-      console.log(`Confirmation locale (développement uniquement) : ${url}`);
-      return { devUrl: url };
+    return async ({ to, kind, subject, url }) => {
+      console.log(`[email local] ${kind} → ${to} : ${subject}${url ? `\n  ${url}` : ''}`);
+      return url ? { devUrl: url } : undefined;
     };
   }
   return undefined;
