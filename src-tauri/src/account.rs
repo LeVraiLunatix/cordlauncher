@@ -27,7 +27,12 @@ pub async fn cord_request(server: String, path: String, method: String, body: Op
     let mut data: Value = serde_json::from_str(&text).map_err(|_| "Le serveur ne renvoie pas une réponse Compte Cord valide.")?;
     if !status.is_success() {
         if status == reqwest::StatusCode::UNAUTHORIZED && path == "/api/me" { let _ = entry.delete_credential(); }
-        return Err(data.get("error").and_then(Value::as_str).unwrap_or("Erreur du service Cord.").to_string());
+        let message = data.get("error").and_then(Value::as_str).unwrap_or("Erreur du service Cord.");
+        // `reason` (ex. mfa_required) permet à l'interface d'adapter le formulaire.
+        return Err(match data.get("reason").and_then(Value::as_str) {
+            Some(reason) => format!("[{reason}] {message}"),
+            None => message.to_string(),
+        });
     }
     if matches!(path.as_str(), "/api/register" | "/api/login" | "/api/passcord/poll") {
         if let Some(token) = data.get("token").and_then(Value::as_str) {

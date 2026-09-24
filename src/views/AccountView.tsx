@@ -13,13 +13,20 @@ export function AccountView() {
   const [name, setName] = useState(account.user?.name ?? "");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [otp, setOtp] = useState("");
+  const [needsOtp, setNeedsOtp] = useState(false);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [notice, setNotice] = useState<string | null>(null);
   const [challenge, setChallenge] = useState<CordChallenge | null>(null);
   async function run(action: () => Promise<void>) {
     setError(null); setNotice(null); setBusy(true);
-    try { await action(); } catch (e) { setError(String(e)); } finally { setBusy(false); }
+    try { await action(); } catch (e) {
+      // Le proxy Rust préfixe la raison du serveur : « [mfa_required] message ».
+      const [, reason, message] = String(e).match(/^\[(\w+)\] ([\s\S]*)$/) ?? [];
+      if (reason === "mfa_required" || reason === "mfa_invalid") setNeedsOtp(true);
+      setError(message ?? String(e));
+    } finally { setBusy(false); }
   }
   useEffect(() => {
     if (IS_TAURI && account.server) void refreshCord().catch(e => setError(String(e)));
@@ -47,12 +54,13 @@ export function AccountView() {
     <motion.header variants={itemVariants}><p className="text-xs tracking-widest text-fg-subtle uppercase">Un compte, toute la suite</p><h1 className="mt-2 font-display text-[32px] font-semibold tracking-tight">Ton espace Cord.</h1><p className="mt-2 text-sm text-fg-muted">Ton identité commune. Et avec Passcord, ton iPhone devient ta clé.</p></motion.header>
     <GlassCard variants={itemVariants} className="rounded-[26px] p-6"><div className="relative z-[3] space-y-4">
       {!account.user ? <>
-        <form className="space-y-4" onSubmit={e => { e.preventDefault(); const secret = password; setPassword(""); setChallenge(null); void run(async () => { await cordRequest(register ? "/api/register" : "/api/login", { email, password: secret, name }); await refreshCord(); }); }}>
+        <form className="space-y-4" onSubmit={e => { e.preventDefault(); const secret = password; const code = otp.trim(); setOtp(""); setChallenge(null); void run(async () => { await cordRequest(register ? "/api/register" : "/api/login", { email, password: secret, name, ...(code && !register ? { otp: code } : {}) }); setPassword(""); setNeedsOtp(false); await refreshCord(); }); }}>
           <h2 className="font-display text-xl font-semibold">{register ? "Créer ton compte Cord" : "Bienvenue chez toi"}</h2>
           {register && <label className="block text-sm">Ton nom<input className="cord-input mt-1" required maxLength={60} autoComplete="name" value={name} onChange={e => setName(e.target.value)} /></label>}
           <label className="block text-sm">Email<input className="cord-input mt-1" type="email" required autoComplete="username" value={email} onChange={e => setEmail(e.target.value)} /></label>
           <label className="block text-sm">Mot de passe<input className="cord-input mt-1" type="password" minLength={register ? 12 : 1} required autoComplete={register ? "new-password" : "current-password"} value={password} onChange={e => setPassword(e.target.value)} /></label>
           {register && <p className="text-xs text-fg-subtle">12 caractères minimum. Ce compte reste distinct de ton compte Apple.</p>}
+          {!register && needsOtp && <label className="block text-sm">Code de double authentification<input className="cord-input mt-1" required inputMode="numeric" autoComplete="one-time-code" maxLength={24} value={otp} onChange={e => setOtp(e.target.value)} placeholder="123 456 ou code de secours" /></label>}
           <div className="flex flex-wrap gap-2"><GlassButton type="submit" variant="primary" disabled={busy || !IS_TAURI || !account.server}>{busy ? "Un instant…" : register ? "Créer mon compte" : "Se connecter"}</GlassButton><GlassButton variant="ghost" disabled={busy} onClick={() => { setRegister(!register); setPassword(""); }}>{register ? "J’ai déjà un compte" : "Créer un compte"}</GlassButton></div>
         </form>
         <GlassButton variant="glass" disabled={busy || !!challenge || !IS_TAURI || !account.server} onClick={() => void run(async () => setChallenge(await cordRequest<CordChallenge>("/api/passcord/login")))}>Se connecter avec Passcord</GlassButton>
