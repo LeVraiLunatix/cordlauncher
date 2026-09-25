@@ -134,9 +134,8 @@ pub async fn apple_status(state: State<'_, AppleState>) -> Result<AppleStatus, S
 /// Connexion. La 2FA arrive dans l'interface par l'évènement `apple://2fa` ;
 /// la réponse revient par `apple_2fa_respond`.
 async fn login(app: &AppHandle, email: String, password: String) -> Result<AppleAccount, String> {
-    // Apple répond 429 après trop de tentatives : chaque nouvel essai prolonge
-    // le blocage de CE compte, donc on s'interdit de le réessayer un moment.
-    // La pause est propre à chaque identifiant : un autre compte reste libre.
+    // Si Apple répond encore 429 après les nouveaux essais d'isideload, on
+    // s'interdit de retenter ce compte quelques minutes (pause par identifiant).
     if let Some(left) = apple_cooldown_left(&email) {
         return Err(format!(
             "Apple bloque encore les connexions à ce compte Apple (trop de tentatives). Réessaie dans {}, sans relancer d'ici là.",
@@ -147,14 +146,13 @@ async fn login(app: &AppHandle, email: String, password: String) -> Result<Apple
     let result = login_attempt(app, email.clone(), password).await;
     if let Err(message) = &result {
         if message.contains("429") || message.contains("Too Many Requests") {
-            // Un nouveau 429 juste après un blocage : Apple n'a pas levé le verrou,
-            // on attend 24 h au lieu d'une heure.
-            let repeated = apple_cooldown_until(&email).is_some_and(|until| unix_now().saturating_sub(until) < 48 * 3600);
-            let seconds = if repeated { 24 * 3600 } else { 3600 };
+            // isideload 0.4 a déjà relancé 10 fois chaque requête : les serveurs d'Apple
+            // refusent en rafale depuis le 2026-09-10, on laisse passer 10 minutes.
+            let seconds = 10 * 60;
             set_apple_cooldown(&email, seconds);
             return Err(format!(
-                "Apple limite encore les connexions à ce compte (trop de tentatives récentes). \
-                 CordLauncher ne réessaiera pas avant {} : chaque essai prolonge le blocage.",
+                "Les serveurs d'Apple refusent les connexions en ce moment (erreur 429, qui touche tous les outils de sideload). \
+                 CordLauncher a déjà réessayé 10 fois : réessaie dans {}.",
                 duration_fr(seconds)
             ));
         }
@@ -175,11 +173,9 @@ fn apple_cooldown_file(email: &str) -> Option<std::path::PathBuf> {
 fn unix_now() -> u64 {
     std::time::SystemTime::now().duration_since(std::time::UNIX_EPOCH).map(|d| d.as_secs()).unwrap_or(0)
 }
-fn apple_cooldown_until(email: &str) -> Option<u64> {
-    std::fs::read_to_string(apple_cooldown_file(email)?).ok()?.trim().parse().ok()
-}
 fn apple_cooldown_left(email: &str) -> Option<u64> {
-    apple_cooldown_until(email)?.checked_sub(unix_now()).filter(|left| *left > 0)
+    let until: u64 = std::fs::read_to_string(apple_cooldown_file(email)?).ok()?.trim().parse().ok()?;
+    until.checked_sub(unix_now()).filter(|left| *left > 0)
 }
 fn set_apple_cooldown(email: &str, seconds: u64) {
     let Some(file) = apple_cooldown_file(email) else { return };
@@ -245,6 +241,27 @@ pub async fn apple_logout(state: State<'_, AppleState>) -> Result<(), String> {
     if let Ok(entry) = keyring::Entry::new(KEYRING_SERVICE, KEYRING_USER) {
         let _ = entry.delete_credential();
     }
+    Ok(())
+}
+
+/// Oublie l'« appareil » que CordLauncher présente à Apple (identité anisette
+/// gardée par isideload dans le coffre Windows) : la prochaine connexion en crée
+/// un nouveau, et Apple redemandera un code de vérification. Lève aussi les pauses.
+#[tauri::command]
+pub async fn apple_reset_device(state: State<'_, AppleState>) -> Result<(), String> {
+    let mut guard = state.account.try_lock().map_err(|_| "Une opération Apple est déjà en cours.")?;
+    *guard = None;
+    match keyring::Entry::new("isideload", "anisette_state").and_then(|e| e.delete_credential()) {
+        Ok(()) | Err(keyring::Error::NoEntry) => {}
+        Err(e) => return Err(format!("Coffre Windows inaccessible : {e}")),
+    }
+    let dir = std::env::var_os("LOCALAPPDATA").map(|d| std::path::PathBuf::from(d).join("app.cordsuite.launcher"));
+    for entry in dir.and_then(|d| std::fs::read_dir(d).ok()).into_iter().flatten().flatten() {
+        if entry.file_name().to_string_lossy().starts_with("apple-cooldown") {
+            let _ = std::fs::remove_file(entry.path());
+        }
+    }
+    log_error("Appareil Apple réinitialisé (identité anisette supprimée)");
     Ok(())
 }
 
@@ -409,7 +426,7 @@ async fn sign_and_install(
             .map_err(|_| "L'iPhone n'est plus connecté.".to_string())?;
         let provider = device.to_provider(UsbmuxdAddr::default(), "CordLauncher");
 
-        let mut sideloader = SideloaderBuilder::new(session, email)
+        let mut sideloader = SideloaderBuilder::<isideload::util::callbacks::MaxCertsCallbackBox>::new(session, email)
             .team_selection(TeamSelection::First)
             .max_certs_behavior(MaxCertsBehavior::Error)
             .machine_name("CordLauncher".to_string())

@@ -37,6 +37,13 @@ export async function loginApple(email: string, password: string, remember: bool
 export async function logoutApple() {
   await operation(async () => { await invoke("apple_logout"); patch({ status: empty }); });
 }
+export async function resetAppleDevice() {
+  await operation(async () => {
+    await invoke("apple_reset_device");
+    patch({ status: await invoke<AppleStatus>("apple_status") });
+    toast({ tone: "ok", title: "Appareil Apple réinitialisé", description: "Apple verra un nouvel appareil et te redemandera un code de vérification." });
+  });
+}
 export async function respondApple(response: string | { SubmitCode: string } | { SendSms: number }) {
   try { await invoke("apple_2fa_respond", { response }); patch({ twoFactor: null }); }
   catch (error) { patch({ error: String(error) }); }

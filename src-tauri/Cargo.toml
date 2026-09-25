@@ -30,7 +30,7 @@ sha2 = "0.11"
 keyring = { version = "3", features = ["windows-native"] }
 
 # ── iPhone : compte Apple, signature, installation par câble ────────────────
-isideload = "0.3.17"
+isideload = "0.4.0"
 idevice = { version = "0.1.68", default-features = false, features = ["ring", "usbmuxd"] }
 
 [target.'cfg(windows)'.dependencies]
@@ -47,8 +47,3 @@ codegen-units = 1
 strip = true
 panic = "abort"
 
-# isideload 0.3.17 corrigé : gsa.apple.com répond 503 à toute requête dont
-# X-Mme-Client-Info annonce Xcode (vérifié le 2026-09-18). On garde le même
-# Mac/macOS mais via akd. Voir vendor/isideload/src/anisette/remote_v3/mod.rs.
-[patch.crates-io]
-isideload = { path = "vendor/isideload" }

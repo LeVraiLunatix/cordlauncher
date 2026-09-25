@@ -76,6 +76,7 @@ pub fn run() {
             sideload::apple_login,
             sideload::apple_2fa_respond,
             sideload::apple_logout,
+            sideload::apple_reset_device,
             sideload::iphone_list,
             sideload::iphone_sideload,
         ])

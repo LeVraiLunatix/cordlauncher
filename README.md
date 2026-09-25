@@ -130,7 +130,6 @@ src-tauri/
   src/sideload.rs            compte Apple + signature + installation iPhone
   src/iphone.rs              détection et lancement d'AltServer
   src/account.rs             relais HTTP vers le service Compte Cord
-  vendor/isideload/          copie corrigée d'isideload (voir « Connexion Apple »)
 account-service/             service OIDC du Compte Cord + portail + tests
 public/apps.json             catalogue (maquette, embarquée dans l'exe)
 public/apps.schema.json      schéma JSON du catalogue
@@ -155,14 +154,22 @@ verre paraît plat. D'où la règle suivie partout : **on anime l'opacité des
 vitres elles-mêmes, jamais d'un conteneur qui les englobe**. Les conteneurs de
 vues (`viewVariants`) ne font que cadencer leurs enfants.
 
-### Connexion Apple : le correctif isideload
+### Connexion Apple : isideload 0.4 et les erreurs 429
 
-`isideload` 0.3.17 annonce Xcode dans l'en-tête `X-Mme-Client-Info` ; le
-serveur d'authentification Apple (`gsa.apple.com`) répond alors **503** à toute
-requête (constaté le 2026-09-18, sur toutes les versions de Xcode testées).
-On copie donc la bibliothèque dans `src-tauri/vendor/isideload/` et on annonce
-le même Mac/macOS mais via **akd** (comme akd/AltServer) — accepté. Le patch
-est branché par `[patch.crates-io]` dans `src-tauri/Cargo.toml`.
+Depuis septembre 2026, le serveur d'authentification d'Apple (`gsa.apple.com`)
+durcit l'accès pour tous les outils de sideload (iloader, Sideloadly, SideStore…) :
+
+- **503** si l'en-tête `X-Mme-Client-Info` annonce Xcode (depuis le 2026-09-10)
+  → isideload annonce le même Mac mais via **akd**, comme AltServer ;
+- **429 aléatoires**, environ une requête sur deux, quels que soient le compte,
+  l'adresse IP ou l'appareil → isideload **0.4.0** (2026-09-23) relance
+  chaque requête jusqu'à 10 fois et ferme la connexion après chaque échange
+  (`Connection: close`).
+
+CordLauncher utilise isideload 0.4.0 tel que publié (plus de copie corrigée).
+Si Apple refuse encore après ces relances, CordLauncher bloque ce compte
+10 minutes. Le bouton **Réinitialiser l'appareil Apple** efface l'identité anisette
+(coffre Windows, `anisette_state.isideload`) et ces pauses.
 
 ## Catalogue d'apps
 

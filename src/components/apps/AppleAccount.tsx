@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { initApple, loginApple, logoutApple, refreshApple, respondApple, useApple } from "../../lib/apple";
+import { initApple, loginApple, logoutApple, refreshApple, resetAppleDevice, respondApple, useApple } from "../../lib/apple";
 import { IS_TAURI, openExternal } from "../../lib/platform";
 import { toast } from "../../lib/toast";
 import { GlassButton, GlassModal, GlassToggle } from "../glass";
@@ -19,8 +19,13 @@ export function AppleAccount() {
         <label className="block text-sm">Mot de passe Apple<input className="cord-input mt-1" type="password" autoComplete="current-password" required value={password} onChange={e => setPassword(e.target.value)} disabled={apple.busy || !IS_TAURI} /></label>
         <div className="flex items-center justify-between gap-3 text-sm"><span>Mémoriser dans le coffre Windows</span><GlassToggle label="Mémoriser le compte Apple" checked={remember} onChange={setRemember} disabled={apple.busy || !IS_TAURI} /></div>
         <GlassButton type="submit" variant="primary" disabled={apple.busy || !IS_TAURI}>{apple.busy ? "Connexion en cours…" : "Connecter mon compte Apple"}</GlassButton>
+        {apple.busy && <p className="text-xs text-fg-muted">Les serveurs d’Apple refusent souvent la première tentative en ce moment : CordLauncher réessaie tout seul plusieurs fois.</p>}
       </form>}
     {apple.error && <p role="alert" className="text-sm text-danger">{apple.error}</p>}
+    {IS_TAURI && <div className="flex flex-wrap items-center justify-between gap-3 rounded-xl bg-[var(--control)] p-4">
+      <span className="min-w-0 flex-1 text-sm">Réinitialiser l’appareil Apple<small className="block text-fg-muted">Si Apple bloque ce PC, CordLauncher se présentera comme un nouvel appareil (nouveau code de vérification demandé). Ton compte mémorisé est conservé.</small></span>
+      <GlassButton variant="glass" disabled={apple.busy} onClick={() => void resetAppleDevice()}>Réinitialiser</GlassButton>
+    </div>}
     {!IS_TAURI && <p className="text-xs text-fg-muted">La connexion Apple et la détection USB sont disponibles dans l’application Windows.</p>}
     <p className="text-xs leading-relaxed text-fg-muted">Avec un compte gratuit, les profils expirent après 7 jours : relance l’installation pour renouveler la signature. Aucun renouvellement automatique n’est activé. La connexion utilise Apple et le service Anisette du moteur isideload.</p>
     <button type="button" className="text-xs underline" onClick={() => void openExternal("https://developer.apple.com/support/compare-memberships/")}>Voir les limites du compte Apple</button>
