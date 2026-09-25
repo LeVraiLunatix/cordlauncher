@@ -135,22 +135,23 @@ pub async fn apple_status(state: State<'_, AppleState>) -> Result<AppleStatus, S
 /// la réponse revient par `apple_2fa_respond`.
 async fn login(app: &AppHandle, email: String, password: String) -> Result<AppleAccount, String> {
     // Apple répond 429 après trop de tentatives : chaque nouvel essai prolonge
-    // le blocage, donc on s'interdit de réessayer pendant une heure.
-    if let Some(left) = apple_cooldown_left() {
+    // le blocage de CE compte, donc on s'interdit de le réessayer un moment.
+    // La pause est propre à chaque identifiant : un autre compte reste libre.
+    if let Some(left) = apple_cooldown_left(&email) {
         return Err(format!(
-            "Apple bloque encore les connexions à ton compte (trop de tentatives). Réessaie dans {}, sans relancer d'ici là.",
+            "Apple bloque encore les connexions à ce compte Apple (trop de tentatives). Réessaie dans {}, sans relancer d'ici là.",
             duration_fr(left)
         ));
     }
     let app = app.clone();
-    let result = login_attempt(app, email, password).await;
+    let result = login_attempt(app, email.clone(), password).await;
     if let Err(message) = &result {
         if message.contains("429") || message.contains("Too Many Requests") {
             // Un nouveau 429 juste après un blocage : Apple n'a pas levé le verrou,
             // on attend 24 h au lieu d'une heure.
-            let repeated = apple_cooldown_until().is_some_and(|until| unix_now().saturating_sub(until) < 48 * 3600);
+            let repeated = apple_cooldown_until(&email).is_some_and(|until| unix_now().saturating_sub(until) < 48 * 3600);
             let seconds = if repeated { 24 * 3600 } else { 3600 };
-            set_apple_cooldown(seconds);
+            set_apple_cooldown(&email, seconds);
             return Err(format!(
                 "Apple limite encore les connexions à ce compte (trop de tentatives récentes). \
                  CordLauncher ne réessaiera pas avant {} : chaque essai prolonge le blocage.",
@@ -166,20 +167,22 @@ fn duration_fr(seconds: u64) -> String {
     if minutes < 90 { format!("{minutes} min") } else { format!("{} h", (minutes + 30) / 60) }
 }
 
-fn apple_cooldown_file() -> Option<std::path::PathBuf> {
-    Some(std::path::PathBuf::from(std::env::var_os("LOCALAPPDATA")?).join("app.cordsuite.launcher").join("apple-cooldown"))
+/// Un fichier par identifiant Apple (`apple-cooldown-<email>`) contenant l'heure unix de fin.
+fn apple_cooldown_file(email: &str) -> Option<std::path::PathBuf> {
+    let id: String = email.trim().to_lowercase().chars().map(|c| if c.is_ascii_alphanumeric() { c } else { '_' }).collect();
+    Some(std::path::PathBuf::from(std::env::var_os("LOCALAPPDATA")?).join("app.cordsuite.launcher").join(format!("apple-cooldown-{id}")))
 }
 fn unix_now() -> u64 {
     std::time::SystemTime::now().duration_since(std::time::UNIX_EPOCH).map(|d| d.as_secs()).unwrap_or(0)
 }
-fn apple_cooldown_until() -> Option<u64> {
-    std::fs::read_to_string(apple_cooldown_file()?).ok()?.trim().parse().ok()
+fn apple_cooldown_until(email: &str) -> Option<u64> {
+    std::fs::read_to_string(apple_cooldown_file(email)?).ok()?.trim().parse().ok()
 }
-fn apple_cooldown_left() -> Option<u64> {
-    apple_cooldown_until()?.checked_sub(unix_now()).filter(|left| *left > 0)
+fn apple_cooldown_left(email: &str) -> Option<u64> {
+    apple_cooldown_until(email)?.checked_sub(unix_now()).filter(|left| *left > 0)
 }
-fn set_apple_cooldown(seconds: u64) {
-    let Some(file) = apple_cooldown_file() else { return };
+fn set_apple_cooldown(email: &str, seconds: u64) {
+    let Some(file) = apple_cooldown_file(email) else { return };
     let until = unix_now() + seconds;
     let written = std::fs::create_dir_all(file.parent().unwrap()).and_then(|_| std::fs::write(&file, until.to_string()));
     log_error(&format!("Apple 429 : pause jusqu'à {until} ({seconds} s) → {written:?}"));
