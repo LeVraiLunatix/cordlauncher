@@ -75,7 +75,7 @@ VIEWS.appareils = {
         </div>
         <ul class="list card-body">
           ${a.sessions.map((s) => html`<li class="list-item">
-            <span class="icon-badge ${s.current ? 'grad' : 'tone-muted'}">${icon(deviceIcon(s.device.kind))}</span>
+            ${s.device.logo ? html`<img class="device-logo" src="${s.device.logo}" alt="" width="42" height="42">` : html`<span class="icon-badge ${s.current ? 'grad' : 'tone-muted'}">${icon(deviceIcon(s.device.kind))}</span>`}
             <div class="body">
               <div class="title">${s.device.label}${s.current ? html`<span class="badge tone-ok"><span class="dot"></span>${t('dev.sessions.current')}</span>` : ''}</div>
               <div class="meta">

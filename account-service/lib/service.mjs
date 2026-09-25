@@ -199,7 +199,8 @@ export function createService({
     );
     if (!u) throw error(401, 'Session expirée. Reconnecte-toi.');
     if (purpose === 'account' && now() - Number(u.s_seen ?? 0) > 5 * 60_000) {
-      await sql('UPDATE sessions SET last_seen_at = $1, ip = $2 WHERE hash = $3', [now(), clientIp(req), u.s_hash]);
+      // Le User-Agent est aussi complété s'il manquait (anciennes sessions d'apps muettes).
+      await sql("UPDATE sessions SET last_seen_at = $1, ip = $2, user_agent = COALESCE(NULLIF(user_agent, ''), $4) WHERE hash = $3", [now(), clientIp(req), u.s_hash, userAgent(req) || null]);
     }
     return { user: u, token };
   }
@@ -427,13 +428,13 @@ export function createService({
       lastSeenAt: Number(s.last_seen_at) || null,
       expiresAt: Number(s.expires),
       method: s.method ?? null,
-      device: { label: device.label, kind: device.kind, browser: device.browser, os: device.os },
+      device: { label: device.label, kind: device.kind, browser: device.browser, os: device.os, app: device.app, logo: device.logo },
       ip: maskIp(s.ip),
     };
   };
   const describeEvent = (e) => {
     const device = e.user_agent ? describeDevice(e.user_agent) : null;
-    return { id: e.id, kind: e.kind, at: Number(e.at), detail: e.detail ?? null, device: device ? { label: device.label, kind: device.kind } : null, ip: maskIp(e.ip) };
+    return { id: e.id, kind: e.kind, at: Number(e.at), detail: e.detail ?? null, device: device ? { label: device.label, kind: device.kind, app: device.app, logo: device.logo } : null, ip: maskIp(e.ip) };
   };
   const describePasskey = (p) => ({
     id: p.id,

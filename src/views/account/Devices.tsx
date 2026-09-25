@@ -63,7 +63,9 @@ export function Devices() {
         <div className="grid gap-1">
           {d.sessions.map(s => (
             <ListRow key={s.id}
-              lead={<IconBadge icon={DEVICE_ICONS[s.device.kind as keyof typeof DEVICE_ICONS] ?? MonitorSmartphone} tone={s.current ? "tint" : "muted"} size="sm" />}
+              lead={s.device.logo
+                ? <img src={cordAsset(s.device.logo) ?? undefined} alt="" className="size-8 shrink-0 rounded-[10px] shadow-[0_6px_16px_-8px_rgb(0_0_0/0.5)]" />
+                : <IconBadge icon={DEVICE_ICONS[s.device.kind as keyof typeof DEVICE_ICONS] ?? MonitorSmartphone} tone={s.current ? "tint" : "muted"} size="sm" />}
               title={<>{s.device.label}{s.current && <Pill tone="ok">Cet appareil</Pill>}</>}
               meta={<>
                 <span className="inline-flex items-center gap-1"><Clock className="size-3" />Actif {relative(s.lastSeenAt || s.createdAt)}</span>

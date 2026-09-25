@@ -47,6 +47,8 @@ fn server_url(server: &str) -> Result<reqwest::Url, String> {
 
 fn client() -> Result<reqwest::Client, String> {
     reqwest::Client::builder()
+        // Sans User-Agent, le Compte Cord afficherait « Appareil inconnu » dans les sessions.
+        .user_agent(concat!("CordLauncher/", env!("CARGO_PKG_VERSION"), " (Windows)"))
         .redirect(reqwest::redirect::Policy::none())
         .timeout(std::time::Duration::from_secs(20))
         .build()

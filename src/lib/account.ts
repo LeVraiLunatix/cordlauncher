@@ -12,9 +12,9 @@ export type CordChallenge = { id: string; url: string; pollToken?: string; expir
 export type CordPasskey = { id: string; name: string; createdAt: number; lastUsedAt: number | null; backedUp: boolean };
 export type CordSession = {
   id: string; current: boolean; createdAt: number | null; lastSeenAt: number | null; expiresAt: number; method: string | null;
-  device: { label: string; kind: string }; ip: string | null;
+  device: { label: string; kind: string; app?: string | null; logo?: string | null }; ip: string | null;
 };
-export type CordEvent = { id: string; kind: string; at: number; detail: string | null; device: { label: string; kind: string } | null; ip: string | null };
+export type CordEvent = { id: string; kind: string; at: number; detail: string | null; device: { label: string; kind: string; app?: string | null; logo?: string | null } | null; ip: string | null };
 export type CordApp = {
   id: string; name: string; tagline: string | null; url: string | null; accent: [string, string]; logo: string | null;
   firstParty: boolean; grantedAt: number; lastUsedAt: number; scope: string;
