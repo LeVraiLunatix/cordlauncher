@@ -1,9 +1,14 @@
 import { invoke } from "@tauri-apps/api/core";
-import { FileUp } from "lucide-react";
+import { Check, FileUp, KeyRound, Sparkles } from "lucide-react";
+import { motion } from "motion/react";
 import { useEffect, useState } from "react";
+import { useCordAccount } from "../../lib/account";
 import { canInstall, sideloadIphone, useApple, type IphoneDevice } from "../../lib/apple";
+import { BETA_ASSETS, betaDownload, betaInfo, hasBeta, openBetaSheet, type BetaInfo } from "../../lib/beta";
+import { cn } from "../../lib/cn";
+import { formatBytes } from "../../lib/format";
 import type { CatalogApp } from "../../lib/catalog/types";
-import { IS_TAURI, openExternal, pickIpaFile } from "../../lib/platform";
+import { IS_TAURI, pickIpaFile } from "../../lib/platform";
 import { GlassButton, GlassProgress } from "../glass";
 import { AppleAccount } from "./AppleAccount";
 
@@ -19,13 +24,41 @@ export function DirectIphoneInstall({ app }: { app: CatalogApp }) {
   const [error, setError] = useState<string | null>(null);
   const [scanning, setScanning] = useState(false);
   const [ipaPath, setIpaPath] = useState<string | null>(null);
+  const { user } = useCordAccount();
+  const [beta, setBeta] = useState<BetaInfo | null>(null);
+  const [variant, setVariant] = useState(`${app.name}.ipa`);
 
-  // Passcord (et toute app en bêta fermée) n'a pas d'IPA publique : on installe
-  // alors le fichier .ipa que l'utilisateur choisit lui-même.
+  // Passcord (et toute app en bêta fermée) n'a pas d'IPA publique : un testeur
+  // installe le dernier build privé via son Compte Cord ; sinon, un fichier
+  // .ipa choisi à la main.
   const publicUrl = app.ios?.ipaUrl ?? null;
   const needsFile = !publicUrl;
-  const source = ipaPath ? { ipaPath } : publicUrl ? { ipaUrl: publicUrl } : null;
+  const tester = needsFile && hasBeta(user, app.id);
+  const betaBuild = tester && beta?.downloads && beta.release?.assets.length ? beta.release : null;
+  const source = ipaPath ? { ipaPath } : publicUrl ? { ipaUrl: publicUrl } : betaBuild ? "beta" as const : null;
   const connected = canInstall(apple.status);
+
+  useEffect(() => {
+    if (!tester || !IS_TAURI) return;
+    betaInfo(app.id).then(info => {
+      setBeta(info);
+      const names = info.release?.assets.map(a => a.name) ?? [];
+      if (names.length && !names.includes(`${app.name}.ipa`)) setVariant(names[0]);
+    }, () => setBeta(null));
+  }, [tester, app.id, app.name]);
+
+  async function install() {
+    if (!source || !selected) return;
+    setError(null);
+    if (source !== "beta") return sideloadIphone(app.id, app.name, source, selected);
+    try {
+      // Lien signé valable quelques minutes : demandé juste avant l'installation.
+      const { url } = await betaDownload(app.id, variant);
+      await sideloadIphone(app.id, app.name, { ipaUrl: url }, selected);
+    } catch (e) {
+      setError((e as Error).message);
+    }
+  }
 
   async function scan() {
     if (!IS_TAURI) return;
@@ -63,26 +96,66 @@ export function DirectIphoneInstall({ app }: { app: CatalogApp }) {
       <AppleAccount />
       <div className="h-px bg-[var(--line)]" />
 
+      {betaBuild && !ipaPath && (
+        <div className="space-y-2.5">
+          <div className="flex items-center justify-between gap-3">
+            <p className="flex items-center gap-2 text-sm font-medium"><Sparkles className="size-4 text-fg-muted" />Dernier build de la bêta</p>
+            <span className="font-mono text-xs text-fg-subtle">{betaBuild.build}</span>
+          </div>
+          <div role="radiogroup" aria-label="Version à installer" className="grid gap-2">
+            {betaBuild.assets.map(asset => {
+              const on = variant === asset.name;
+              return (
+                <motion.button
+                  key={asset.name}
+                  type="button"
+                  role="radio"
+                  aria-checked={on}
+                  disabled={apple.busy}
+                  onClick={() => setVariant(asset.name)}
+                  whileTap={{ scale: 0.985 }}
+                  className={cn("relative flex items-center gap-3 rounded-2xl p-3.5 text-left transition-colors", on ? "bg-[var(--control-hover)]" : "bg-[var(--control)] hover:bg-[var(--control-hover)]")}
+                  style={on ? { boxShadow: "inset 0 0 0 1.5px color-mix(in oklab, var(--tint-a) 70%, transparent)" } : undefined}
+                >
+                  <span className={cn("grid size-5 shrink-0 place-items-center rounded-full ring-1 ring-[var(--line)]", on && "tint-fill ring-0")}>
+                    {on && <Check className="size-3 text-white" strokeWidth={3.5} />}
+                  </span>
+                  <span className="min-w-0 flex-1">
+                    <span className="block truncate font-mono text-[13px] font-semibold">{asset.name}</span>
+                    <span className="block text-xs text-fg-muted">{BETA_ASSETS[asset.name] ?? "Build de la bêta"}</span>
+                  </span>
+                  <span className="shrink-0 font-mono text-xs text-fg-subtle">{formatBytes(asset.size)}</span>
+                </motion.button>
+              );
+            })}
+          </div>
+        </div>
+      )}
+
       {needsFile && (
         <div className="space-y-2">
-          <label className="block text-sm">Fichier de l’app (.ipa)</label>
+          <label className="block text-sm">{betaBuild ? "Ou un fichier .ipa de ce PC" : "Fichier de l’app (.ipa)"}</label>
           <div className="flex flex-wrap items-center gap-2">
             <GlassButton variant="glass" icon={<FileUp className="size-4" />} disabled={!IS_TAURI || apple.busy} onClick={() => void chooseFile()}>
               {ipaPath ? "Changer de fichier" : "Choisir un .ipa…"}
             </GlassButton>
             {ipaPath && <span className="truncate text-sm text-fg-muted" title={ipaPath}>{baseName(ipaPath)}</span>}
+            {ipaPath && betaBuild && <GlassButton size="sm" variant="ghost" onClick={() => setIpaPath(null)}>Utiliser le build de la bêta</GlassButton>}
           </div>
-          <p className="text-xs text-fg-subtle">
-            {app.name} est en bêta fermée : télécharge son <code>.ipa</code> depuis tes releases, puis choisis-le ici.
-            {app.betaUrl && (
-              <>
-                {" "}
-                <button type="button" className="underline" onClick={() => void openExternal(app.betaUrl!)}>
-                  Rejoindre la bêta
-                </button>
-              </>
-            )}
-          </p>
+          {!betaBuild && (
+            <p className="text-xs text-fg-subtle">
+              {tester
+                ? beta && !beta.downloads
+                  ? `Tu fais partie de la bêta de ${app.name}, mais le téléchargement direct n’est pas encore ouvert : choisis le .ipa reçu.`
+                  : `Tu fais partie de la bêta de ${app.name} : recherche du dernier build…`
+                : <>
+                    {app.name} est en bêta fermée : avec une clé d’accès, CordLauncher installe directement le dernier build.{" "}
+                    <button type="button" className="inline-flex items-center gap-1 underline" onClick={() => openBetaSheet(app.id)}>
+                      <KeyRound className="size-3" />J’ai une clé
+                    </button>
+                  </>}
+            </p>
+          )}
         </div>
       )}
 
@@ -111,7 +184,7 @@ export function DirectIphoneInstall({ app }: { app: CatalogApp }) {
         <GlassButton
           variant="primary"
           disabled={!selected || apple.busy || !connected || !source}
-          onClick={() => source && void sideloadIphone(app.id, app.name, source, selected)}
+          onClick={() => void install()}
         >
           Installer / renouveler
         </GlassButton>

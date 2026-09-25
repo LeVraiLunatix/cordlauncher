@@ -565,7 +565,7 @@ function DeviceIllustration({ mode }: { mode: "device" | "sms" | "unknown" }) {
 }
 
 /** Coche qui se trace, avec une gerbe de particules. */
-function SuccessMark() {
+export function SuccessMark() {
   return (
     <motion.div
       className="relative mx-auto grid size-[132px] place-items-center"

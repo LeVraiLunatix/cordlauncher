@@ -4,7 +4,7 @@ import { IS_TAURI } from "../platform";
 import { getSettings } from "../settings";
 import { createStore, useStore } from "../store";
 import { useCordAccount } from "../account";
-import { hasBetaAdminAccess } from "../catalog/access";
+import { hasBetaAccess } from "../catalog/access";
 import { toast } from "../toast";
 import { mockDriver } from "./mock-driver";
 import { tauriDriver } from "./tauri-driver";
@@ -198,7 +198,7 @@ export function useInstalledCount(apps: CatalogApp[]): number {
 export type AppAction =
   | { kind: "loading" }
   | { kind: "none" }
-  | { kind: "join-beta"; url: string }
+  | { kind: "join-beta" }
   | { kind: "install" }
   | { kind: "update"; from: string }
   | { kind: "open"; version: string }
@@ -212,9 +212,7 @@ export function useAppAction(app: CatalogApp): AppAction {
   const job = useJob(app.id);
 
   if (app.status === "coming-soon") return { kind: "none" };
-  if (app.status === "closed-beta" && !hasBetaAdminAccess(app, account.user?.email)) {
-    return { kind: "join-beta", url: app.betaUrl ?? app.website ?? "https://cordsuite.app" };
-  }
+  if (!hasBetaAccess(app, account.user)) return { kind: "join-beta" };
   if (job) return { kind: "busy", job };
   if (detecting) return { kind: "loading" };
   if (!installed) return app.downloadUrl ? { kind: "install" } : { kind: "none" };

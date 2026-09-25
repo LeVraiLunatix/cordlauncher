@@ -3,6 +3,9 @@ import { useCallback, useEffect, useRef, useState, type CSSProperties } from "re
 import { AppDetail } from "./components/apps/AppDetail";
 import { InstallSheet } from "./components/apps/InstallSheet";
 import { AppleVerification } from "./components/apps/AppleAccount";
+import { BetaKeySheet } from "./components/apps/BetaKeySheet";
+import { refreshCord } from "./lib/account";
+import { NAVIGATE_EVENT } from "./lib/beta";
 import { IphoneInstallSheet } from "./components/apps/IphoneInstallSheet";
 import { AnimatedGradientBackground } from "./components/glass";
 import { Sidebar, type Route } from "./components/shell/Sidebar";
@@ -24,6 +27,8 @@ const SKIP_INTRO = new URLSearchParams(window.location.search).get("intro") === 
 const NO_APPS: CatalogApp[] = [];
 
 async function boot() {
+  // Session Cord chargée dès le lancement : elle ouvre les bêtas (Passcord) dans le catalogue.
+  void refreshCord().catch(() => {});
   const catalog = await loadCatalog();
   if (catalog) await detectInstalled(catalog.apps);
 }
@@ -95,6 +100,13 @@ function Shell() {
     return () => window.removeEventListener("keydown", onKey);
   }, []);
 
+  // Navigation demandée depuis une fenêtre (ex. « Se connecter au Compte Cord »).
+  useEffect(() => {
+    const onNavigate = (e: Event) => setRoute((e as CustomEvent<Route>).detail);
+    window.addEventListener(NAVIGATE_EVENT, onNavigate);
+    return () => window.removeEventListener(NAVIGATE_EVENT, onNavigate);
+  }, []);
+
   const onQuery = (q: string) => {
     setQuery(q);
     if (q && route !== "discover") setRoute("discover");
@@ -141,6 +153,7 @@ function Shell() {
       <AppDetail app={selected} onClose={closeDetail} />
       <IphoneInstallSheet apps={apps} />
       <InstallSheet />
+      <BetaKeySheet apps={apps} />
       <AppleVerification />
     </div>
   );

@@ -6,6 +6,8 @@ export type CordUser = {
   id: string; name: string; email: string; createdAt: number; emailVerified: boolean;
   theme?: string; locale?: string; alerts?: boolean; avatarUrl?: string | null; mfa?: boolean; admin?: boolean;
   lastLoginAt?: number | null; passwordChangedAt?: number | null;
+  /** Bêtas fermées ouvertes à ce compte (clé utilisée, ou administration). */
+  beta?: string[];
 };
 export type CordKey = { id: string; name: string; createdAt: number; lastUsedAt?: number | null };
 export type CordChallenge = { id: string; url: string; pollToken?: string; expiresAt: number };

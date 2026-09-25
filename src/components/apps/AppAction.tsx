@@ -1,11 +1,11 @@
-import { ArrowUpRight, Check, Download, Play, RefreshCw, X } from "lucide-react";
+import { Check, Download, KeyRound, Play, RefreshCw, X } from "lucide-react";
 import { AnimatePresence, motion } from "motion/react";
 import type { CSSProperties, MouseEvent } from "react";
 import type { CatalogApp } from "../../lib/catalog/types";
 import { formatBytes, formatEta, formatPercent, formatSpeed } from "../../lib/format";
 import { cancelJob, installApp, launchApp, useAppAction, type Job } from "../../lib/installer";
-import { openExternal } from "../../lib/platform";
 import { GlassButton, GlassProgress, Skeleton } from "../glass";
+import { openBetaSheet } from "../../lib/beta";
 import { requestInstall } from "./InstallSheet";
 
 type Size = "sm" | "md" | "lg";
@@ -48,8 +48,8 @@ export function AppActionButton({
           size={size}
           className={className}
           tint={app.iconGradient}
-          trailingIcon={<ArrowUpRight className="size-3.5 transition-transform group-hover:translate-x-0.5 group-hover:-translate-y-0.5" />}
-          onClick={stop(() => void openExternal(action.url))}
+          icon={<KeyRound className="size-3.5 transition-transform duration-300 group-hover:-rotate-12" />}
+          onClick={stop(() => openBetaSheet(app.id))}
         >
           Rejoindre la bêta
         </GlassButton>

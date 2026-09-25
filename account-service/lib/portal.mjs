@@ -1,7 +1,7 @@
 // Portail Compte Cord, embarqué en chaînes pour être servi par la fonction
 // serverless (aucun fichier statique exposé). Source : dossier portal/ —
 // régénérer avec `npm run portal` après une modification.
-export const PORTAL_VERSION = "c89f85507932";
+export const PORTAL_VERSION = "5011ac0e7eda";
 
 export const PORTAL_HTML = `<!doctype html>
 <html lang="fr">
@@ -20,8 +20,8 @@ export const PORTAL_HTML = `<!doctype html>
 <link rel="apple-touch-icon" href="/assets/icon-180.png">
 <link rel="preload" href="/assets/fonts/inter.woff2" as="font" type="font/woff2" crossorigin>
 <link rel="preload" href="/assets/fonts/space-grotesk.woff2" as="font" type="font/woff2" crossorigin>
-<link rel="stylesheet" href="/portal.css?v=c89f85507932">
-<script type="module" src="/portal.js?v=c89f85507932"></script>
+<link rel="stylesheet" href="/portal.css?v=5011ac0e7eda">
+<script type="module" src="/portal.js?v=5011ac0e7eda"></script>
 </head>
 <body>
 <svg xmlns="http://www.w3.org/2000/svg" class="sprite" aria-hidden="true" focusable="false"><symbol id="i-activity" viewBox="0 0 24 24"><path d="M22 12h-2.48a2 2 0 0 0-1.93 1.46l-2.35 8.36a.25.25 0 0 1-.48 0L9.24 2.18a.25.25 0 0 0-.48 0l-2.35 8.36A2 2 0 0 1 4.49 12H2" /></symbol><symbol id="i-app-window" viewBox="0 0 24 24"><rect x="2" y="4" width="20" height="16" rx="2" /><path d="M10 4v4" /><path d="M2 8h20" /><path d="M6 4v4" /></symbol><symbol id="i-arrow-left" viewBox="0 0 24 24"><path d="m12 19-7-7 7-7" /><path d="M19 12H5" /></symbol><symbol id="i-arrow-right" viewBox="0 0 24 24"><path d="M5 12h14" /><path d="m12 5 7 7-7 7" /></symbol><symbol id="i-at-sign" viewBox="0 0 24 24"><circle cx="12" cy="12" r="4" /><path d="M16 8v5a3 3 0 0 0 6 0v-1a10 10 0 1 0-4 8" /></symbol><symbol id="i-badge-check" viewBox="0 0 24 24"><path d="M3.85 8.62a4 4 0 0 1 4.78-4.77 4 4 0 0 1 6.74 0 4 4 0 0 1 4.78 4.78 4 4 0 0 1 0 6.74 4 4 0 0 1-4.77 4.78 4 4 0 0 1-6.75 0 4 4 0 0 1-4.78-4.77 4 4 0 0 1 0-6.76Z" /><path d="m16 9-5.5 5.5L8 12" /></symbol><symbol id="i-ban" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10" /><path d="M4.929 4.929 19.07 19.071" /></symbol><symbol id="i-bell-off" viewBox="0 0 24 24"><path d="M10.268 21a2 2 0 0 0 3.464 0" /><path d="M17 17H4a1 1 0 0 1-.74-1.673C4.59 13.956 6 12.499 6 8a6 6 0 0 1 .258-1.742" /><path d="m2 2 20 20" /><path d="M8.668 3.01A6 6 0 0 1 18 8c0 2.687.77 4.653 1.707 6.05" /></symbol><symbol id="i-bell" viewBox="0 0 24 24"><path d="M10.268 21a2 2 0 0 0 3.464 0" /><path d="M3.262 15.326A1 1 0 0 0 4 17h16a1 1 0 0 0 .74-1.673C19.41 13.956 18 12.499 18 8A6 6 0 0 0 6 8c0 4.499-1.411 5.956-2.738 7.326" /></symbol><symbol id="i-camera" viewBox="0 0 24 24"><path d="M13.997 4a2 2 0 0 1 1.76 1.05l.486.9A2 2 0 0 0 18.003 7H20a2 2 0 0 1 2 2v9a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V9a2 2 0 0 1 2-2h1.997a2 2 0 0 0 1.759-1.048l.489-.904A2 2 0 0 1 10.004 4z" /><circle cx="12" cy="13" r="3" /></symbol><symbol id="i-chart-column" viewBox="0 0 24 24"><path d="M3 3v16a2 2 0 0 0 2 2h16" /><path d="M18 17V9" /><path d="M13 17V5" /><path d="M8 17v-3" /></symbol><symbol id="i-check" viewBox="0 0 24 24"><path d="M20 6 9 17l-5-5" /></symbol><symbol id="i-chevron-down" viewBox="0 0 24 24"><path d="m6 9 6 6 6-6" /></symbol><symbol id="i-chevron-right" viewBox="0 0 24 24"><path d="m9 18 6-6-6-6" /></symbol><symbol id="i-circle-alert" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10" /><line x1="12" x2="12" y1="8" y2="12" /><line x1="12" x2="12.01" y1="16" y2="16" /></symbol><symbol id="i-circle-check" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10" /><path d="m16 9-5.5 5.5L8 12" /></symbol><symbol id="i-circle-help" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10" /><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3" /><path d="M12 17h.01" /></symbol><symbol id="i-circle-x" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10" /><path d="m15 9-6 6" /><path d="m9 9 6 6" /></symbol><symbol id="i-clock" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10" /><path d="M12 6v6l4 2" /></symbol><symbol id="i-cloud" viewBox="0 0 24 24"><path d="M17.5 19H9a7 7 0 1 1 6.71-9h1.79a4.5 4.5 0 1 1 0 9Z" /></symbol><symbol id="i-copy" viewBox="0 0 24 24"><rect width="14" height="14" x="8" y="8" rx="2" ry="2" /><path d="M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2" /></symbol><symbol id="i-cpu" viewBox="0 0 24 24"><path d="M12 20v2" /><path d="M12 2v2" /><path d="M17 20v2" /><path d="M17 2v2" /><path d="M2 12h2" /><path d="M2 17h2" /><path d="M2 7h2" /><path d="M20 12h2" /><path d="M20 17h2" /><path d="M20 7h2" /><path d="M7 20v2" /><path d="M7 2v2" /><rect x="4" y="4" width="16" height="16" rx="2" /><rect x="8" y="8" width="8" height="8" rx="1" /></symbol><symbol id="i-database" viewBox="0 0 24 24"><ellipse cx="12" cy="5" rx="9" ry="3" /><path d="M3 5V19A9 3 0 0 0 21 19V5" /><path d="M3 12A9 3 0 0 0 21 12" /></symbol><symbol id="i-download" viewBox="0 0 24 24"><path d="M12 15V3" /><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" /><path d="m7 10 5 5 5-5" /></symbol><symbol id="i-ellipsis" viewBox="0 0 24 24"><circle cx="12" cy="12" r="1" /><circle cx="19" cy="12" r="1" /><circle cx="5" cy="12" r="1" /></symbol><symbol id="i-external-link" viewBox="0 0 24 24"><path d="M15 3h6v6" /><path d="M10 14 21 3" /><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6" /></symbol><symbol id="i-eye-off" viewBox="0 0 24 24"><path d="M10.733 5.076a10.744 10.744 0 0 1 11.205 6.575 1 1 0 0 1 0 .696 10.747 10.747 0 0 1-1.444 2.49" /><path d="M14.084 14.158a3 3 0 0 1-4.242-4.242" /><path d="M17.479 17.499a10.75 10.75 0 0 1-15.417-5.151 1 1 0 0 1 0-.696 10.75 10.75 0 0 1 4.446-5.143" /><path d="m2 2 20 20" /></symbol><symbol id="i-eye" viewBox="0 0 24 24"><path d="M2.062 12.348a1 1 0 0 1 0-.696 10.75 10.75 0 0 1 19.876 0 1 1 0 0 1 0 .696 10.75 10.75 0 0 1-19.876 0" /><circle cx="12" cy="12" r="3" /></symbol><symbol id="i-file-json" viewBox="0 0 24 24"><path d="M6 22a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h8a2.4 2.4 0 0 1 1.704.706l3.588 3.588A2.4 2.4 0 0 1 20 8v12a2 2 0 0 1-2 2z" /><path d="M14 2v5a1 1 0 0 0 1 1h5" /><path d="M10 12a1 1 0 0 0-1 1v1a1 1 0 0 1-1 1 1 1 0 0 1 1 1v1a1 1 0 0 0 1 1" /><path d="M14 18a1 1 0 0 0 1-1v-1a1 1 0 0 1 1-1 1 1 0 0 1-1-1v-1a1 1 0 0 0-1-1" /></symbol><symbol id="i-fingerprint-pattern" viewBox="0 0 24 24"><path d="M12 10a2 2 0 0 0-2 2c0 1.02-.1 2.51-.26 4" /><path d="M14 13.12c0 2.38 0 6.38-1 8.88" /><path d="M17.29 21.02c.12-.6.43-2.3.5-3.02" /><path d="M2 12a10 10 0 0 1 18-6" /><path d="M2 16h.01" /><path d="M21.8 16c.2-2 .131-5.354 0-6" /><path d="M5 19.5C5.5 18 6 15 6 12a6 6 0 0 1 .34-2" /><path d="M8.65 22c.21-.66.45-1.32.57-2" /><path d="M9 6.8a6 6 0 0 1 9 5.2v2" /></symbol><symbol id="i-globe" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10" /><path d="M12 2a14.5 14.5 0 0 0 0 20 14.5 14.5 0 0 0 0-20" /><path d="M2 12h20" /></symbol><symbol id="i-hard-drive" viewBox="0 0 24 24"><path d="M10 16h.01" /><path d="M2.212 11.577a2 2 0 0 0-.212.896V18a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2v-5.527a2 2 0 0 0-.212-.896L18.55 5.11A2 2 0 0 0 16.76 4H7.24a2 2 0 0 0-1.79 1.11z" /><path d="M21.946 12.013H2.054" /><path d="M6 16h.01" /></symbol><symbol id="i-history" viewBox="0 0 24 24"><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8" /><path d="M3 3v5h5" /><path d="M12 7v5l4 2" /></symbol><symbol id="i-house" viewBox="0 0 24 24"><path d="M15 21v-8a1 1 0 0 0-1-1h-4a1 1 0 0 0-1 1v8" /><path d="M3 10a2 2 0 0 1 .709-1.528l7-6a2 2 0 0 1 2.582 0l7 6A2 2 0 0 1 21 10v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z" /></symbol><symbol id="i-id-card" viewBox="0 0 24 24"><path d="M13 19a4 4 0 00-8 0" /><path d="M16 10h2" /><path d="M16 14h2" /><circle cx="9" cy="12" r="3" /><rect x="2" y="5" width="20" height="14" rx="2" /></symbol><symbol id="i-info" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10" /><path d="M12 16v-4" /><path d="M12 8h.01" /></symbol><symbol id="i-key-round" viewBox="0 0 24 24"><path d="M2.586 17.414A2 2 0 0 0 2 18.828V21a1 1 0 0 0 1 1h3a1 1 0 0 0 1-1v-1a1 1 0 0 1 1-1h1a1 1 0 0 0 1-1v-1a1 1 0 0 1 1-1h.172a2 2 0 0 0 1.414-.586l.814-.814a6.5 6.5 0 1 0-4-4z" /><circle cx="16.5" cy="7.5" r=".5" fill="currentColor" /></symbol><symbol id="i-key" viewBox="0 0 24 24"><path d="m2 21 9.6-9.6" /><path d="m7.5 15.5 2.3 2.3a1 1 0 0 1 0 1.4l-2.1 2.1a1 1 0 0 1-1.4 0L4 19" /><circle cx="15.5" cy="7.5" r="5.5" /></symbol><symbol id="i-languages" viewBox="0 0 24 24"><path d="m5 8 6 6" /><path d="m4 14 6-6 2-3" /><path d="M2 5h12" /><path d="M7 2h1" /><path d="m22 22-5-10-5 10" /><path d="M14 18h6" /></symbol><symbol id="i-laptop" viewBox="0 0 24 24"><path d="M18 5a2 2 0 0 1 2 2v8.526a2 2 0 0 0 .212.897l1.068 2.127a1 1 0 0 1-.9 1.45H3.62a1 1 0 0 1-.9-1.45l1.068-2.127A2 2 0 0 0 4 15.526V7a2 2 0 0 1 2-2z" /><path d="M20.054 15.987H3.946" /></symbol><symbol id="i-layout-dashboard" viewBox="0 0 24 24"><rect width="7" height="9" x="3" y="3" rx="1" /><rect width="7" height="5" x="14" y="3" rx="1" /><rect width="7" height="9" x="14" y="12" rx="1" /><rect width="7" height="5" x="3" y="16" rx="1" /></symbol><symbol id="i-layout-grid" viewBox="0 0 24 24"><rect width="7" height="7" x="3" y="3" rx="1" /><rect width="7" height="7" x="14" y="3" rx="1" /><rect width="7" height="7" x="14" y="14" rx="1" /><rect width="7" height="7" x="3" y="14" rx="1" /></symbol><symbol id="i-link-2" viewBox="0 0 24 24"><path d="M9 17H7A5 5 0 0 1 7 7h2" /><path d="M15 7h2a5 5 0 1 1 0 10h-2" /><line x1="8" x2="16" y1="12" y2="12" /></symbol><symbol id="i-lock-keyhole" viewBox="0 0 24 24"><circle cx="12" cy="16" r="1" /><rect x="3" y="10" width="18" height="12" rx="2" /><path d="M7 10V7a5 5 0 0 1 10 0v3" /></symbol><symbol id="i-lock" viewBox="0 0 24 24"><rect width="18" height="11" x="3" y="11" rx="2" ry="2" /><path d="M7 11V7a5 5 0 0 1 10 0v4" /></symbol><symbol id="i-log-in" viewBox="0 0 24 24"><path d="m10 17 5-5-5-5" /><path d="M15 12H3" /><path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4" /></symbol><symbol id="i-log-out" viewBox="0 0 24 24"><path d="m16 17 5-5-5-5" /><path d="M21 12H9" /><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" /></symbol><symbol id="i-mail-check" viewBox="0 0 24 24"><path d="M22 13V6a2 2 0 0 0-2-2H4a2 2 0 0 0-2 2v12c0 1.1.9 2 2 2h8" /><path d="m22 7-8.97 5.7a1.94 1.94 0 0 1-2.06 0L2 7" /><path d="m16 19 2 2 4-4" /></symbol><symbol id="i-mail" viewBox="0 0 24 24"><path d="m22 7-8.991 5.727a2 2 0 0 1-2.009 0L2 7" /><rect x="2" y="4" width="20" height="16" rx="2" /></symbol><symbol id="i-menu" viewBox="0 0 24 24"><path d="M4 5h16" /><path d="M4 12h16" /><path d="M4 19h16" /></symbol><symbol id="i-monitor-smartphone" viewBox="0 0 24 24"><path d="M18 8V6a2 2 0 0 0-2-2H4a2 2 0 0 0-2 2v7a2 2 0 0 0 2 2h8" /><path d="M10 19v-3.96 3.15" /><path d="M7 19h5" /><rect width="6" height="10" x="16" y="12" rx="2" /></symbol><symbol id="i-monitor" viewBox="0 0 24 24"><rect width="20" height="14" x="2" y="3" rx="2" /><line x1="8" x2="16" y1="21" y2="21" /><line x1="12" x2="12" y1="17" y2="21" /></symbol><symbol id="i-moon" viewBox="0 0 24 24"><path d="M20.985 12.486a9 9 0 1 1-9.473-9.472c.405-.022.617.46.402.803a6 6 0 0 0 8.268 8.268c.344-.215.825-.004.803.401" /></symbol><symbol id="i-palette" viewBox="0 0 24 24"><path d="M12 22a1 1 0 0 1 0-20 10 9 0 0 1 10 9 5 5 0 0 1-5 5h-2.25a1.75 1.75 0 0 0-1.4 2.8l.3.4a1.75 1.75 0 0 1-1.4 2.8z" /><circle cx="13.5" cy="6.5" r=".5" fill="currentColor" /><circle cx="17.5" cy="10.5" r=".5" fill="currentColor" /><circle cx="6.5" cy="12.5" r=".5" fill="currentColor" /><circle cx="8.5" cy="7.5" r=".5" fill="currentColor" /></symbol><symbol id="i-party-popper" viewBox="0 0 24 24"><path d="M5.8 11.3 2 22l10.7-3.79" /><path d="M4 3h.01" /><path d="M22 8h.01" /><path d="M15 2h.01" /><path d="M22 20h.01" /><path d="m22 2-2.24.75a2.9 2.9 0 0 0-1.96 3.12c.1.86-.57 1.63-1.45 1.63h-.38c-.86 0-1.6.6-1.76 1.44L14 10" /><path d="m22 13-.82-.33c-.86-.34-1.82.2-1.98 1.11c-.11.7-.72 1.22-1.43 1.22H17" /><path d="m11 2 .33.82c.34.86-.2 1.82-1.11 1.98C9.52 4.9 9 5.52 9 6.23V7" /><path d="M11 13c1.93 1.93 2.83 4.17 2 5-.83.83-3.07-.07-5-2-1.93-1.93-2.83-4.17-2-5 .83-.83 3.07.07 5 2Z" /></symbol><symbol id="i-pencil" viewBox="0 0 24 24"><path d="M21.174 6.812a1 1 0 0 0-3.986-3.987L3.842 16.174a2 2 0 0 0-.5.83l-1.321 4.352a.5.5 0 0 0 .623.622l4.353-1.32a2 2 0 0 0 .83-.497z" /><path d="m15 5 4 4" /></symbol><symbol id="i-plus" viewBox="0 0 24 24"><path d="M5 12h14" /><path d="M12 5v14" /></symbol><symbol id="i-podcast" viewBox="0 0 24 24"><path d="M12 17v4" /><path d="M18 11a6 6 0 00-3-5.197" /><path d="M2 11a10 10 0 015-8.662" /><path d="M22 11a10 10 0 00-5-8.662" /><path d="M6 11a6 6 0 013-5.197" /><path d="M9 21h6" /><rect x="10" y="9" width="4" height="8" rx="2" /></symbol><symbol id="i-qr-code" viewBox="0 0 24 24"><rect width="5" height="5" x="3" y="3" rx="1" /><rect width="5" height="5" x="16" y="3" rx="1" /><rect width="5" height="5" x="3" y="16" rx="1" /><path d="M21 16h-3a2 2 0 0 0-2 2v3" /><path d="M21 21v.01" /><path d="M12 7v3a2 2 0 0 1-2 2H7" /><path d="M3 12h.01" /><path d="M12 3h.01" /><path d="M12 16v.01" /><path d="M16 12h1" /><path d="M21 12v.01" /><path d="M12 21v-1" /></symbol><symbol id="i-refresh-cw" viewBox="0 0 24 24"><path d="M3 12a9 9 0 0 1 9-9 9.75 9.75 0 0 1 6.74 2.74L21 8" /><path d="M21 3v5h-5" /><path d="M21 12a9 9 0 0 1-9 9 9.75 9.75 0 0 1-6.74-2.74L3 16" /><path d="M8 16H3v5" /></symbol><symbol id="i-rotate-ccw" viewBox="0 0 24 24"><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8" /><path d="M3 3v5h5" /></symbol><symbol id="i-scan-face" viewBox="0 0 24 24"><path d="M3 7V5a2 2 0 0 1 2-2h2" /><path d="M17 3h2a2 2 0 0 1 2 2v2" /><path d="M21 17v2a2 2 0 0 1-2 2h-2" /><path d="M7 21H5a2 2 0 0 1-2-2v-2" /><path d="M8 14s1.5 2 4 2 4-2 4-2" /><path d="M9 9h.01" /><path d="M15 9h.01" /></symbol><symbol id="i-send" viewBox="0 0 24 24"><path d="M14.536 21.686a.5.5 0 0 0 .937-.024l6.5-19a.496.496 0 0 0-.635-.635l-19 6.5a.5.5 0 0 0-.024.937l7.93 3.18a2 2 0 0 1 1.112 1.11z" /><path d="m21.854 2.147-10.94 10.939" /></symbol><symbol id="i-server" viewBox="0 0 24 24"><rect width="20" height="8" x="2" y="2" rx="2" ry="2" /><rect width="20" height="8" x="2" y="14" rx="2" ry="2" /><line x1="6" x2="6.01" y1="6" y2="6" /><line x1="6" x2="6.01" y1="18" y2="18" /></symbol><symbol id="i-settings" viewBox="0 0 24 24"><path d="M9.671 4.136a2.34 2.34 0 0 1 4.659 0 2.34 2.34 0 0 0 3.319 1.915 2.34 2.34 0 0 1 2.33 4.033 2.34 2.34 0 0 0 0 3.831 2.34 2.34 0 0 1-2.33 4.033 2.34 2.34 0 0 0-3.319 1.915 2.34 2.34 0 0 1-4.659 0 2.34 2.34 0 0 0-3.32-1.915 2.34 2.34 0 0 1-2.33-4.033 2.34 2.34 0 0 0 0-3.831A2.34 2.34 0 0 1 6.35 6.051a2.34 2.34 0 0 0 3.319-1.915" /><circle cx="12" cy="12" r="3" /></symbol><symbol id="i-shield-alert" viewBox="0 0 24 24"><path d="M20 13c0 5-3.5 7.5-7.66 8.95a1 1 0 0 1-.67-.01C7.5 20.5 4 18 4 13V6a1 1 0 0 1 1-1c2 0 4.5-1.2 6.24-2.72a1.17 1.17 0 0 1 1.52 0C14.51 3.81 17 5 19 5a1 1 0 0 1 1 1z" /><path d="M12 8v4" /><path d="M12 16h.01" /></symbol><symbol id="i-shield-check" viewBox="0 0 24 24"><path d="M20 13c0 5-3.5 7.5-7.66 8.95a1 1 0 0 1-.67-.01C7.5 20.5 4 18 4 13V6a1 1 0 0 1 1-1c2 0 4.5-1.2 6.24-2.72a1.17 1.17 0 0 1 1.52 0C14.51 3.81 17 5 19 5a1 1 0 0 1 1 1z" /><path d="m9 12 2 2 4-4" /></symbol><symbol id="i-shield" viewBox="0 0 24 24"><path d="M20 13c0 5-3.5 7.5-7.66 8.95a1 1 0 0 1-.67-.01C7.5 20.5 4 18 4 13V6a1 1 0 0 1 1-1c2 0 4.5-1.2 6.24-2.72a1.17 1.17 0 0 1 1.52 0C14.51 3.81 17 5 19 5a1 1 0 0 1 1 1z" /></symbol><symbol id="i-sliders-horizontal" viewBox="0 0 24 24"><path d="M10 5H3" /><path d="M12 19H3" /><path d="M14 3v4" /><path d="M16 17v4" /><path d="M21 12h-9" /><path d="M21 19h-5" /><path d="M21 5h-7" /><path d="M8 10v4" /><path d="M8 12H3" /></symbol><symbol id="i-smartphone" viewBox="0 0 24 24"><rect width="14" height="20" x="5" y="2" rx="2" ry="2" /><path d="M12 18h.01" /></symbol><symbol id="i-sparkles" viewBox="0 0 24 24"><path d="M11.017 2.814a1 1 0 0 1 1.966 0l1.051 5.558a2 2 0 0 0 1.594 1.594l5.558 1.051a1 1 0 0 1 0 1.966l-5.558 1.051a2 2 0 0 0-1.594 1.594l-1.051 5.558a1 1 0 0 1-1.966 0l-1.051-5.558a2 2 0 0 0-1.594-1.594l-5.558-1.051a1 1 0 0 1 0-1.966l5.558-1.051a2 2 0 0 0 1.594-1.594z" /><path d="M20 2v4" /><path d="M22 4h-4" /><circle cx="4" cy="20" r="2" /></symbol><symbol id="i-sun-moon" viewBox="0 0 24 24"><path d="M12 2v2" /><path d="M14.837 16.385a6 6 0 1 1-7.223-7.222c.624-.147.97.66.715 1.248a4 4 0 0 0 5.26 5.259c.589-.255 1.396.09 1.248.715" /><path d="M16 12a4 4 0 0 0-4-4" /><path d="m19 5-1.256 1.256" /><path d="M20 12h2" /></symbol><symbol id="i-sun" viewBox="0 0 24 24"><circle cx="12" cy="12" r="4" /><path d="M12 2v2" /><path d="M12 20v2" /><path d="m4.93 4.93 1.41 1.41" /><path d="m17.66 17.66 1.41 1.41" /><path d="M2 12h2" /><path d="M20 12h2" /><path d="m6.34 17.66-1.41 1.41" /><path d="m19.07 4.93-1.41 1.41" /></symbol><symbol id="i-tablet-smartphone" viewBox="0 0 24 24"><rect width="10" height="14" x="3" y="8" rx="2" /><path d="M5 4a2 2 0 0 1 2-2h12a2 2 0 0 1 2 2v16a2 2 0 0 1-2 2h-2.4" /><path d="M8 18h.01" /></symbol><symbol id="i-trash-2" viewBox="0 0 24 24"><path d="M10 11v6" /><path d="M14 11v6" /><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6" /><path d="M3 6h18" /><path d="M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" /></symbol><symbol id="i-triangle-alert" viewBox="0 0 24 24"><path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3" /><path d="M12 9v4" /><path d="M12 17h.01" /></symbol><symbol id="i-upload" viewBox="0 0 24 24"><path d="M12 3v12" /><path d="m17 8-5-5-5 5" /><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" /></symbol><symbol id="i-user-check" viewBox="0 0 24 24"><path d="m16 11 2 2 4-4" /><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2" /><circle cx="9" cy="7" r="4" /></symbol><symbol id="i-user-round" viewBox="0 0 24 24"><circle cx="12" cy="8" r="5" /><path d="M20 21a8 8 0 0 0-16 0" /></symbol><symbol id="i-user" viewBox="0 0 24 24"><path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2" /><circle cx="12" cy="7" r="4" /></symbol><symbol id="i-users" viewBox="0 0 24 24"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2" /><path d="M16 3.128a4 4 0 0 1 0 7.744" /><path d="M22 21v-2a4 4 0 0 0-3-3.87" /><circle cx="9" cy="7" r="4" /></symbol><symbol id="i-wand-sparkles" viewBox="0 0 24 24"><path d="m21.64 3.64-1.28-1.28a1.21 1.21 0 0 0-1.72 0L2.36 18.64a1.21 1.21 0 0 0 0 1.72l1.28 1.28a1.2 1.2 0 0 0 1.72 0L21.64 5.36a1.2 1.2 0 0 0 0-1.72" /><path d="m14 7 3 3" /><path d="M5 6v4" /><path d="M19 14v4" /><path d="M10 2v2" /><path d="M7 8H3" /><path d="M21 16h-4" /><path d="M11 3H9" /></symbol><symbol id="i-x" viewBox="0 0 24 24"><path d="M18 6 6 18" /><path d="m6 6 12 12" /></symbol><symbol id="i-zap" viewBox="0 0 24 24"><path d="M15.914 4a1.5 1.5 0 00-2.474-1.561l-9 9A1.5 1.5 0 005.5 14h4.002a.5.5 0 01.471.666L8.086 20a1.5 1.5 0 002.475 1.56l9-9A1.5 1.5 0 0018.5 10h-3.997a.5.5 0 01-.472-.667z" /></symbol></svg>
@@ -4354,6 +4354,16 @@ messages({
     'apps.revokeDesc': '{app} ne pourra plus lire ton profil Cord et te redemandera l’autorisation à la prochaine connexion. Tes données dans {app} ne sont pas supprimées.',
     'apps.revoked': 'Accès de {app} révoqué.', 'apps.suite': 'La suite Cord', 'apps.suiteDesc': 'Toutes les apps qui utilisent ton Compte Cord.',
     'scope.openid': 'Identifiant Cord', 'scope.profile': 'Nom et photo', 'scope.email': 'Adresse email',
+    'betaApp.title': 'Bêta fermée de Passcord', 'betaApp.desc': 'Tu as reçu une clé d’accès ? Entre-la pour rejoindre les premiers testeurs.',
+    'betaApp.key': 'Clé d’accès', 'betaApp.join': 'Rejoindre la bêta', 'betaApp.joined': 'Bienvenue dans la bêta de {name} !', 'betaApp.already': 'Tu fais déjà partie de la bêta.',
+    'betaApp.member': 'Testeur', 'betaApp.memberDesc': 'Télécharge l’app puis installe-la avec AltStore, ou depuis CordLauncher (Installer sur iPhone).',
+    'betaApp.build': '{build} · publié {when}', 'betaApp.loading': 'Recherche du dernier build…', 'betaApp.none': 'Aucun build publié pour le moment.',
+    'betaApp.soon': 'Le téléchargement direct arrive bientôt : en attendant, demande l’IPA à l’administrateur.',
+    'betaApp.download': 'Télécharger', 'betaApp.unverified': 'Confirme d’abord ton adresse email pour utiliser une clé.',
+    'asset.Passcord.ipa': 'App, extension Safari et clavier — recommandé', 'asset.Passcord-sans-clavier.ipa': 'App et extension Safari, sans clavier',
+    'asset.Passcord-autofill.ipa': 'Avec le remplissage automatique — compte Apple Developer payant requis',
+    'reason.beta_key_invalid': 'Clé inconnue. Vérifie-la caractère par caractère (ex. PASS-7KQM-2XVD-9HRT).', 'reason.beta_key_used': 'Cette clé a déjà été utilisée.',
+    'reason.beta_key_expired': 'Cette clé a expiré.', 'reason.beta_key_revoked': 'Cette clé a été désactivée.', 'reason.beta_required': 'Cette bêta demande une clé d’accès.',
   },
   en: {
     'apps.title': 'Apps', 'apps.desc': 'Apps you signed in to with your Cord account, and what they can see.',
@@ -4363,10 +4373,65 @@ messages({
     'apps.revokeDesc': '{app} will no longer read your Cord profile and will ask for permission on your next sign-in. Your data inside {app} isn’t deleted.',
     'apps.revoked': '{app}’s access revoked.', 'apps.suite': 'The Cord suite', 'apps.suiteDesc': 'Every app that uses your Cord account.',
     'scope.openid': 'Cord ID', 'scope.profile': 'Name and photo', 'scope.email': 'Email address',
+    'betaApp.title': 'Passcord closed beta', 'betaApp.desc': 'Got an access key? Enter it to join the first testers.',
+    'betaApp.key': 'Access key', 'betaApp.join': 'Join the beta', 'betaApp.joined': 'Welcome to the {name} beta!', 'betaApp.already': 'You’re already in the beta.',
+    'betaApp.member': 'Tester', 'betaApp.memberDesc': 'Download the app, then install it with AltStore or from CordLauncher (Install on iPhone).',
+    'betaApp.build': '{build} · published {when}', 'betaApp.loading': 'Looking for the latest build…', 'betaApp.none': 'No build published yet.',
+    'betaApp.soon': 'Direct download is coming soon: meanwhile, ask the admin for the IPA.',
+    'betaApp.download': 'Download', 'betaApp.unverified': 'Confirm your email address first to redeem a key.',
+    'asset.Passcord.ipa': 'App, Safari extension and keyboard — recommended', 'asset.Passcord-sans-clavier.ipa': 'App and Safari extension, no keyboard',
+    'asset.Passcord-autofill.ipa': 'With system AutoFill — paid Apple Developer account required',
+    'reason.beta_key_invalid': 'Unknown key. Check it character by character (e.g. PASS-7KQM-2XVD-9HRT).', 'reason.beta_key_used': 'This key has already been used.',
+    'reason.beta_key_expired': 'This key has expired.', 'reason.beta_key_revoked': 'This key has been disabled.', 'reason.beta_required': 'This beta requires an access key.',
   },
 });
 
 const SCOPE_ICONS = { openid: 'id-card', profile: 'user-round', email: 'at-sign' };
+const betaState = { info: null, loading: false };
+const fmtSize = (bytes) => \`\${(bytes / 1_000_000).toLocaleString(intlLocale(), { maximumFractionDigits: 1 })} Mo\`;
+
+function betaCard(a) {
+  const member = (a.user.beta ?? []).includes('passcord');
+  const info = betaState.info;
+  const logo = html\`<img class="device-logo" src="/assets/logos/passcord.png" alt="" width="42" height="42">\`;
+  if (!member) {
+    return html\`<section class="card glass">
+      <div class="card-head">\${logo}<div class="grow"><h2 class="card-title">\${t('betaApp.title')}</h2><p class="card-desc">\${t(a.user.emailVerified ? 'betaApp.desc' : 'betaApp.unverified')}</p></div></div>
+      <form id="beta-redeem" class="card-body beta-redeem" novalidate>
+        <div class="field"><label for="beta-code">\${t('betaApp.key')}</label>
+          <input class="input" id="beta-code" name="code" placeholder="PASS-XXXX-XXXX-XXXX" autocomplete="off" spellcheck="false" autocapitalize="characters" maxlength="40" required \${a.user.emailVerified ? '' : raw('disabled')}></div>
+        <button class="btn btn-primary" type="submit" \${a.user.emailVerified ? '' : raw('disabled')}>\${icon('key-round')}\${t('betaApp.join')}</button>
+      </form>
+    </section>\`;
+  }
+  return html\`<section class="card glass">
+    <div class="card-head">\${logo}<div class="grow"><h2 class="card-title">\${t('betaApp.title')} <span class="badge tone-ok">\${icon('badge-check')}\${t('betaApp.member')}</span></h2>
+      <p class="card-desc">\${t('betaApp.memberDesc')}</p></div></div>
+    <div class="card-body">\${
+      !info ? html\`<p class="subtle">\${t('betaApp.loading')}</p>\`
+      : !info.downloads ? html\`<p class="subtle">\${t('betaApp.soon')}</p>\`
+      : !info.release ? html\`<p class="subtle">\${t('betaApp.none')}</p>\`
+      : html\`<p class="tiny subtle mono">\${t('betaApp.build', { build: info.release.build, when: fmtRelative(info.release.publishedAt) })}</p>
+        <ul class="list">\${[...info.release.assets].sort((x, y) => (x.name === 'Passcord.ipa' ? -1 : y.name === 'Passcord.ipa' ? 1 : 0)).map((asset) => html\`<li class="list-item">
+          <span class="icon-badge sm \${asset.name === 'Passcord.ipa' ? 'grad' : ''}">\${icon('smartphone')}</span>
+          <div class="body"><div class="title mono">\${asset.name}</div><div class="meta"><span>\${MESSAGES[locale][\`asset.\${asset.name}\`] ? t(\`asset.\${asset.name}\`) : ''}</span><span>\${fmtSize(asset.size)}</span></div></div>
+          <div class="actions"><button class="btn \${asset.name === 'Passcord.ipa' ? 'btn-primary' : 'btn-glass'} btn-sm" data-action="beta-download" data-asset="\${asset.name}">\${icon('download')}\${t('betaApp.download')}</button></div>
+        </li>\`)}</ul>\`
+    }</div>
+  </section>\`;
+}
+
+async function loadBetaInfo() {
+  betaState.loading = true;
+  try {
+    betaState.info = await api('/api/beta/passcord');
+    if (state.route === 'apps') renderShell();
+  } catch (e) {
+    toastError(e);
+  } finally {
+    betaState.loading = false;
+  }
+}
 
 VIEWS.apps = {
   render(a) {
@@ -4391,13 +4456,38 @@ VIEWS.apps = {
             : emptyState({ iconName: 'app-window', title: t('apps.empty'), desc: t('apps.emptyDesc'), action: html\`<a class="btn btn-primary btn-sm" href="https://drivecord.app" target="_blank" rel="noopener">\${t('apps.tryDrivecord')}\${icon('external-link')}</a>\` })}
         </div>
       </section>
+      \${betaCard(a)}
       <div class="section-title"><h2>\${t('apps.suite')}</h2></div>
       <div class="suite-grid">\${state.suite.map((app) => suiteTile(app))}</div>
     </div>\`;
   },
+  mount(root) {
+    if ((state.account?.user.beta ?? []).includes('passcord') && !betaState.info && !betaState.loading) loadBetaInfo();
+    const form = $('#beta-redeem', root);
+    form?.addEventListener('submit', async (event) => {
+      event.preventDefault();
+      const input = $('#beta-code', form);
+      if (!input.value.trim()) return input.focus();
+      try {
+        const result = await busy(event.submitter ?? $('[type="submit"]', form), () => api('/api/beta/redeem', { code: input.value }));
+        toast(result.already ? t('betaApp.already') : t('betaApp.joined', { name: result.name }));
+        if (!result.already) celebrate();
+        betaState.info = null;
+        await refresh();
+      } catch (e) {
+        input.setAttribute('aria-invalid', 'true');
+        toastError(e);
+      }
+    });
+  },
 };
 
 Object.assign(ACTIONS, {
+  async 'beta-download'(button) {
+    const { url } = await busy(button, () => api('/api/beta/passcord/download', { asset: button.dataset.asset }));
+    // Lien signé et temporaire vers le fichier : le navigateur le télécharge directement.
+    location.href = url;
+  },
   async 'app-revoke'(button) {
     const name = button.dataset.name;
     const ok = await confirmDialog({ title: t('apps.revokeTitle', { app: name }), desc: t('apps.revokeDesc', { app: name }), confirm: t('apps.revoke'), iconName: 'ban' });
@@ -4427,6 +4517,7 @@ messages({
     'ev.app_authorized': 'App autorisée', 'ev.app_revoked': 'Accès d’une app révoqué',
     'ev.session_revoked': 'Session fermée à distance', 'ev.sessions_revoked': 'Autres sessions fermées',
     'ev.profile_updated': 'Profil mis à jour',
+    'ev.beta_joined': 'Bêta rejointe', 'ev.beta_download': 'Build de bêta téléchargé', 'ev.beta_keys_created': 'Clés de bêta générées',
     'via.password': 'mot de passe', 'via.passkey': 'passkey', 'via.passcord': 'Passcord', 'via.reset': 'lien de réinitialisation', 'via.mfa': 'code 2FA incorrect',
     'via.name': 'nom', 'via.avatar': 'photo',
   },
@@ -4445,6 +4536,7 @@ messages({
     'ev.app_authorized': 'App authorized', 'ev.app_revoked': 'App access revoked',
     'ev.session_revoked': 'Session signed out remotely', 'ev.sessions_revoked': 'Other sessions signed out',
     'ev.profile_updated': 'Profile updated',
+    'ev.beta_joined': 'Joined a beta', 'ev.beta_download': 'Beta build downloaded', 'ev.beta_keys_created': 'Beta keys generated',
     'via.password': 'password', 'via.passkey': 'passkey', 'via.passcord': 'Passcord', 'via.reset': 'reset link', 'via.mfa': 'wrong 2FA code',
     'via.name': 'name', 'via.avatar': 'photo',
   },
@@ -4460,11 +4552,12 @@ const EVENT_STYLE = {
   passcord_paired: ['smartphone', 'tone-ok'], passcord_revoked: ['trash-2', 'tone-muted'],
   app_authorized: ['app-window', ''], app_revoked: ['ban', 'tone-muted'],
   session_revoked: ['log-out', 'tone-muted'], sessions_revoked: ['log-out', 'tone-muted'], profile_updated: ['pencil', 'tone-muted'],
+  beta_joined: ['key-round', 'tone-ok'], beta_download: ['download', 'tone-info'], beta_keys_created: ['key', 'tone-muted'],
 };
 const EVENT_GROUPS = {
   logins: ['register', 'login', 'login_failed', 'session_revoked', 'sessions_revoked'],
   security: ['password_changed', 'password_reset', 'password_reset_requested', 'mfa_enabled', 'mfa_disabled', 'recovery_used', 'recovery_regenerated', 'passkey_added', 'passkey_removed', 'passcord_paired', 'passcord_revoked', 'email_changed', 'email_verified'],
-  apps: ['app_authorized', 'app_revoked'],
+  apps: ['app_authorized', 'app_revoked', 'beta_joined', 'beta_download', 'beta_keys_created'],
 };
 
 function eventDetail(e) {
@@ -4852,11 +4945,12 @@ Object.assign(ACTIONS, {
 });
 
 // src/38-admin.js
-/* Administration (propriétaire uniquement, CORD_ADMINS) : statistiques et clients OAuth. */
+/* Administration (propriétaire uniquement, CORD_ADMINS) : statistiques, clients OAuth et bêta fermée de Passcord. */
 
 messages({
   fr: {
     'admin.title': 'Administration', 'admin.desc': 'Vue d’ensemble du Compte Cord. Aucune donnée personnelle n’est affichée ici.',
+    'admin.tab.overview': 'Vue d’ensemble', 'admin.tab.beta': 'Bêta Passcord',
     'admin.users': 'Comptes', 'admin.verified': 'Emails vérifiés', 'admin.sessions': 'Sessions actives', 'admin.logins': 'Connexions (24 h)',
     'admin.signups': 'Inscriptions — 30 derniers jours', 'admin.signups7': '{n} cette semaine', 'admin.adoption': 'Adoption de la sécurité',
     'admin.mfa': 'Double authentification', 'admin.passkeys': 'Passkeys', 'admin.passcord': 'Passcord', 'admin.failures': '{n} échec(s) de connexion en 24 h',
@@ -4864,9 +4958,25 @@ messages({
     'admin.client': 'Application', 'admin.redirects': 'Adresses de retour', 'admin.clientUsers': 'Comptes', 'admin.lastUse': 'Dernier usage',
     'admin.mail': 'Emails', 'admin.mailOn': 'Resend configuré', 'admin.mailOff': 'Envoi d’emails non configuré',
     'admin.loading': 'Chargement des statistiques…',
+    'beta.desc': 'Génère des clés d’accès à la bêta fermée de Passcord. Une clé s’utilise sur compte.cordsuite.app ou dans CordLauncher et débloque le téléchargement de l’app.',
+    'beta.activeKeys': 'Clés actives', 'beta.testers': 'Testeurs', 'beta.build': 'Dernier build', 'beta.noBuild': 'Aucun',
+    'beta.downloadsOff': 'Téléchargement direct non configuré', 'beta.downloadsOffDesc': 'Ajoute la variable PASSCORD_RELEASES_TOKEN (jeton GitHub en lecture seule sur le dépôt Passcord) pour que les testeurs téléchargent l’IPA depuis le Compte Cord.',
+    'beta.generate': 'Générer des clés', 'beta.generateDesc': 'Chaque clé n’est affichée qu’une fois : copie-la avant de fermer.',
+    'beta.count': 'Nombre de clés', 'beta.uses': 'Utilisations par clé', 'beta.validity': 'Validité', 'beta.label': 'Note (facultatif)', 'beta.labelPh': 'Ex. Serveur Discord, amis…',
+    'beta.never': 'Sans limite', 'beta.days': '{n} jours', 'beta.create': 'Générer',
+    'beta.created.one': 'Clé créée', 'beta.created.other': '{n} clés créées', 'beta.createdDesc': 'Elles ne seront plus jamais affichées en entier : copie-les maintenant.',
+    'beta.copyAll': 'Tout copier', 'beta.copiedAll': 'Clés copiées.', 'beta.saveTxt': 'Enregistrer (.txt)', 'beta.done': 'C’est noté',
+    'beta.keys': 'Clés d’accès', 'beta.keysEmpty': 'Aucune clé pour l’instant', 'beta.keysEmptyDesc': 'Génère une première clé pour inviter un testeur.',
+    'beta.key': 'Clé', 'beta.usage': 'Utilisations', 'beta.expires': 'Expire', 'beta.state': 'État', 'beta.createdAt': 'Créée',
+    'beta.status.active': 'Active', 'beta.status.used': 'Utilisée', 'beta.status.expired': 'Expirée', 'beta.status.revoked': 'Désactivée',
+    'beta.revoke': 'Désactiver', 'beta.revokeTitle': 'Désactiver cette clé ?', 'beta.revokeDesc': 'Elle ne pourra plus être utilisée. Les testeurs qui l’ont déjà utilisée gardent leur accès.', 'beta.revoked': 'Clé désactivée.',
+    'beta.testersTitle': 'Testeurs', 'beta.testersEmpty': 'Aucun testeur', 'beta.testersEmptyDesc': 'Ils apparaîtront ici dès qu’ils auront utilisé une clé.',
+    'beta.via': 'via {key}', 'beta.remove': 'Retirer', 'beta.removeTitle': 'Retirer {name} de la bêta ?', 'beta.removeDesc': 'Son compte Cord reste intact, mais il ne pourra plus télécharger Passcord sans une nouvelle clé.', 'beta.removed': 'Testeur retiré.',
+    'beta.txtHeader': 'Clés d’accès à la bêta fermée de Passcord — à utiliser sur https://compte.cordsuite.app/#apps',
   },
   en: {
     'admin.title': 'Admin', 'admin.desc': 'Cord Account at a glance. No personal data is shown here.',
+    'admin.tab.overview': 'Overview', 'admin.tab.beta': 'Passcord beta',
     'admin.users': 'Accounts', 'admin.verified': 'Verified emails', 'admin.sessions': 'Active sessions', 'admin.logins': 'Sign-ins (24 h)',
     'admin.signups': 'Sign-ups — last 30 days', 'admin.signups7': '{n} this week', 'admin.adoption': 'Security adoption',
     'admin.mfa': 'Two-factor', 'admin.passkeys': 'Passkeys', 'admin.passcord': 'Passcord', 'admin.failures': '{n} failed sign-in(s) in 24 h',
@@ -4874,16 +4984,40 @@ messages({
     'admin.client': 'Application', 'admin.redirects': 'Redirect URIs', 'admin.clientUsers': 'Accounts', 'admin.lastUse': 'Last used',
     'admin.mail': 'Emails', 'admin.mailOn': 'Resend configured', 'admin.mailOff': 'Email delivery not configured',
     'admin.loading': 'Loading statistics…',
+    'beta.desc': 'Generate access keys for the Passcord closed beta. A key is redeemed on compte.cordsuite.app or in CordLauncher and unlocks the app download.',
+    'beta.activeKeys': 'Active keys', 'beta.testers': 'Testers', 'beta.build': 'Latest build', 'beta.noBuild': 'None',
+    'beta.downloadsOff': 'Direct download not configured', 'beta.downloadsOffDesc': 'Add the PASSCORD_RELEASES_TOKEN variable (read-only GitHub token on the Passcord repo) so testers can download the IPA from their Cord account.',
+    'beta.generate': 'Generate keys', 'beta.generateDesc': 'Each key is shown only once: copy it before closing.',
+    'beta.count': 'Number of keys', 'beta.uses': 'Uses per key', 'beta.validity': 'Valid for', 'beta.label': 'Note (optional)', 'beta.labelPh': 'E.g. Discord server, friends…',
+    'beta.never': 'No limit', 'beta.days': '{n} days', 'beta.create': 'Generate',
+    'beta.created.one': 'Key created', 'beta.created.other': '{n} keys created', 'beta.createdDesc': 'They will never be shown in full again: copy them now.',
+    'beta.copyAll': 'Copy all', 'beta.copiedAll': 'Keys copied.', 'beta.saveTxt': 'Save (.txt)', 'beta.done': 'Got it',
+    'beta.keys': 'Access keys', 'beta.keysEmpty': 'No keys yet', 'beta.keysEmptyDesc': 'Generate a first key to invite a tester.',
+    'beta.key': 'Key', 'beta.usage': 'Uses', 'beta.expires': 'Expires', 'beta.state': 'Status', 'beta.createdAt': 'Created',
+    'beta.status.active': 'Active', 'beta.status.used': 'Used', 'beta.status.expired': 'Expired', 'beta.status.revoked': 'Disabled',
+    'beta.revoke': 'Disable', 'beta.revokeTitle': 'Disable this key?', 'beta.revokeDesc': 'It can no longer be redeemed. Testers who already used it keep their access.', 'beta.revoked': 'Key disabled.',
+    'beta.testersTitle': 'Testers', 'beta.testersEmpty': 'No testers', 'beta.testersEmptyDesc': 'They’ll show up here once they redeem a key.',
+    'beta.via': 'via {key}', 'beta.remove': 'Remove', 'beta.removeTitle': 'Remove {name} from the beta?', 'beta.removeDesc': 'Their Cord account stays intact, but they can no longer download Passcord without a new key.', 'beta.removed': 'Tester removed.',
+    'beta.txtHeader': 'Passcord closed beta access keys — redeem them at https://compte.cordsuite.app/#apps',
   },
 });
 
-const adminState = { data: null, loading: false };
+const adminState = { data: null, loading: false, tab: 'overview', beta: null, betaLoading: false };
+const BETA_TONES = { active: 'tone-ok', used: 'tone-muted', expired: 'tone-warn', revoked: 'tone-danger' };
+const maskedKey = (hint) => \`PASS-••••-••••-\${hint}\`;
 
 VIEWS.admin = {
   render() {
+    const tabs = html\`<div class="segmented admin-tabs" role="radiogroup" aria-label="\${t('admin.title')}">
+      \${[['overview', 'chart-column'], ['beta', 'key-round']].map(([value, ic]) => html\`<label><input type="radio" name="admin-tab" value="\${value}" data-change="admin-tab" \${adminState.tab === value ? raw('checked') : ''}><span>\${icon(ic)}\${t(\`admin.tab.\${value}\`)}</span></label>\`)}
+    </div>\`;
+    const head = (actions) => pageHead({ eyebrow: t('nav.section.owner'), title: t('admin.title'), desc: adminState.tab === 'beta' ? t('beta.desc') : t('admin.desc'), actions });
+    const reload = html\`<button class="btn btn-glass btn-sm" data-action="admin-reload">\${icon('refresh-cw')}\${t('common.retry')}</button>\`;
+    if (adminState.tab === 'beta') return html\`<div class="view">\${head(reload)}\${tabs}\${renderBeta()}</div>\`;
+
     const d = adminState.data;
     if (!d) {
-      return html\`<div class="view">\${pageHead({ eyebrow: t('nav.section.owner'), title: t('admin.title'), desc: t('admin.desc') })}
+      return html\`<div class="view">\${head('')}\${tabs}
         <div class="grid-4">\${[1, 2, 3, 4].map(() => html\`<div class="skeleton sk-block"></div>\`)}</div><div class="skeleton sk-block"></div></div>\`;
     }
     const { totals } = d;
@@ -4894,9 +5028,8 @@ VIEWS.admin = {
     const max = Math.max(1, ...days.map((x) => x.count));
     const pct = (n) => (totals.users ? Math.round((n / totals.users) * 100) : 0);
     return html\`<div class="view">
-      \${pageHead({ eyebrow: t('nav.section.owner'), title: t('admin.title'), desc: t('admin.desc'),
-        actions: html\`<span class="badge \${d.mail ? 'tone-ok' : 'tone-warn'}">\${icon('mail')}\${t(d.mail ? 'admin.mailOn' : 'admin.mailOff')}</span>
-          <button class="btn btn-glass btn-sm" data-action="admin-reload">\${icon('refresh-cw')}\${t('common.retry')}</button>\` })}
+      \${head(html\`<span class="badge \${d.mail ? 'tone-ok' : 'tone-warn'}">\${icon('mail')}\${t(d.mail ? 'admin.mailOn' : 'admin.mailOff')}</span>\${reload}\`)}
+      \${tabs}
       <section class="grid-4">
         \${[['users', 'users', ''], ['verified', 'mail-check', 'tone-ok'], ['sessions', 'monitor-smartphone', 'tone-info'], ['logins24', 'log-in', 'tone-warn']].map(([k, ic, tone]) => html\`
           <div class="stat glass"><div class="top"><span class="icon-badge sm \${tone}">\${icon(ic)}</span></div><div class="value">\${totals[k]}</div>
@@ -4933,9 +5066,64 @@ VIEWS.admin = {
     </div>\`;
   },
   mount() {
-    if (!adminState.data && !adminState.loading) loadAdmin();
+    if (adminState.tab === 'beta') {
+      if (!adminState.beta && !adminState.betaLoading) loadBeta();
+    } else if (!adminState.data && !adminState.loading) loadAdmin();
+    const form = $('#beta-generate');
+    form?.addEventListener('submit', (event) => generateKeys(event, form));
   },
 };
+
+function renderBeta() {
+  const b = adminState.beta;
+  if (!b) return html\`<div class="grid-3">\${[1, 2, 3].map(() => html\`<div class="skeleton sk-block"></div>\`)}</div><div class="skeleton sk-block"></div>\`;
+  const active = b.keys.filter((k) => k.status === 'active').length;
+  return html\`
+    <section class="grid-3">
+      <div class="stat glass"><div class="top"><span class="icon-badge sm tone-ok">\${icon('key-round')}</span></div><div class="value">\${active}</div><div class="label">\${t('beta.activeKeys')}</div></div>
+      <div class="stat glass"><div class="top"><span class="icon-badge sm tone-info">\${icon('users')}</span></div><div class="value">\${b.testers.length}</div><div class="label">\${t('beta.testers')}</div></div>
+      <div class="stat glass"><div class="top"><span class="icon-badge sm">\${icon('smartphone')}</span></div><div class="value beta-build">\${b.release?.build ?? t('beta.noBuild')}</div>
+        <div class="label">\${t('beta.build')}\${b.release?.publishedAt ? html\` · \${fmtRelative(b.release.publishedAt)}\` : ''}</div></div>
+    </section>
+    \${b.downloads ? '' : html\`<div class="banner tone-warn" role="status">\${icon('triangle-alert')}<div class="body"><p class="title">\${t('beta.downloadsOff')}</p><p class="desc">\${t('beta.downloadsOffDesc')}</p></div></div>\`}
+    <section class="card glass">
+      <div class="card-head"><span class="icon-badge grad">\${icon('sparkles')}</span><div class="grow"><h2 class="card-title">\${t('beta.generate')}</h2><p class="card-desc">\${t('beta.generateDesc')}</p></div></div>
+      <form id="beta-generate" class="card-body beta-form" novalidate>
+        <div class="field"><label for="beta-count">\${t('beta.count')}</label><input class="input" id="beta-count" name="count" type="number" min="1" max="50" value="1" required></div>
+        <div class="field"><label for="beta-uses">\${t('beta.uses')}</label><input class="input" id="beta-uses" name="maxUses" type="number" min="1" max="1000" value="1" required></div>
+        <div class="field"><label for="beta-validity">\${t('beta.validity')}</label><select class="input" id="beta-validity" name="expiresInDays">
+          \${[0, 7, 30, 90].map((n) => html\`<option value="\${n}" \${n === 30 ? raw('selected') : ''}>\${n ? t('beta.days', { n }) : t('beta.never')}</option>\`)}
+        </select></div>
+        <div class="field beta-label"><label for="beta-label">\${t('beta.label')}</label><input class="input" id="beta-label" name="label" maxlength="60" placeholder="\${t('beta.labelPh')}"></div>
+        <div class="beta-submit"><button class="btn btn-primary" type="submit">\${icon('key-round')}\${t('beta.create')}</button></div>
+      </form>
+    </section>
+    <section class="card glass">
+      <div class="card-head"><span class="icon-badge">\${icon('key')}</span><div class="grow"><h2 class="card-title">\${t('beta.keys')}</h2></div></div>
+      <div class="card-body">\${b.keys.length
+        ? html\`<div class="table-wrap"><table class="table">
+            <thead><tr><th>\${t('beta.key')}</th><th>\${t('beta.usage')}</th><th>\${t('beta.expires')}</th><th>\${t('beta.state')}</th><th></th></tr></thead>
+            <tbody>\${b.keys.map((k) => html\`<tr>
+              <td><div class="mono">\${maskedKey(k.hint)}</div><div class="tiny subtle">\${k.label ?? ''}\${k.label ? ' · ' : ''}\${t('beta.createdAt')} \${fmtRelative(k.createdAt)}</div></td>
+              <td class="mono">\${k.uses} / \${k.maxUses}</td>
+              <td>\${k.expiresAt ? fmtDateShort(k.expiresAt) : t('beta.never')}</td>
+              <td><span class="badge \${BETA_TONES[k.status]}">\${t(\`beta.status.\${k.status}\`)}</span></td>
+              <td class="actions-cell">\${k.status === 'active' ? html\`<button class="btn btn-danger btn-sm" data-action="beta-revoke" data-id="\${k.id}">\${t('beta.revoke')}</button>\` : ''}</td>
+            </tr>\`)}</tbody>
+          </table></div>\`
+        : emptyState({ iconName: 'key-round', title: t('beta.keysEmpty'), desc: t('beta.keysEmptyDesc') })}</div>
+    </section>
+    <section class="card glass">
+      <div class="card-head"><span class="icon-badge">\${icon('users')}</span><div class="grow"><h2 class="card-title">\${t('beta.testersTitle')}</h2></div></div>
+      <div class="card-body">\${b.testers.length
+        ? html\`<ul class="list">\${b.testers.map((u) => html\`<li class="list-item">
+            \${avatar({ id: u.userId, name: u.name, email: u.email }, 'sm')}
+            <div class="body"><div class="title">\${u.name}</div><div class="meta"><span>\${u.email}</span><span>\${fmtRelative(u.grantedAt)}</span>\${u.keyHint ? html\`<span class="mono">\${t('beta.via', { key: u.keyLabel ?? \`…\${u.keyHint}\` })}</span>\` : ''}</div></div>
+            <div class="actions"><button class="btn btn-ghost btn-sm" data-action="beta-remove" data-id="\${u.userId}" data-name="\${u.name}">\${t('beta.remove')}</button></div>
+          </li>\`)}</ul>\`
+        : emptyState({ iconName: 'users', title: t('beta.testersEmpty'), desc: t('beta.testersEmptyDesc') })}</div>
+    </section>\`;
+}
 
 async function loadAdmin() {
   adminState.loading = true;
@@ -4948,10 +5136,77 @@ async function loadAdmin() {
     adminState.loading = false;
   }
 }
+async function loadBeta() {
+  adminState.betaLoading = true;
+  try {
+    adminState.beta = await api('/api/admin/beta?product=passcord');
+    if (state.route === 'admin' && adminState.tab === 'beta') renderShell();
+  } catch (e) {
+    toastError(e);
+  } finally {
+    adminState.betaLoading = false;
+  }
+}
+
+async function generateKeys(event, form) {
+  event.preventDefault();
+  if (!form.checkValidity()) { $(':invalid', form)?.focus(); return toast(t('error.form'), { type: 'error' }); }
+  const data = new FormData(form);
+  const body = { product: 'passcord', count: Number(data.get('count')), maxUses: Number(data.get('maxUses')), expiresInDays: Number(data.get('expiresInDays')), label: String(data.get('label') ?? '') };
+  const { keys } = await busy(event.submitter ?? $('[type="submit"]', form), () => api('/api/admin/beta/keys', body)).catch((e) => { toastError(e); return {}; });
+  if (!keys) return;
+  const codes = keys.map((k) => k.code);
+  adminState.beta = null;
+  modal({
+    title: keys.length === 1 ? t('beta.created.one') : t('beta.created.other', { n: keys.length }),
+    desc: t('beta.createdDesc'),
+    iconName: 'party-popper',
+    tone: 'tone-ok',
+    wide: keys.length > 6,
+    body: html\`<ul class="beta-codes">\${keys.map((k, i) => html\`<li data-delay="\${i * 40}"><code>\${k.code}</code>
+      <button type="button" class="btn btn-ghost btn-icon btn-sm" data-copy="\${k.code}" aria-label="\${t('common.copy')}">\${icon('copy')}</button></li>\`)}</ul>\`,
+    actions: html\`<button type="button" class="btn btn-ghost" data-save>\${icon('download')}\${t('beta.saveTxt')}</button>
+      <button type="button" class="btn btn-glass" data-copy-all>\${icon('copy')}\${t('beta.copyAll')}</button>
+      <button type="submit" class="btn btn-primary">\${t('beta.done')}</button>\`,
+    onOpen(ctx) {
+      hydrate(ctx.dialog);
+      ctx.dialog.addEventListener('click', (e) => {
+        const one = e.target.closest('[data-copy]');
+        if (one) copyText(one.dataset.copy);
+        if (e.target.closest('[data-copy-all]')) copyText(codes.join('\\n'), t('beta.copiedAll'));
+        if (e.target.closest('[data-save]')) downloadFile(\`cles-beta-passcord-\${new Date().toISOString().slice(0, 10)}.txt\`, \`\${t('beta.txtHeader')}\\n\\n\${codes.join('\\n')}\\n\`, 'text/plain');
+      });
+    },
+  }).then(() => renderShell());
+  if (keys.length === 1) celebrate();
+  form.reset();
+}
 
 Object.assign(ACTIONS, {
   'admin-reload'() {
-    adminState.data = null;
+    if (adminState.tab === 'beta') adminState.beta = null;
+    else adminState.data = null;
+    renderShell();
+  },
+  'admin-tab'(input) {
+    adminState.tab = input.value;
+    renderShell();
+  },
+  async 'beta-revoke'(button) {
+    const ok = await confirmDialog({ title: t('beta.revokeTitle'), desc: t('beta.revokeDesc'), confirm: t('beta.revoke'), iconName: 'ban' });
+    if (!ok) return;
+    await api('/api/admin/beta/keys', { id: button.dataset.id }, 'DELETE');
+    toast(t('beta.revoked'), { type: 'info' });
+    adminState.beta = null;
+    renderShell();
+  },
+  async 'beta-remove'(button) {
+    const name = button.dataset.name;
+    const ok = await confirmDialog({ title: t('beta.removeTitle', { name }), desc: t('beta.removeDesc'), confirm: t('beta.remove'), iconName: 'user-round' });
+    if (!ok) return;
+    await api('/api/admin/beta/testers', { userId: button.dataset.id, product: 'passcord' }, 'DELETE');
+    toast(t('beta.removed'), { type: 'info' });
+    adminState.beta = null;
     renderShell();
   },
 });
@@ -6312,6 +6567,30 @@ details[open] > summary { margin-bottom: 12px; }
   .checklist li { padding: 12px; gap: 12px; }
 }
 .device-logo { width: 42px; height: 42px; flex: none; border-radius: 13px; box-shadow: 0 8px 20px -10px rgba(0, 0, 0, 0.5); }
+
+/* administration : onglets + bêta fermée */
+.admin-tabs { justify-self: start; margin: -4px 0 4px; }
+.beta-build { font-size: 22px; line-height: 1.2; }
+.beta-form { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 14px 16px; align-items: end; }
+.beta-form .beta-label { grid-column: 1 / 3; }
+.beta-form .beta-submit { display: flex; justify-content: flex-end; }
+.beta-codes { display: grid; gap: 8px; max-height: min(52vh, 460px); overflow: auto; padding: 2px; }
+.beta-codes li { display: flex; align-items: center; justify-content: space-between; gap: 10px; padding: 8px 8px 8px 14px; border-radius: 12px; background: var(--control); box-shadow: inset 0 0 0 1px var(--line); animation: code-in 0.5s var(--ease) both; }
+.beta-codes code { font: 600 15px/1.4 var(--font-mono); letter-spacing: 0.06em; user-select: all; }
+.modal.wide .beta-codes { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+@keyframes code-in { from { opacity: 0; transform: translateY(8px) scale(0.98); } }
+.table .actions-cell { text-align: right; white-space: nowrap; }
+.beta-redeem { display: flex; gap: 10px; align-items: flex-end; }
+.beta-redeem .field { flex: 1; }
+.beta-redeem .input { font-family: var(--font-mono); letter-spacing: 0.08em; text-transform: uppercase; }
+.beta-assets { display: grid; gap: 8px; }
+@media (max-width: 720px) {
+  .beta-form { grid-template-columns: 1fr 1fr; }
+  .beta-form .beta-label, .beta-form .beta-submit { grid-column: 1 / -1; }
+  .modal.wide .beta-codes { grid-template-columns: 1fr; }
+  .beta-redeem { flex-direction: column; align-items: stretch; }
+}
+@media (prefers-reduced-motion: reduce) { .beta-codes li { animation: none; } }
 
 /* 60-consent.css */
 /* ── Écran de consentement OAuth (/authorize) ─────────────────────────── */

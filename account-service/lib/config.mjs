@@ -1,3 +1,4 @@
+import { githubReleases } from './beta.mjs';
 import { generateKeyPairSync } from 'node:crypto';
 
 /**
@@ -62,4 +63,17 @@ export function makeSendMail({ localDev }) {
     };
   }
   return undefined;
+}
+
+/**
+ * Builds privés des bêtas : `PASSCORD_RELEASES_TOKEN` = jeton GitHub à grain
+ * fin, en lecture seule sur le contenu du dépôt Passcord (privé). Sans jeton,
+ * les clés d'accès fonctionnent mais le téléchargement direct est désactivé.
+ */
+export function readBetaReleases() {
+  const passcord = githubReleases({
+    token: process.env.PASSCORD_RELEASES_TOKEN,
+    repo: process.env.PASSCORD_RELEASES_REPO || 'LeVraiLunatix/passcord',
+  });
+  return passcord ? { passcord } : {};
 }

@@ -1,8 +1,11 @@
-import { AppWindow, AtSign, BadgeCheck, Ban, ExternalLink, IdCard, UserRound } from "lucide-react";
+import { AppWindow, AtSign, BadgeCheck, Ban, ExternalLink, IdCard, KeyRound, Smartphone, UserRound } from "lucide-react";
 import { motion } from "motion/react";
 import { GlassButton, GlassCard } from "../../components/glass";
 import { cordAsset, cordRequest, useCordAccount } from "../../lib/account";
+import { hasBeta, openBetaSheet } from "../../lib/beta";
+import type { CatalogApp } from "../../lib/catalog/types";
 import { cn } from "../../lib/cn";
+import { openIphoneInstall } from "../../lib/iphone";
 import { itemVariants } from "../../lib/motion";
 import { openExternal } from "../../lib/platform";
 import { toast } from "../../lib/toast";
@@ -53,6 +56,17 @@ export function Apps() {
           : <Empty icon={AppWindow} title="Aucune app connectée" desc="Sur Drivecord et les autres apps de la suite, choisis « Continuer avec Cord » : elles apparaîtront ici."
               action={<GlassButton size="sm" variant="primary" trailingIcon={<ExternalLink className="size-3" />} onClick={() => void openExternal("https://drivecord.app")}>Essayer Drivecord</GlassButton>} />}
       </Panel>
+
+      <Panel
+        title={<span className="flex items-center gap-2">Bêta fermée de Passcord{hasBeta(d.user, "passcord") && <Pill tone="ok"><BadgeCheck className="size-3" />{d.user.admin ? "Admin" : "Testeur"}</Pill>}</span>}
+        desc={hasBeta(d.user, "passcord")
+          ? "Tu as accès au dernier build : installe-le sur ton iPhone depuis ce PC, sans fichier à récupérer."
+          : "Tu as reçu une clé d’accès ? Utilise-la pour rejoindre les premiers testeurs."}
+        actions={hasBeta(d.user, "passcord")
+          // La fenêtre iPhone n'a besoin que de l'identifiant de l'app.
+          ? <GlassButton size="sm" variant="primary" icon={<Smartphone className="size-3.5" />} onClick={() => openIphoneInstall({ id: "passcord" } as CatalogApp)}>Installer sur iPhone</GlassButton>
+          : <GlassButton size="sm" variant="primary" icon={<KeyRound className="size-3.5" />} onClick={() => openBetaSheet("passcord")}>J’ai une clé</GlassButton>}
+      />
 
       <p className="px-1 pt-2 text-[11px] font-semibold tracking-[0.14em] text-fg-subtle uppercase">La suite Cord</p>
       <motion.div variants={itemVariants} className="grid grid-cols-[repeat(auto-fill,minmax(200px,1fr))] gap-3">

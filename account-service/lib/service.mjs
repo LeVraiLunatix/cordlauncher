@@ -8,6 +8,7 @@ import { describeDevice, deviceKey } from './ua.mjs';
 import { verifyRegistration, verifyAssertion } from './webauthn.mjs';
 import { renderMail } from './mail.mjs';
 import { SUITE, describeClient } from './catalog.mjs';
+import { BETA_PRODUCTS, generateBetaCode, normalizeBetaCode } from './beta.mjs';
 
 /**
  * Cœur du service Compte Cord — sans dépendance à un moteur de base précis.
@@ -45,7 +46,7 @@ const maskEmail = (email) => {
   return `${local.slice(0, 1)}${'•'.repeat(Math.max(2, Math.min(6, local.length - 1)))}@${domain}`;
 };
 
-export const SCHEMA_VERSION = 3;
+export const SCHEMA_VERSION = 4;
 
 export const SCHEMA = `
   CREATE TABLE IF NOT EXISTS users (id TEXT PRIMARY KEY, email TEXT UNIQUE NOT NULL, name TEXT NOT NULL, salt TEXT NOT NULL, password_hash TEXT NOT NULL, created_at BIGINT NOT NULL, email_verified_at BIGINT);
@@ -85,6 +86,10 @@ const MIGRATIONS = [
   'CREATE INDEX IF NOT EXISTS sessions_user_idx ON sessions (user_id)',
   'CREATE INDEX IF NOT EXISTS events_user_idx ON account_events (user_id, at)',
   'CREATE INDEX IF NOT EXISTS passkeys_user_idx ON passkeys (user_id)',
+  // v4 : bêtas fermées (clés d'accès hachées + testeurs).
+  'CREATE TABLE IF NOT EXISTS beta_keys (id TEXT PRIMARY KEY, product TEXT NOT NULL, code_hash TEXT UNIQUE NOT NULL, hint TEXT NOT NULL, label TEXT, max_uses INTEGER NOT NULL DEFAULT 1, uses INTEGER NOT NULL DEFAULT 0, expires_at BIGINT, created_by TEXT, created_at BIGINT NOT NULL, revoked_at BIGINT)',
+  'CREATE TABLE IF NOT EXISTS beta_access (user_id TEXT NOT NULL REFERENCES users(id), product TEXT NOT NULL, key_id TEXT, granted_at BIGINT NOT NULL, PRIMARY KEY (user_id, product))',
+  'CREATE INDEX IF NOT EXISTS beta_keys_product_idx ON beta_keys (product, created_at)',
 ];
 
 /** Applique le schéma. À appeler une fois au démarrage (idempotent). */
@@ -116,6 +121,8 @@ export function createService({
   oidcKey,
   admins = [],
   dataKey,
+  /** Builds privés par produit de bêta : `{ passcord: githubReleases(...) }` (voir beta.mjs). */
+  betaReleases = {},
   portal = PORTAL,
 }) {
   const origin = new URL(issuer);
@@ -140,6 +147,43 @@ export function createService({
 
   const one = async (text, params) => (await sql(text, params))[0];
   const isAdmin = (u) => Boolean(u.email_verified_at) && adminEmails.has(String(u.email).toLowerCase());
+  /** Produits de bêta ouverts à ce compte (tous pour l'administration). */
+  async function betaAccess(u) {
+    if (isAdmin(u)) return Object.keys(BETA_PRODUCTS);
+    const rows = await sql('SELECT product FROM beta_access WHERE user_id = $1 ORDER BY granted_at', [u.id]);
+    return rows.map((r) => r.product).filter((p) => Object.hasOwn(BETA_PRODUCTS, p));
+  }
+  const betaProduct = (value) => {
+    if (typeof value !== 'string' || !Object.hasOwn(BETA_PRODUCTS, value)) throw error(400, 'Bêta inconnue.');
+    return value;
+  };
+  const describeBetaKey = (k) => {
+    const t = now();
+    const status = k.revoked_at ? 'revoked' : k.expires_at && Number(k.expires_at) <= t ? 'expired' : Number(k.uses) >= Number(k.max_uses) ? 'used' : 'active';
+    return {
+      id: k.id,
+      product: k.product,
+      label: k.label ?? null,
+      hint: k.hint,
+      maxUses: Number(k.max_uses),
+      uses: Number(k.uses),
+      expiresAt: k.expires_at ? Number(k.expires_at) : null,
+      createdAt: Number(k.created_at),
+      revokedAt: k.revoked_at ? Number(k.revoked_at) : null,
+      status,
+    };
+  };
+  async function releaseInfo(product) {
+    const source = betaReleases[product];
+    if (!source) return null;
+    try {
+      const r = await source.latest();
+      return r && { build: r.build, tag: r.tag, publishedAt: r.publishedAt, assets: r.assets.map((a) => ({ name: a.name, size: a.size })) };
+    } catch (e) {
+      console.error('[cord-account] releases', e);
+      return null;
+    }
+  }
   const avatarUrl = (u) => (u.avatar ? `${issuer}/avatar/${u.id}?v=${hash(u.avatar).slice(0, 10)}` : null);
 
   let lastCleanup = 0;
@@ -463,16 +507,17 @@ export function createService({
   });
 
   async function dashboard(u) {
-    const [passcord, passkeys, sessions, consents, events, codes] = await Promise.all([
+    const [passcord, passkeys, sessions, consents, events, codes, beta] = await Promise.all([
       sql('SELECT * FROM passcord_keys WHERE user_id = $1 ORDER BY created_at', [u.id]),
       sql('SELECT * FROM passkeys WHERE user_id = $1 ORDER BY created_at', [u.id]),
       sql("SELECT * FROM sessions WHERE user_id = $1 AND purpose = 'account' AND expires > $2 ORDER BY last_seen_at DESC NULLS LAST", [u.id, now()]),
       sql('SELECT * FROM oauth_consents WHERE user_id = $1 ORDER BY last_used_at DESC', [u.id]),
       sql('SELECT * FROM account_events WHERE user_id = $1 ORDER BY at DESC LIMIT 40', [u.id]),
       one('SELECT COUNT(*) AS n FROM recovery_codes WHERE user_id = $1 AND used_at IS NULL', [u.id]),
+      betaAccess(u),
     ]);
     return {
-      user: profile(u),
+      user: { ...profile(u), beta },
       security: {
         mfa: Boolean(u.mfa_enabled_at),
         mfaSince: u.mfa_enabled_at ? Number(u.mfa_enabled_at) : null,
@@ -607,7 +652,7 @@ export function createService({
       if (method === 'GET' && path === '/api/me') {
         const { user } = await session(req);
         const keys = await sql('SELECT * FROM passcord_keys WHERE user_id = $1 ORDER BY created_at', [user.id]);
-        return json({ user: profile(user), keys: keys.map(describePasscord) });
+        return json({ user: { ...profile(user), beta: await betaAccess(user) }, keys: keys.map(describePasscord) });
       }
       if (method === 'GET' && path === '/api/account') {
         const { user } = await session(req);
@@ -667,6 +712,35 @@ export function createService({
         };
         res.setHeader('Content-Disposition', `attachment; filename="compte-cord-${new Date().toISOString().slice(0, 10)}.json"`);
         return json(body);
+      }
+      if (method === 'GET' && path.startsWith('/api/beta/')) {
+        const { user } = await session(req);
+        const product = betaProduct(path.slice('/api/beta/'.length));
+        const access = (await betaAccess(user)).includes(product);
+        return json({ product, name: BETA_PRODUCTS[product].name, access, downloads: Boolean(betaReleases[product]), release: access ? await releaseInfo(product) : null });
+      }
+      if (method === 'GET' && path === '/api/admin/beta') {
+        const { user } = await session(req);
+        if (!isAdmin(user)) throw error(403, 'Réservé à l’administration du Compte Cord.');
+        const product = betaProduct(url.searchParams.get('product') ?? 'passcord');
+        const [keys, testers] = await Promise.all([
+          sql('SELECT * FROM beta_keys WHERE product = $1 ORDER BY created_at DESC LIMIT 500', [product]),
+          sql(
+            `SELECT beta_access.user_id, beta_access.granted_at, users.name, users.email, beta_keys.label, beta_keys.hint
+               FROM beta_access JOIN users ON users.id = beta_access.user_id
+               LEFT JOIN beta_keys ON beta_keys.id = beta_access.key_id
+              WHERE beta_access.product = $1 ORDER BY beta_access.granted_at DESC`,
+            [product],
+          ),
+        ]);
+        return json({
+          product,
+          name: BETA_PRODUCTS[product].name,
+          downloads: Boolean(betaReleases[product]),
+          release: await releaseInfo(product),
+          keys: keys.map(describeBetaKey),
+          testers: testers.map((r) => ({ userId: r.user_id, name: r.name, email: r.email, grantedAt: Number(r.granted_at), keyLabel: r.label ?? null, keyHint: r.hint ?? null })),
+        });
       }
       if (method === 'GET' && path === '/api/admin/overview') {
         const { user } = await session(req);
@@ -900,7 +974,7 @@ export function createService({
       }
       if (path === '/api/me' && method === 'DELETE') {
         const { user } = await session(req);
-        for (const table of ['sessions', 'challenges', 'codes', 'passcord_keys', 'passkeys', 'oauth_consents', 'recovery_codes', 'account_events']) {
+        for (const table of ['sessions', 'challenges', 'codes', 'passcord_keys', 'passkeys', 'oauth_consents', 'recovery_codes', 'account_events', 'beta_access']) {
           await sql(`DELETE FROM ${table} WHERE user_id = $1`, [user.id]);
         }
         await sql('DELETE FROM users WHERE id = $1', [user.id]);
@@ -1099,6 +1173,99 @@ export function createService({
         await sql('UPDATE passkeys SET sign_count = $1, last_used_at = $2, backed_up = $3 WHERE id = $4', [result.signCount, now(), Number(result.backedUp), pk.id]);
         const u = await one('SELECT * FROM users WHERE id = $1', [pk.user_id]);
         return json(await completeLogin(req, res, u, 'passkey'));
+      }
+
+      // ── Bêtas fermées ──────────────────────────────────────────────────
+      if (path === '/api/beta/redeem' && method === 'POST') {
+        const { user } = await session(req);
+        if (await overLimit(`beta:${user.id}`, 10, 3600_000)) throw error(429, 'Trop d’essais. Réessaie dans une heure.');
+        if (!user.email_verified_at) throw error(403, 'Confirme d’abord ton adresse email.', 'email_unverified');
+        const parsed = normalizeBetaCode(data.code);
+        if (!parsed) throw error(400, 'Cette clé n’a pas le bon format (ex. PASS-7KQM-2XVD-9HRT).', 'beta_key_invalid');
+        const { name } = BETA_PRODUCTS[parsed.product];
+        if ((await betaAccess(user)).includes(parsed.product)) return json({ product: parsed.product, name, already: true });
+        const key = await one('SELECT * FROM beta_keys WHERE code_hash = $1 AND product = $2', [hash(parsed.body), parsed.product]);
+        if (!key) throw error(404, 'Clé inconnue. Vérifie-la caractère par caractère.', 'beta_key_invalid');
+        const state = describeBetaKey(key).status;
+        if (state === 'revoked') throw error(410, 'Cette clé a été désactivée.', 'beta_key_revoked');
+        if (state === 'expired') throw error(410, 'Cette clé a expiré.', 'beta_key_expired');
+        // Consommation atomique : deux utilisations simultanées ne dépassent pas le quota.
+        const taken = await one(
+          'UPDATE beta_keys SET uses = uses + 1 WHERE id = $1 AND revoked_at IS NULL AND uses < max_uses AND (expires_at IS NULL OR expires_at > $2) RETURNING id',
+          [key.id, now()],
+        );
+        if (!taken) throw error(410, 'Cette clé a déjà été utilisée.', 'beta_key_used');
+        await sql('INSERT INTO beta_access (user_id, product, key_id, granted_at) VALUES ($1, $2, $3, $4) ON CONFLICT (user_id, product) DO NOTHING', [user.id, parsed.product, key.id, now()]);
+        await record(user.id, 'beta_joined', req, name);
+        return json({ product: parsed.product, name, already: false }, 201);
+      }
+      if (path.startsWith('/api/beta/') && path.endsWith('/download') && method === 'POST') {
+        const { user } = await session(req);
+        const product = betaProduct(path.slice('/api/beta/'.length, -'/download'.length));
+        if (!(await betaAccess(user)).includes(product)) throw error(403, 'Cette bêta demande une clé d’accès.', 'beta_required');
+        const source = betaReleases[product];
+        if (!source) throw error(503, 'Les téléchargements de cette bêta ne sont pas encore configurés.', 'downloads_unconfigured');
+        if (await overLimit(`download:${user.id}`, 30, 3600_000)) throw error(429, 'Trop de téléchargements. Réessaie dans une heure.');
+        let release;
+        try {
+          release = await source.latest();
+        } catch (e) {
+          console.error('[cord-account] releases', e);
+          throw error(502, 'Le serveur des builds ne répond pas. Réessaie dans un instant.', 'downloads_unavailable');
+        }
+        if (!release) throw error(404, 'Aucun build publié pour le moment.', 'no_build');
+        const wanted = typeof data.asset === 'string' ? data.asset : null;
+        const asset = wanted
+          ? release.assets.find((a) => a.name === wanted)
+          : release.assets.find((a) => a.name === `${BETA_PRODUCTS[product].name}.ipa`) ?? release.assets[0];
+        if (!asset) throw error(404, 'Ce fichier n’existe pas dans le dernier build.');
+        let downloadUrl;
+        try {
+          downloadUrl = await source.downloadUrl(asset);
+        } catch (e) {
+          console.error('[cord-account] releases', e);
+          throw error(502, 'Le serveur des builds ne répond pas. Réessaie dans un instant.', 'downloads_unavailable');
+        }
+        await record(user.id, 'beta_download', req, `${asset.name} · ${release.build}`);
+        return json({ url: downloadUrl, name: asset.name, size: asset.size, build: release.build });
+      }
+      if (path === '/api/admin/beta/keys' && method === 'POST') {
+        const { user } = await session(req);
+        if (!isAdmin(user)) throw error(403, 'Réservé à l’administration du Compte Cord.');
+        const product = betaProduct(data.product ?? 'passcord');
+        const count = Number(data.count ?? 1);
+        const maxUses = Number(data.maxUses ?? 1);
+        const days = Number(data.expiresInDays ?? 0);
+        if (!Number.isInteger(count) || count < 1 || count > 50) throw error(400, 'Entre 1 et 50 clés à la fois.');
+        if (!Number.isInteger(maxUses) || maxUses < 1 || maxUses > 1000) throw error(400, 'Entre 1 et 1000 utilisations par clé.');
+        if (!Number.isInteger(days) || days < 0 || days > 365) throw error(400, 'Durée de validité entre 0 (illimitée) et 365 jours.');
+        const label = typeof data.label === 'string' && data.label.trim() ? data.label.trim().slice(0, 60) : null;
+        const t = now();
+        const created = [];
+        for (let i = 0; i < count; i++) {
+          const code = generateBetaCode(product);
+          const { body } = normalizeBetaCode(code);
+          const row = await one(
+            `INSERT INTO beta_keys (id, product, code_hash, hint, label, max_uses, expires_at, created_by, created_at)
+             VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9) RETURNING *`,
+            [randomUUID(), product, hash(body), body.slice(-4), label, maxUses, days ? t + days * DAY : null, user.id, t],
+          );
+          created.push({ ...describeBetaKey(row), code });
+        }
+        await record(user.id, 'beta_keys_created', req, `${count} × ${BETA_PRODUCTS[product].name}`);
+        return json({ keys: created }, 201);
+      }
+      if (path === '/api/admin/beta/keys' && method === 'DELETE') {
+        const { user } = await session(req);
+        if (!isAdmin(user)) throw error(403, 'Réservé à l’administration du Compte Cord.');
+        await sql('UPDATE beta_keys SET revoked_at = $1 WHERE id = $2 AND revoked_at IS NULL', [now(), field(data, 'id', 64)]);
+        return json({ ok: true });
+      }
+      if (path === '/api/admin/beta/testers' && method === 'DELETE') {
+        const { user } = await session(req);
+        if (!isAdmin(user)) throw error(403, 'Réservé à l’administration du Compte Cord.');
+        await sql('DELETE FROM beta_access WHERE user_id = $1 AND product = $2', [field(data, 'userId', 64), betaProduct(data.product ?? 'passcord')]);
+        return json({ ok: true });
       }
 
       // ── Passcord ───────────────────────────────────────────────────────

@@ -10,9 +10,9 @@ const KEYRING_SERVICE: &str = "CordLauncher Cord Account";
 fn allowed(method: &str, path: &str) -> bool {
     matches!(
         (method, path),
-        ("GET", "/api/me" | "/api/account" | "/api/sessions" | "/api/activity" | "/api/connected-apps" | "/api/suite" | "/api/admin/overview")
+        ("GET", "/api/me" | "/api/account" | "/api/sessions" | "/api/activity" | "/api/connected-apps" | "/api/suite" | "/api/admin/overview" | "/api/admin/beta" | "/api/beta/passcord")
             | ("PATCH", "/api/me" | "/api/passcord/keys" | "/api/passkeys")
-            | ("DELETE", "/api/me" | "/api/passcord/keys" | "/api/passkeys" | "/api/sessions" | "/api/connected-apps")
+            | ("DELETE", "/api/me" | "/api/passcord/keys" | "/api/passkeys" | "/api/sessions" | "/api/connected-apps" | "/api/admin/beta/keys" | "/api/admin/beta/testers")
             | (
                 "POST",
                 "/api/register"
@@ -28,6 +28,9 @@ fn allowed(method: &str, path: &str) -> bool {
                     | "/api/passcord/pair/status"
                     | "/api/passcord/login"
                     | "/api/passcord/poll"
+                    | "/api/beta/redeem"
+                    | "/api/beta/passcord/download"
+                    | "/api/admin/beta/keys"
             )
     )
 }

@@ -1,6 +1,6 @@
 import { createService, migrate } from '../lib/service.mjs';
 import { neonSql } from '../lib/db-neon.mjs';
-import { readClients, readOidcKey, readAdmins, makeSendMail } from '../lib/config.mjs';
+import { readClients, readOidcKey, readAdmins, makeSendMail, readBetaReleases } from '../lib/config.mjs';
 
 /**
  * Point d'entrée serverless (Vercel). Tout le trafic de compte.cordsuite.app
@@ -26,6 +26,7 @@ function build() {
       admins: readAdmins(),
       dataKey: process.env.CORD_DATA_KEY,
       oidcKey: readOidcKey(),
+      betaReleases: readBetaReleases(),
     });
   })();
 }

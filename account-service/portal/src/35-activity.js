@@ -16,6 +16,7 @@ messages({
     'ev.app_authorized': 'App autorisée', 'ev.app_revoked': 'Accès d’une app révoqué',
     'ev.session_revoked': 'Session fermée à distance', 'ev.sessions_revoked': 'Autres sessions fermées',
     'ev.profile_updated': 'Profil mis à jour',
+    'ev.beta_joined': 'Bêta rejointe', 'ev.beta_download': 'Build de bêta téléchargé', 'ev.beta_keys_created': 'Clés de bêta générées',
     'via.password': 'mot de passe', 'via.passkey': 'passkey', 'via.passcord': 'Passcord', 'via.reset': 'lien de réinitialisation', 'via.mfa': 'code 2FA incorrect',
     'via.name': 'nom', 'via.avatar': 'photo',
   },
@@ -34,6 +35,7 @@ messages({
     'ev.app_authorized': 'App authorized', 'ev.app_revoked': 'App access revoked',
     'ev.session_revoked': 'Session signed out remotely', 'ev.sessions_revoked': 'Other sessions signed out',
     'ev.profile_updated': 'Profile updated',
+    'ev.beta_joined': 'Joined a beta', 'ev.beta_download': 'Beta build downloaded', 'ev.beta_keys_created': 'Beta keys generated',
     'via.password': 'password', 'via.passkey': 'passkey', 'via.passcord': 'Passcord', 'via.reset': 'reset link', 'via.mfa': 'wrong 2FA code',
     'via.name': 'name', 'via.avatar': 'photo',
   },
@@ -49,11 +51,12 @@ const EVENT_STYLE = {
   passcord_paired: ['smartphone', 'tone-ok'], passcord_revoked: ['trash-2', 'tone-muted'],
   app_authorized: ['app-window', ''], app_revoked: ['ban', 'tone-muted'],
   session_revoked: ['log-out', 'tone-muted'], sessions_revoked: ['log-out', 'tone-muted'], profile_updated: ['pencil', 'tone-muted'],
+  beta_joined: ['key-round', 'tone-ok'], beta_download: ['download', 'tone-info'], beta_keys_created: ['key', 'tone-muted'],
 };
 const EVENT_GROUPS = {
   logins: ['register', 'login', 'login_failed', 'session_revoked', 'sessions_revoked'],
   security: ['password_changed', 'password_reset', 'password_reset_requested', 'mfa_enabled', 'mfa_disabled', 'recovery_used', 'recovery_regenerated', 'passkey_added', 'passkey_removed', 'passcord_paired', 'passcord_revoked', 'email_changed', 'email_verified'],
-  apps: ['app_authorized', 'app_revoked'],
+  apps: ['app_authorized', 'app_revoked', 'beta_joined', 'beta_download', 'beta_keys_created'],
 };
 
 function eventDetail(e) {

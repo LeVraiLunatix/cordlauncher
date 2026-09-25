@@ -1,4 +1,5 @@
 import test from 'node:test';
+import { githubReleases, normalizeBetaCode, generateBetaCode } from './lib/beta.mjs';
 import assert from 'node:assert/strict';
 import http from 'node:http';
 import { createHash, generateKeyPairSync, randomBytes, sign } from 'node:crypto';
@@ -23,7 +24,7 @@ const sha256 = (data) => createHash('sha256').update(data).digest();
 const UA_MAC = 'Mozilla/5.0 (Macintosh; Intel Mac OS X 14_5) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.5 Safari/605.1.15';
 const UA_PHONE = 'Mozilla/5.0 (iPhone; CPU iPhone OS 18_0 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/18.0 Mobile/15E148 Safari/604.1';
 
-async function setup(t, { admins = [] } = {}) {
+async function setup(t, { admins = [], betaReleases } = {}) {
   const sql = await pgliteSql(undefined);
   await migrate(sql);
   await migrate(sql); // idempotente
@@ -33,6 +34,7 @@ async function setup(t, { admins = [] } = {}) {
     issuer,
     oidcKey,
     admins,
+    betaReleases,
     sendMail: async (m) => {
       mails.push(m);
     },
@@ -451,4 +453,144 @@ test('adding a factor to an old session requires the password again (stolen-cook
   assert.equal((await request('/api/security/totp', { token, body: { action: 'setup', password: credentials.password } })).status, 200);
   assert.equal((await request('/api/passkeys/register/options', { token, body: {} })).data.reason, 'reauth_required');
   assert.equal((await request('/api/passkeys/register/options', { token, body: { password: credentials.password } })).status, 200);
+});
+
+// ── Bêtas fermées ─────────────────────────────────────────────────────────
+async function tester(ctx, email, { verify = true } = {}) {
+  const r = await ctx.request('/api/register', { body: { name: 'Testeur', email, password: 'Un mot de passe testeur' } });
+  assert.equal(r.status, 201);
+  if (verify) {
+    await ctx.request('/api/email/send', { token: r.data.token, body: {} });
+    const token = new URL(ctx.lastMail('verify').url).searchParams.get('verify');
+    assert.equal((await ctx.request('/api/email/verify', { body: { token } })).status, 200);
+  }
+  return r.data.token;
+}
+
+test('beta keys: well-formed, unambiguous and tolerant to how they are typed', () => {
+  const code = generateBetaCode('passcord');
+  assert.match(code, /^PASS-[A-HJKMNP-Z2-9]{4}-[A-HJKMNP-Z2-9]{4}-[A-HJKMNP-Z2-9]{4}$/);
+  const parsed = normalizeBetaCode(code);
+  assert.equal(parsed.product, 'passcord');
+  assert.deepEqual(normalizeBetaCode(` ${code.toLowerCase().replaceAll('-', ' ')} `), parsed);
+  assert.equal(normalizeBetaCode('PASS-0000-1111-OOOO'), null, 'caractères hors alphabet refusés');
+  assert.equal(normalizeBetaCode('NOPE-AAAA-BBBB-CCCC'), null);
+  assert.notEqual(generateBetaCode('passcord'), generateBetaCode('passcord'));
+});
+
+test('beta keys: only admins generate them, they are shown once and stored hashed', async (t) => {
+  const ctx = await setup(t, { admins: ['luna@example.test'] });
+  const { request, token, sql } = ctx;
+  const created = await request('/api/admin/beta/keys', { token, body: { product: 'passcord', count: 3, maxUses: 2, expiresInDays: 30, label: 'Discord' } });
+  assert.equal(created.status, 201);
+  assert.equal(created.data.keys.length, 3);
+  const [key] = created.data.keys;
+  assert.equal(key.status, 'active');
+  assert.equal(key.maxUses, 2);
+  assert.equal(key.label, 'Discord');
+  assert.ok(key.expiresAt > Date.now());
+  assert.equal(key.hint, key.code.replaceAll('-', '').slice(-4));
+  const rows = await sql('SELECT code_hash FROM beta_keys', []);
+  assert.ok(rows.every((r) => !created.data.keys.some((k) => r.code_hash.includes(k.code.replaceAll('-', '').slice(4)))), 'jamais en clair');
+  const listed = await request('/api/admin/beta?product=passcord', { token });
+  assert.equal(listed.data.keys.length, 3);
+  assert.ok(listed.data.keys.every((k) => k.code === undefined), 'la liste ne remontre pas les clés');
+  assert.equal((await request('/api/admin/beta/keys', { token, body: { count: 51 } })).status, 400);
+  assert.equal((await request('/api/admin/beta/keys', { token, body: { product: 'inconnu' } })).status, 400);
+
+  const outsider = await tester(ctx, 'outsider@example.test');
+  assert.equal((await request('/api/admin/beta/keys', { token: outsider, body: { count: 1 } })).status, 403);
+  assert.equal((await request('/api/admin/beta', { token: outsider })).status, 403);
+});
+
+test('beta keys: redeeming grants access once per quota, revocation and expiry are enforced', async (t) => {
+  const ctx = await setup(t, { admins: ['luna@example.test'] });
+  const { request, token: admin, sql } = ctx;
+  const [single, revoked, expired] = (await request('/api/admin/beta/keys', { token: admin, body: { count: 3, maxUses: 1 } })).data.keys;
+
+  const unverified = await tester(ctx, 'pending@example.test', { verify: false });
+  assert.equal((await request('/api/beta/redeem', { token: unverified, body: { code: single.code } })).data.reason, 'email_unverified');
+
+  const alice = await tester(ctx, 'alice@example.test');
+  assert.deepEqual((await request('/api/me', { token: alice })).data.user.beta, []);
+  assert.equal((await request('/api/beta/passcord', { token: alice })).data.access, false);
+  assert.equal((await request('/api/beta/redeem', { token: alice, body: { code: 'PASS-AAAA-BBBB-CCCC' } })).data.reason, 'beta_key_invalid');
+  assert.equal((await request('/api/beta/redeem', { token: alice, body: { code: 'bonjour' } })).status, 400);
+  const redeemed = await request('/api/beta/redeem', { token: alice, body: { code: single.code.toLowerCase() } });
+  assert.equal(redeemed.status, 201);
+  assert.equal(redeemed.data.name, 'Passcord');
+  assert.deepEqual((await request('/api/me', { token: alice })).data.user.beta, ['passcord']);
+  assert.deepEqual((await request('/api/account', { token: alice })).data.user.beta, ['passcord']);
+  assert.equal((await request('/api/beta/redeem', { token: alice, body: { code: single.code } })).data.already, true, 'déjà testeur : la clé n\'est pas re-consommée');
+
+  const bob = await tester(ctx, 'bob@example.test');
+  assert.equal((await request('/api/beta/redeem', { token: bob, body: { code: single.code } })).data.reason, 'beta_key_used');
+  await request('/api/admin/beta/keys', { token: admin, method: 'DELETE', body: { id: revoked.id } });
+  assert.equal((await request('/api/beta/redeem', { token: bob, body: { code: revoked.code } })).data.reason, 'beta_key_revoked');
+  await sql('UPDATE beta_keys SET expires_at = $1 WHERE id = $2', [Date.now() - 1000, expired.id]);
+  assert.equal((await request('/api/beta/redeem', { token: bob, body: { code: expired.code } })).data.reason, 'beta_key_expired');
+
+  const overview = await request('/api/admin/beta', { token: admin });
+  assert.deepEqual(overview.data.keys.map((k) => k.status).sort(), ['expired', 'revoked', 'used']);
+  assert.equal(overview.data.testers.length, 1);
+  assert.equal(overview.data.testers[0].email, 'alice@example.test');
+  assert.equal(overview.data.testers[0].keyHint, single.hint);
+  assert.deepEqual((await request('/api/me', { token: admin })).data.user.beta, ['passcord'], 'les admins ont toutes les bêtas');
+
+  await request('/api/admin/beta/testers', { token: admin, method: 'DELETE', body: { userId: overview.data.testers[0].userId, product: 'passcord' } });
+  assert.deepEqual((await request('/api/me', { token: alice })).data.user.beta, []);
+
+  // La suppression du compte efface aussi l'accès.
+  const carol = await tester(ctx, 'carol@example.test');
+  const [key] = (await request('/api/admin/beta/keys', { token: admin, body: { count: 1 } })).data.keys;
+  await request('/api/beta/redeem', { token: carol, body: { code: key.code } });
+  const me = (await request('/api/me', { token: carol })).data.user;
+  await request('/api/me', { token: carol, method: 'DELETE', body: {} });
+  assert.equal(Number((await sql('SELECT COUNT(*) AS n FROM beta_access WHERE user_id = $1', [me.id]))[0].n), 0);
+});
+
+test('beta downloads: private builds are handed out only to testers, as short-lived links', async (t) => {
+  const calls = [];
+  const fakeFetch = async (url, init) => {
+    calls.push([url, init.headers.Accept]);
+    if (url.includes('/releases?')) {
+      return new Response(JSON.stringify([
+        { draft: true, name: 'Brouillon', tag_name: 'build-11', assets: [{ id: 9, name: 'Passcord.ipa', size: 1, url: 'https://api.github.com/assets/9' }] },
+        { draft: false, name: 'Build 10', tag_name: 'build-10', published_at: '2026-09-25T16:05:10Z', assets: [
+          { id: 1, name: 'Passcord-autofill.ipa', size: 2255032, url: 'https://api.github.com/assets/1' },
+          { id: 2, name: 'Passcord.ipa', size: 1832796, url: 'https://api.github.com/assets/2' },
+          { id: 3, name: 'notes.txt', size: 10, url: 'https://api.github.com/assets/3' },
+        ] },
+      ]), { status: 200 });
+    }
+    return new Response(null, { status: 302, headers: { Location: `https://objects.example/signed/${url.split('/').pop()}?sig=abc` } });
+  };
+  const releases = githubReleases({ token: 'jeton-de-test', repo: 'owner/passcord', fetchImpl: fakeFetch });
+  const ctx = await setup(t, { admins: ['luna@example.test'], betaReleases: { passcord: releases } });
+  const { request, token: admin } = ctx;
+  const user = await tester(ctx, 'dave@example.test');
+
+  const refused = await request('/api/beta/passcord/download', { token: user, body: {} });
+  assert.equal(refused.data.reason, 'beta_required');
+  assert.equal(calls.length, 0, 'GitHub n\'est pas contacté sans accès');
+
+  const [key] = (await request('/api/admin/beta/keys', { token: admin, body: { count: 1 } })).data.keys;
+  await request('/api/beta/redeem', { token: user, body: { code: key.code } });
+  const info = await request('/api/beta/passcord', { token: user });
+  assert.equal(info.data.access, true);
+  assert.equal(info.data.release.build, 'Build 10');
+  assert.deepEqual(info.data.release.assets.map((a) => a.name), ['Passcord-autofill.ipa', 'Passcord.ipa']);
+
+  const standard = await request('/api/beta/passcord/download', { token: user, body: {} });
+  assert.equal(standard.status, 200);
+  assert.equal(standard.data.name, 'Passcord.ipa', 'Passcord.ipa par défaut');
+  assert.equal(standard.data.url, 'https://objects.example/signed/2?sig=abc');
+  assert.ok(calls.every(([, accept]) => accept), 'en-têtes GitHub posés');
+  assert.equal(JSON.stringify(standard.data).includes('jeton-de-test'), false, 'le jeton ne sort jamais');
+  const autofill = await request('/api/beta/passcord/download', { token: user, body: { asset: 'Passcord-autofill.ipa' } });
+  assert.equal(autofill.data.url, 'https://objects.example/signed/1?sig=abc');
+  assert.equal((await request('/api/beta/passcord/download', { token: user, body: { asset: 'notes.txt' } })).status, 404);
+
+  const unconfigured = await setup(t, { admins: ['luna@example.test'] });
+  assert.equal((await unconfigured.request('/api/beta/passcord/download', { token: unconfigured.token, body: {} })).data.reason, 'downloads_unconfigured');
 });

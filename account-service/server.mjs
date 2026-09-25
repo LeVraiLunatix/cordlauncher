@@ -4,7 +4,7 @@ import { dirname, resolve } from 'node:path';
 import { mkdirSync, existsSync, readFileSync, writeFileSync } from 'node:fs';
 import { createService, migrate } from './lib/service.mjs';
 import { pgliteSql } from './lib/db-pglite.mjs';
-import { readClients, readOidcKey, readAdmins, makeSendMail } from './lib/config.mjs';
+import { readClients, readOidcKey, readAdmins, makeSendMail, readBetaReleases } from './lib/config.mjs';
 
 /**
  * Entrée de développement local : Postgres embarqué (PGlite) + serveur HTTP,
@@ -40,6 +40,7 @@ export async function startFromEnv() {
     clients: readClients(),
     sendMail: makeSendMail({ localDev: localhost }),
     admins: readAdmins(),
+    betaReleases: readBetaReleases(),
     dataKey: process.env.CORD_DATA_KEY,
     oidcKey,
   });
