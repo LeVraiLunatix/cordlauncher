@@ -24,7 +24,7 @@ const sha256 = (data) => createHash('sha256').update(data).digest();
 const UA_MAC = 'Mozilla/5.0 (Macintosh; Intel Mac OS X 14_5) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.5 Safari/605.1.15';
 const UA_PHONE = 'Mozilla/5.0 (iPhone; CPU iPhone OS 18_0 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/18.0 Mobile/15E148 Safari/604.1';
 
-async function setup(t, { admins = [], betaReleases } = {}) {
+async function setup(t, { admins = [], betaReleases, githubFetch } = {}) {
   const sql = await pgliteSql(undefined);
   await migrate(sql);
   await migrate(sql); // idempotente
@@ -35,6 +35,7 @@ async function setup(t, { admins = [], betaReleases } = {}) {
     oidcKey,
     admins,
     betaReleases,
+    githubFetch,
     sendMail: async (m) => {
       mails.push(m);
     },
@@ -593,4 +594,40 @@ test('beta downloads: private builds are handed out only to testers, as short-li
 
   const unconfigured = await setup(t, { admins: ['luna@example.test'] });
   assert.equal((await unconfigured.request('/api/beta/passcord/download', { token: unconfigured.token, body: {} })).data.reason, 'downloads_unconfigured');
+});
+
+test('beta downloads can be configured from the admin: the GitHub token is checked, then stored encrypted', async (t) => {
+  const seen = [];
+  const githubFetch = async (url, init) => {
+    seen.push(init.headers.Authorization);
+    if (init.headers.Authorization !== 'Bearer github_pat_bon_jeton_de_test_123456') return new Response('{}', { status: 404 });
+    if (url.includes('/releases?')) {
+      return new Response(JSON.stringify([{ draft: false, name: 'Build 10', tag_name: 'build-10', published_at: '2026-09-25T16:05:10Z', assets: [{ id: 2, name: 'Passcord.ipa', size: 1832796, url: 'https://api.github.com/assets/2' }] }]), { status: 200 });
+    }
+    return new Response(null, { status: 302, headers: { Location: 'https://objects.example/signed/2?sig=abc' } });
+  };
+  const ctx = await setup(t, { admins: ['luna@example.test'], githubFetch });
+  const { request, token: admin, sql } = ctx;
+  assert.equal((await request('/api/admin/beta', { token: admin })).data.downloads, false);
+
+  const tester = await ctx.request('/api/register', { body: { name: 'T', email: 't@example.test', password: 'Un mot de passe testeur' } });
+  assert.equal((await request('/api/admin/beta/token', { token: tester.data.token, body: { token: 'github_pat_bon_jeton_de_test_123456' } })).status, 403);
+  assert.equal((await request('/api/admin/beta/token', { token: admin, body: { token: 'pas-un-jeton' } })).data.reason, 'token_invalid');
+  assert.equal((await request('/api/admin/beta/token', { token: admin, body: { token: 'github_pat_mauvais_jeton_de_test_1234' } })).data.reason, 'token_rejected');
+
+  const saved = await request('/api/admin/beta/token', { token: admin, body: { token: 'github_pat_bon_jeton_de_test_123456' } });
+  assert.equal(saved.status, 200);
+  assert.equal(saved.data.release.build, 'Build 10');
+  const [row] = await sql("SELECT value FROM service_settings WHERE key = 'releases_token:passcord'", []);
+  assert.ok(row.value.startsWith('v1.') && !row.value.includes('bon_jeton'), 'chiffré au repos');
+
+  const overview = await request('/api/admin/beta', { token: admin });
+  assert.equal(overview.data.downloads, true);
+  assert.equal(overview.data.downloadsSource, 'admin');
+  assert.equal(JSON.stringify(overview.data).includes('bon_jeton'), false, 'jamais renvoyé');
+  const link = await request('/api/beta/passcord/download', { token: admin, body: {} });
+  assert.equal(link.data.url, 'https://objects.example/signed/2?sig=abc');
+
+  await request('/api/admin/beta/token', { token: admin, method: 'DELETE', body: { product: 'passcord' } });
+  assert.equal((await request('/api/admin/beta', { token: admin })).data.downloads, false);
 });

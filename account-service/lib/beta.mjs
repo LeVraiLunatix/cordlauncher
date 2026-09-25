@@ -11,7 +11,7 @@ import { randomBytes } from 'node:crypto';
  */
 
 export const BETA_PRODUCTS = {
-  passcord: { name: 'Passcord', prefix: 'PASS' },
+  passcord: { name: 'Passcord', prefix: 'PASS', repo: 'LeVraiLunatix/passcord' },
 };
 
 const ALPHABET = 'ABCDEFGHJKMNPQRSTUVWXYZ23456789';

@@ -77,12 +77,16 @@ export function Apps() {
             <GlassCard key={app.slug} interactive={Boolean(live)} tint={app.accent} className={cn("rounded-[22px] p-4", live && "cursor-pointer")}
               onClick={live ? () => void openExternal(app.url!) : undefined}>
               <div className="relative z-[3] grid gap-3">
-                <div className="flex items-center justify-between gap-2">
-                  <img src={cordAsset(app.logo) ?? undefined} alt="" className={cn("size-11 rounded-[12px]", app.status === "soon" && "opacity-75 saturate-50")} />
-                  <Pill tone={tone}>{label}</Pill>
+                <div className="flex min-w-0 items-center gap-3">
+                  <img src={cordAsset(app.logo) ?? undefined} alt="" className={cn("size-11 shrink-0 rounded-[12px]", app.status === "soon" && "opacity-75 saturate-50")} />
+                  <div className="min-w-0">
+                    <p className="truncate font-display font-semibold">{app.name}</p>
+                    <p className="truncate text-[12.5px] text-fg-subtle">{app.tagline}</p>
+                  </div>
                 </div>
-                <div><p className="font-display font-semibold">{app.name}</p><p className="text-[12.5px] text-fg-subtle">{app.tagline}</p></div>
                 <p className="text-[13px] leading-snug text-fg-muted">{app.description}</p>
+                {/* Sous la description : à côté du logo, « En développement » débordait des tuiles étroites. */}
+                <div><Pill tone={tone}>{label}</Pill></div>
               </div>
             </GlassCard>
           );

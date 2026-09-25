@@ -8,7 +8,7 @@ import { describeDevice, deviceKey } from './ua.mjs';
 import { verifyRegistration, verifyAssertion } from './webauthn.mjs';
 import { renderMail } from './mail.mjs';
 import { SUITE, describeClient } from './catalog.mjs';
-import { BETA_PRODUCTS, generateBetaCode, normalizeBetaCode } from './beta.mjs';
+import { BETA_PRODUCTS, generateBetaCode, githubReleases, normalizeBetaCode } from './beta.mjs';
 
 /**
  * Cœur du service Compte Cord — sans dépendance à un moteur de base précis.
@@ -46,7 +46,7 @@ const maskEmail = (email) => {
   return `${local.slice(0, 1)}${'•'.repeat(Math.max(2, Math.min(6, local.length - 1)))}@${domain}`;
 };
 
-export const SCHEMA_VERSION = 4;
+export const SCHEMA_VERSION = 5;
 
 export const SCHEMA = `
   CREATE TABLE IF NOT EXISTS users (id TEXT PRIMARY KEY, email TEXT UNIQUE NOT NULL, name TEXT NOT NULL, salt TEXT NOT NULL, password_hash TEXT NOT NULL, created_at BIGINT NOT NULL, email_verified_at BIGINT);
@@ -90,6 +90,8 @@ const MIGRATIONS = [
   'CREATE TABLE IF NOT EXISTS beta_keys (id TEXT PRIMARY KEY, product TEXT NOT NULL, code_hash TEXT UNIQUE NOT NULL, hint TEXT NOT NULL, label TEXT, max_uses INTEGER NOT NULL DEFAULT 1, uses INTEGER NOT NULL DEFAULT 0, expires_at BIGINT, created_by TEXT, created_at BIGINT NOT NULL, revoked_at BIGINT)',
   'CREATE TABLE IF NOT EXISTS beta_access (user_id TEXT NOT NULL REFERENCES users(id), product TEXT NOT NULL, key_id TEXT, granted_at BIGINT NOT NULL, PRIMARY KEY (user_id, product))',
   'CREATE INDEX IF NOT EXISTS beta_keys_product_idx ON beta_keys (product, created_at)',
+  // v5 : réglages du service posés depuis l'administration (secrets chiffrés).
+  'CREATE TABLE IF NOT EXISTS service_settings (key TEXT PRIMARY KEY, value TEXT NOT NULL, updated_at BIGINT NOT NULL, updated_by TEXT)',
 ];
 
 /** Applique le schéma. À appeler une fois au démarrage (idempotent). */
@@ -123,6 +125,8 @@ export function createService({
   dataKey,
   /** Builds privés par produit de bêta : `{ passcord: githubReleases(...) }` (voir beta.mjs). */
   betaReleases = {},
+  /** `fetch` utilisé pour GitHub (remplaçable dans les tests). */
+  githubFetch = fetch,
   portal = PORTAL,
 }) {
   const origin = new URL(issuer);
@@ -173,8 +177,30 @@ export function createService({
       status,
     };
   };
+  // Jeton GitHub des builds privés : variable d'environnement, sinon collé
+  // depuis l'administration (chiffré au repos avec le coffre du service).
+  const releaseCache = new Map();
+  async function storedReleaseToken(product) {
+    const row = await one('SELECT value FROM service_settings WHERE key = $1', [`releases_token:${product}`]);
+    return row ? vault.open(row.value) : null;
+  }
+  async function releasesFor(product) {
+    if (betaReleases[product]) return betaReleases[product];
+    const repo = BETA_PRODUCTS[product]?.repo;
+    const token = repo ? await storedReleaseToken(product) : null;
+    if (!token) return null;
+    const cached = releaseCache.get(product);
+    if (cached?.token === token) return cached.source;
+    const source = githubReleases({ token, repo, fetchImpl: githubFetch });
+    releaseCache.set(product, { token, source });
+    return source;
+  }
+  async function downloadsSource(product) {
+    if (betaReleases[product]) return 'env';
+    return (await storedReleaseToken(product)) ? 'admin' : null;
+  }
   async function releaseInfo(product) {
-    const source = betaReleases[product];
+    const source = await releasesFor(product);
     if (!source) return null;
     try {
       const r = await source.latest();
@@ -717,7 +743,7 @@ export function createService({
         const { user } = await session(req);
         const product = betaProduct(path.slice('/api/beta/'.length));
         const access = (await betaAccess(user)).includes(product);
-        return json({ product, name: BETA_PRODUCTS[product].name, access, downloads: Boolean(betaReleases[product]), release: access ? await releaseInfo(product) : null });
+        return json({ product, name: BETA_PRODUCTS[product].name, access, downloads: Boolean(await releasesFor(product)), release: access ? await releaseInfo(product) : null });
       }
       if (method === 'GET' && path === '/api/admin/beta') {
         const { user } = await session(req);
@@ -736,7 +762,9 @@ export function createService({
         return json({
           product,
           name: BETA_PRODUCTS[product].name,
-          downloads: Boolean(betaReleases[product]),
+          downloads: Boolean(await releasesFor(product)),
+          downloadsSource: await downloadsSource(product),
+          repo: BETA_PRODUCTS[product].repo,
           release: await releaseInfo(product),
           keys: keys.map(describeBetaKey),
           testers: testers.map((r) => ({ userId: r.user_id, name: r.name, email: r.email, grantedAt: Number(r.granted_at), keyLabel: r.label ?? null, keyHint: r.hint ?? null })),
@@ -1203,7 +1231,7 @@ export function createService({
         const { user } = await session(req);
         const product = betaProduct(path.slice('/api/beta/'.length, -'/download'.length));
         if (!(await betaAccess(user)).includes(product)) throw error(403, 'Cette bêta demande une clé d’accès.', 'beta_required');
-        const source = betaReleases[product];
+        const source = await releasesFor(product);
         if (!source) throw error(503, 'Les téléchargements de cette bêta ne sont pas encore configurés.', 'downloads_unconfigured');
         if (await overLimit(`download:${user.id}`, 30, 3600_000)) throw error(429, 'Trop de téléchargements. Réessaie dans une heure.');
         let release;
@@ -1259,6 +1287,37 @@ export function createService({
         const { user } = await session(req);
         if (!isAdmin(user)) throw error(403, 'Réservé à l’administration du Compte Cord.');
         await sql('UPDATE beta_keys SET revoked_at = $1 WHERE id = $2 AND revoked_at IS NULL', [now(), field(data, 'id', 64)]);
+        return json({ ok: true });
+      }
+      if (path === '/api/admin/beta/token' && method === 'POST') {
+        const { user } = await session(req);
+        if (!isAdmin(user)) throw error(403, 'Réservé à l’administration du Compte Cord.');
+        const product = betaProduct(data.product ?? 'passcord');
+        if (betaReleases[product]) throw error(409, 'Le jeton est déjà fourni par une variable d’environnement du serveur.', 'token_from_env');
+        await requireReauth(user, data);
+        const token = typeof data.token === 'string' ? data.token.trim() : '';
+        if (!/^(github_pat_|ghp_)[A-Za-z0-9_]{20,255}$/.test(token)) throw error(400, 'Ce n’est pas un jeton GitHub (il commence par github_pat_).', 'token_invalid');
+        let release;
+        try {
+          release = await githubReleases({ token, repo: BETA_PRODUCTS[product].repo, fetchImpl: githubFetch }).latest();
+        } catch {
+          throw error(400, `GitHub refuse ce jeton pour ${BETA_PRODUCTS[product].repo} : vérifie qu’il a accès à ce dépôt, avec la permission Contents en lecture.`, 'token_rejected');
+        }
+        await sql(
+          `INSERT INTO service_settings (key, value, updated_at, updated_by) VALUES ($1, $2, $3, $4)
+           ON CONFLICT (key) DO UPDATE SET value = $2, updated_at = $3, updated_by = $4`,
+          [`releases_token:${product}`, vault.seal(token), now(), user.id],
+        );
+        releaseCache.delete(product);
+        await record(user.id, 'beta_downloads_configured', req, BETA_PRODUCTS[product].name);
+        return json({ ok: true, release: release && { build: release.build, tag: release.tag, publishedAt: release.publishedAt, assets: release.assets.map((a) => ({ name: a.name, size: a.size })) } });
+      }
+      if (path === '/api/admin/beta/token' && method === 'DELETE') {
+        const { user } = await session(req);
+        if (!isAdmin(user)) throw error(403, 'Réservé à l’administration du Compte Cord.');
+        const product = betaProduct(data.product ?? 'passcord');
+        await sql('DELETE FROM service_settings WHERE key = $1', [`releases_token:${product}`]);
+        releaseCache.delete(product);
         return json({ ok: true });
       }
       if (path === '/api/admin/beta/testers' && method === 'DELETE') {

@@ -26,6 +26,14 @@ messages({
     'beta.testersTitle': 'Testeurs', 'beta.testersEmpty': 'Aucun testeur', 'beta.testersEmptyDesc': 'Ils apparaîtront ici dès qu’ils auront utilisé une clé.',
     'beta.via': 'via {key}', 'beta.remove': 'Retirer', 'beta.removeTitle': 'Retirer {name} de la bêta ?', 'beta.removeDesc': 'Son compte Cord reste intact, mais il ne pourra plus télécharger Passcord sans une nouvelle clé.', 'beta.removed': 'Testeur retiré.',
     'beta.txtHeader': 'Clés d’accès à la bêta fermée de Passcord — à utiliser sur https://compte.cordsuite.app/#apps',
+    'beta.direct': 'Installation directe', 'beta.directOn': 'Active', 'beta.directOff': 'À configurer',
+    'beta.directOnDesc': 'Les testeurs téléchargent le dernier build de {repo}, et CordLauncher l’installe sans fichier à récupérer.',
+    'beta.directOffDesc': 'Pour que les testeurs installent Passcord en un clic, le Compte Cord doit pouvoir lire tes releases privées sur GitHub.',
+    'beta.directEnv': 'Jeton fourni par la variable PASSCORD_RELEASES_TOKEN du serveur.', 'beta.directAdmin': 'Jeton GitHub enregistré chiffré dans le Compte Cord — il n’est jamais réaffiché.',
+    'beta.step1': 'Crée un jeton sur GitHub : dans « Repository access », choisis « Only select repositories » → passcord. La permission « Contents : lecture » est déjà cochée.',
+    'beta.step1Btn': 'Créer le jeton', 'beta.step2': 'Colle-le ici : le Compte Cord vérifie qu’il ouvre bien le dépôt, puis le garde chiffré.',
+    'beta.activate': 'Activer', 'beta.change': 'Changer le jeton', 'beta.disable': 'Désactiver', 'beta.activated': 'Installation directe activée.',
+    'beta.disableTitle': 'Désactiver l’installation directe ?', 'beta.disableDesc': 'Le jeton GitHub est effacé du Compte Cord. Les testeurs devront de nouveau choisir un fichier .ipa.', 'beta.disabled': 'Installation directe désactivée.',
   },
   en: {
     'admin.title': 'Admin', 'admin.desc': 'Cord Account at a glance. No personal data is shown here.',
@@ -52,12 +60,42 @@ messages({
     'beta.testersTitle': 'Testers', 'beta.testersEmpty': 'No testers', 'beta.testersEmptyDesc': 'They’ll show up here once they redeem a key.',
     'beta.via': 'via {key}', 'beta.remove': 'Remove', 'beta.removeTitle': 'Remove {name} from the beta?', 'beta.removeDesc': 'Their Cord account stays intact, but they can no longer download Passcord without a new key.', 'beta.removed': 'Tester removed.',
     'beta.txtHeader': 'Passcord closed beta access keys — redeem them at https://compte.cordsuite.app/#apps',
+    'beta.direct': 'Direct install', 'beta.directOn': 'On', 'beta.directOff': 'Needs setup',
+    'beta.directOnDesc': 'Testers download the latest build of {repo}, and CordLauncher installs it with no file to fetch.',
+    'beta.directOffDesc': 'For testers to install Passcord in one click, the Cord Account must be able to read your private GitHub releases.',
+    'beta.directEnv': 'Token provided by the server’s PASSCORD_RELEASES_TOKEN variable.', 'beta.directAdmin': 'GitHub token stored encrypted in the Cord Account — never shown again.',
+    'beta.step1': 'Create a token on GitHub: under “Repository access”, pick “Only select repositories” → passcord. “Contents: read” is already checked.',
+    'beta.step1Btn': 'Create the token', 'beta.step2': 'Paste it here: the Cord Account checks it opens the repository, then stores it encrypted.',
+    'beta.activate': 'Turn on', 'beta.change': 'Change token', 'beta.disable': 'Turn off', 'beta.activated': 'Direct install is on.',
+    'beta.disableTitle': 'Turn off direct install?', 'beta.disableDesc': 'The GitHub token is erased from the Cord Account. Testers will have to pick an .ipa file again.', 'beta.disabled': 'Direct install is off.',
   },
 });
 
 const adminState = { data: null, loading: false, tab: 'overview', beta: null, betaLoading: false };
 const BETA_TONES = { active: 'tone-ok', used: 'tone-muted', expired: 'tone-warn', revoked: 'tone-danger' };
 const maskedKey = (hint) => `PASS-••••-••••-${hint}`;
+const TOKEN_URL = 'https://github.com/settings/personal-access-tokens/new?name=Compte+Cord+-+builds+Passcord&description=Lecture+des+releases+priv%C3%A9es+de+Passcord&expires_in=none&contents=read';
+
+function directCard(b) {
+  const ready = b.downloads && !adminState.editToken;
+  return html`<section class="card glass">
+    <div class="card-head"><span class="icon-badge ${b.downloads ? 'tone-ok' : 'tone-warn'}">${icon('download')}</span>
+      <div class="grow"><h2 class="card-title">${t('beta.direct')} <span class="badge ${b.downloads ? 'tone-ok' : 'tone-warn'}">${t(b.downloads ? 'beta.directOn' : 'beta.directOff')}</span></h2>
+        <p class="card-desc">${b.downloads ? t('beta.directOnDesc', { repo: b.repo ?? 'Passcord' }) : t('beta.directOffDesc')}</p></div>
+      ${ready && b.downloadsSource === 'admin' ? html`<div class="row-wrap"><button class="btn btn-ghost btn-sm" data-action="beta-token-edit">${t('beta.change')}</button><button class="btn btn-ghost btn-sm" data-action="beta-token-off">${t('beta.disable')}</button></div>` : ''}
+    </div>
+    <div class="card-body">${ready
+      ? html`<p class="subtle tiny">${t(b.downloadsSource === 'env' ? 'beta.directEnv' : 'beta.directAdmin')}</p>`
+      : html`<ol class="token-steps">
+          <li><span class="step-n">1</span><p>${t('beta.step1')}</p><a class="btn btn-glass btn-sm" href="${TOKEN_URL}" target="_blank" rel="noopener">${icon('key-round')}${t('beta.step1Btn')}${icon('external-link')}</a></li>
+          <li><span class="step-n">2</span><div class="grow stack-sm"><p>${t('beta.step2')}</p>
+            <form id="beta-token" class="row-wrap" novalidate>
+              <input class="input mono grow" name="token" type="password" autocomplete="off" spellcheck="false" placeholder="github_pat_…" aria-label="GitHub" required>
+              <button class="btn btn-primary" type="submit">${icon('check')}${t('beta.activate')}</button>
+            </form></div></li>
+        </ol>`}</div>
+  </section>`;
+}
 
 VIEWS.admin = {
   render() {
@@ -124,6 +162,22 @@ VIEWS.admin = {
     } else if (!adminState.data && !adminState.loading) loadAdmin();
     const form = $('#beta-generate');
     form?.addEventListener('submit', (event) => generateKeys(event, form));
+    const tokenForm = $('#beta-token');
+    tokenForm?.addEventListener('submit', async (event) => {
+      event.preventDefault();
+      const input = $('[name="token"]', tokenForm);
+      if (!input.value.trim()) return input.focus();
+      try {
+        await busy(event.submitter, () => withReauth((extra) => api('/api/admin/beta/token', { product: 'passcord', token: input.value.trim(), ...extra })));
+        toast(t('beta.activated'));
+        adminState.editToken = false;
+        adminState.beta = null;
+        renderShell();
+      } catch (e) {
+        input.setAttribute('aria-invalid', 'true');
+        toastError(e);
+      }
+    });
   },
 };
 
@@ -138,14 +192,14 @@ function renderBeta() {
       <div class="stat glass"><div class="top"><span class="icon-badge sm">${icon('smartphone')}</span></div><div class="value beta-build">${b.release?.build ?? t('beta.noBuild')}</div>
         <div class="label">${t('beta.build')}${b.release?.publishedAt ? html` · ${fmtRelative(b.release.publishedAt)}` : ''}</div></div>
     </section>
-    ${b.downloads ? '' : html`<div class="banner tone-warn" role="status">${icon('triangle-alert')}<div class="body"><p class="title">${t('beta.downloadsOff')}</p><p class="desc">${t('beta.downloadsOffDesc')}</p></div></div>`}
+    ${directCard(b)}
     <section class="card glass">
       <div class="card-head"><span class="icon-badge grad">${icon('sparkles')}</span><div class="grow"><h2 class="card-title">${t('beta.generate')}</h2><p class="card-desc">${t('beta.generateDesc')}</p></div></div>
       <form id="beta-generate" class="card-body beta-form" novalidate>
         <div class="field"><label for="beta-count">${t('beta.count')}</label><input class="input" id="beta-count" name="count" type="number" min="1" max="50" value="1" required></div>
         <div class="field"><label for="beta-uses">${t('beta.uses')}</label><input class="input" id="beta-uses" name="maxUses" type="number" min="1" max="1000" value="1" required></div>
         <div class="field"><label for="beta-validity">${t('beta.validity')}</label><select class="input" id="beta-validity" name="expiresInDays">
-          ${[0, 7, 30, 90].map((n) => html`<option value="${n}" ${n === 30 ? raw('selected') : ''}>${n ? t('beta.days', { n }) : t('beta.never')}</option>`)}
+          ${[7, 30, 90, 0].map((n) => html`<option value="${n}" ${n === 30 ? raw('selected') : ''}>${n ? t('beta.days', { n }) : t('beta.never')}</option>`)}
         </select></div>
         <div class="field beta-label"><label for="beta-label">${t('beta.label')}</label><input class="input" id="beta-label" name="label" maxlength="60" placeholder="${t('beta.labelPh')}"></div>
         <div class="beta-submit"><button class="btn btn-primary" type="submit">${icon('key-round')}${t('beta.create')}</button></div>
@@ -236,6 +290,18 @@ async function generateKeys(event, form) {
 }
 
 Object.assign(ACTIONS, {
+  'beta-token-edit'() {
+    adminState.editToken = true;
+    renderShell();
+  },
+  async 'beta-token-off'() {
+    const ok = await confirmDialog({ title: t('beta.disableTitle'), desc: t('beta.disableDesc'), confirm: t('beta.disable'), iconName: 'download' });
+    if (!ok) return;
+    await api('/api/admin/beta/token', { product: 'passcord' }, 'DELETE');
+    toast(t('beta.disabled'), { type: 'info' });
+    adminState.beta = null;
+    renderShell();
+  },
   'admin-reload'() {
     if (adminState.tab === 'beta') adminState.beta = null;
     else adminState.data = null;

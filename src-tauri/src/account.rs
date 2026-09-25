@@ -12,7 +12,7 @@ fn allowed(method: &str, path: &str) -> bool {
         (method, path),
         ("GET", "/api/me" | "/api/account" | "/api/sessions" | "/api/activity" | "/api/connected-apps" | "/api/suite" | "/api/admin/overview" | "/api/admin/beta" | "/api/beta/passcord")
             | ("PATCH", "/api/me" | "/api/passcord/keys" | "/api/passkeys")
-            | ("DELETE", "/api/me" | "/api/passcord/keys" | "/api/passkeys" | "/api/sessions" | "/api/connected-apps" | "/api/admin/beta/keys" | "/api/admin/beta/testers")
+            | ("DELETE", "/api/me" | "/api/passcord/keys" | "/api/passkeys" | "/api/sessions" | "/api/connected-apps" | "/api/admin/beta/keys" | "/api/admin/beta/testers" | "/api/admin/beta/token")
             | (
                 "POST",
                 "/api/register"
@@ -31,6 +31,7 @@ fn allowed(method: &str, path: &str) -> bool {
                     | "/api/beta/redeem"
                     | "/api/beta/passcord/download"
                     | "/api/admin/beta/keys"
+                    | "/api/admin/beta/token"
             )
     )
 }

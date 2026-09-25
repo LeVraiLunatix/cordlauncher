@@ -4,7 +4,8 @@ import { motion } from "motion/react";
 import { useEffect, useState } from "react";
 import { useCordAccount } from "../../lib/account";
 import { canInstall, sideloadIphone, useApple, type IphoneDevice } from "../../lib/apple";
-import { BETA_ASSETS, betaDownload, betaInfo, hasBeta, openBetaSheet, type BetaInfo } from "../../lib/beta";
+import { BETA_ASSETS, betaDownload, betaInfo, hasBeta, navigateTo, openBetaSheet, type BetaInfo } from "../../lib/beta";
+import { closeIphoneInstall } from "../../lib/iphone";
 import { cn } from "../../lib/cn";
 import { formatBytes } from "../../lib/format";
 import type { CatalogApp } from "../../lib/catalog/types";
@@ -146,7 +147,12 @@ export function DirectIphoneInstall({ app }: { app: CatalogApp }) {
             <p className="text-xs text-fg-subtle">
               {tester
                 ? beta && !beta.downloads
-                  ? `Tu fais partie de la bêta de ${app.name}, mais le téléchargement direct n’est pas encore ouvert : choisis le .ipa reçu.`
+                  ? user?.admin
+                    ? <>
+                        L’installation directe n’est pas encore activée : colle ton jeton GitHub dans Compte Cord › Admin › Bêta Passcord (une seule fois).{" "}
+                        <button type="button" className="underline" onClick={() => { closeIphoneInstall(); navigateTo("account"); }}>Y aller</button>
+                      </>
+                    : `Tu fais partie de la bêta de ${app.name}, mais l’installation directe n’est pas encore ouverte : choisis le .ipa reçu.`
                   : `Tu fais partie de la bêta de ${app.name} : recherche du dernier build…`
                 : <>
                     {app.name} est en bêta fermée : avec une clé d’accès, CordLauncher installe directement le dernier build.{" "}

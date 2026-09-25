@@ -1,13 +1,14 @@
-import { AlertTriangle, Check, Copy, KeyRound, LogIn, MailCheck, MessageSquareText, MonitorSmartphone, RefreshCw, Server, Smartphone, Sparkles, Users } from "lucide-react";
+import { AlertTriangle, ArrowUpRight, Check, CloudDownload, Copy, KeyRound, Loader2, LogIn, MailCheck, MessageSquareText, MonitorSmartphone, RefreshCw, Server, Smartphone, Sparkles, Users } from "lucide-react";
 import { AnimatePresence, motion } from "motion/react";
 import { useCallback, useEffect, useState } from "react";
 import { GlassButton, GlassCard, GlassModal, GlassSegmented, Skeleton } from "../../components/glass";
 import { cordAsset, cordRequest } from "../../lib/account";
 import type { BetaAdmin, BetaKey } from "../../lib/beta";
 import { easeGlass, itemVariants, springSoft } from "../../lib/motion";
+import { openExternal } from "../../lib/platform";
 import { toast } from "../../lib/toast";
 import { useAccount } from "./context";
-import { Avatar, dateShort, Empty, IconBadge, ListRow, Panel, Pill, Progress, relative, type Tone } from "./kit";
+import { Avatar, dateShort, Empty, IconBadge, ListRow, Panel, Pill, Progress, relative, withReauth, type Tone } from "./kit";
 
 type Overview = {
   totals: Record<"users" | "verified" | "mfa" | "passkey_users" | "passcord_users" | "sessions" | "signups7" | "signups30" | "logins24" | "failures24", number>;
@@ -133,7 +134,9 @@ function Stat({ icon, value, label, tone, small = false }: { icon: typeof Users;
 const STATUS: Record<BetaKey["status"], [Tone, string]> = {
   active: ["ok", "Active"], used: ["muted", "Utilisée"], expired: ["warn", "Expirée"], revoked: ["danger", "Désactivée"],
 };
-const VALIDITY = [[0, "Sans limite"], [7, "7 jours"], [30, "30 jours"], [90, "90 jours"]] as const;
+const VALIDITY = [{ value: "7", label: "7 jours" }, { value: "30", label: "30 jours" }, { value: "90", label: "90 jours" }, { value: "0", label: "Sans limite" }];
+/** Page GitHub de création de jeton, préremplie (lecture seule du contenu, sans expiration). */
+const TOKEN_URL = "https://github.com/settings/personal-access-tokens/new?name=Compte+Cord+-+builds+Passcord&description=Lecture+des+releases+priv%C3%A9es+de+Passcord&expires_in=none&contents=read";
 const invitation = (codes: string[]) =>
   `Tu es invité·e à la bêta fermée de Passcord !\n\n${codes.length > 1 ? "Tes clés d’accès" : "Ta clé d’accès"} :\n${codes.join("\n")}\n\n` +
   "Utilise-la sur https://compte.cordsuite.app/#apps (onglet Apps) ou dans CordLauncher (fiche Passcord → Rejoindre la bêta), " +
@@ -212,27 +215,20 @@ function BetaTab() {
         <Stat icon={Smartphone} value={data.release?.build ?? "Aucun"} small label={data.release?.publishedAt ? `Dernier build · ${relative(data.release.publishedAt)}` : "Dernier build"} tone="tint" />
       </div>
 
-      {!data.downloads && (
-        <div className="flex gap-3 rounded-[20px] bg-[color-mix(in_oklab,var(--warn)_12%,transparent)] p-4 text-sm">
-          <AlertTriangle className="mt-0.5 size-4 shrink-0 text-warn" />
-          <p><strong>Téléchargement direct non configuré.</strong> <span className="text-fg-muted">Ajoute la variable <code>PASSCORD_RELEASES_TOKEN</code> (jeton GitHub en lecture seule sur le dépôt Passcord) au Compte Cord : les testeurs installeront alors l’app sans fichier à récupérer.</span></p>
-        </div>
-      )}
+      <DownloadsPanel data={data} onChange={load} />
 
       <Panel icon={Sparkles} title="Générer des clés" desc="Chaque clé n’est affichée qu’une fois : copie-la avant de fermer.">
-        <form className="grid gap-3 sm:grid-cols-[repeat(3,minmax(0,1fr))]" onSubmit={e => { e.preventDefault(); void generate(); }}>
+        <form className="grid gap-3 sm:grid-cols-2" onSubmit={e => { e.preventDefault(); void generate(); }}>
           <label className="grid gap-1.5 text-[13px] text-fg-muted">Nombre de clés
             <input className="cord-input" type="number" min={1} max={50} value={count} onChange={e => setCount(Math.max(1, Math.min(50, Number(e.target.value) || 1)))} />
           </label>
           <label className="grid gap-1.5 text-[13px] text-fg-muted">Utilisations par clé
             <input className="cord-input" type="number" min={1} max={1000} value={maxUses} onChange={e => setMaxUses(Math.max(1, Math.min(1000, Number(e.target.value) || 1)))} />
           </label>
-          <label className="grid gap-1.5 text-[13px] text-fg-muted">Validité
-            <select className="cord-input" value={days} onChange={e => setDays(Number(e.target.value))}>
-              {VALIDITY.map(([n, text]) => <option key={n} value={n}>{text}</option>)}
-            </select>
-          </label>
-          <label className="grid gap-1.5 text-[13px] text-fg-muted sm:col-span-2">Note (facultatif)
+          <div className="grid gap-1.5 text-[13px] text-fg-muted sm:col-span-2">Validité
+            <GlassSegmented label="Validité des clés" value={String(days)} onChange={v => setDays(Number(v))} options={VALIDITY} className="w-fit max-w-full" />
+          </div>
+          <label className="grid gap-1.5 text-[13px] text-fg-muted">Note (facultatif)
             <input className="cord-input" maxLength={60} placeholder="Ex. Serveur Discord, amis…" value={label} onChange={e => setLabel(e.target.value)} />
           </label>
           <div className="flex items-end justify-end">
@@ -282,6 +278,99 @@ function BetaTab() {
 
       <CreatedKeys keys={created} onClose={() => setCreated(null)} />
     </>
+  );
+}
+
+/**
+ * Installation directe : le Compte Cord lit les releases privées de Passcord
+ * avec un jeton GitHub en lecture seule, collé ici une fois (gardé chiffré).
+ */
+function DownloadsPanel({ data, onChange }: { data: BetaAdmin; onChange: () => void }) {
+  const { askPassword, openModal } = useAccount();
+  const [editing, setEditing] = useState(false);
+  const [token, setToken] = useState("");
+  const [saving, setSaving] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const valid = /^(github_pat_|ghp_)[A-Za-z0-9_]{20,}$/.test(token.trim());
+
+  async function save() {
+    setSaving(true);
+    setError(null);
+    try {
+      const result = await withReauth(extra => cordRequest<{ release: BetaAdmin["release"] }>("/api/admin/beta/token", { product: "passcord", token: token.trim(), ...extra }), askPassword);
+      if (!result) return;
+      setToken("");
+      setEditing(false);
+      toast({ tone: "ok", title: "Installation directe activée", description: result.release ? `Les testeurs installeront ${result.release.build} depuis CordLauncher.` : "Aucun build publié pour l’instant." });
+      onChange();
+    } catch (e) {
+      setError((e as Error).message);
+    } finally {
+      setSaving(false);
+    }
+  }
+  const remove = () => openModal({
+    title: "Désactiver l’installation directe ?",
+    desc: "Le jeton GitHub est effacé du Compte Cord. Les testeurs devront de nouveau choisir un fichier .ipa.",
+    icon: CloudDownload, tone: "danger", danger: true, submit: "Désactiver",
+    onSubmit: async () => {
+      await cordRequest("/api/admin/beta/token", { product: "passcord" }, "DELETE");
+      toast({ tone: "info", title: "Installation directe désactivée" });
+      onChange();
+    },
+  });
+
+  const ready = data.downloads && !editing;
+  return (
+    <Panel
+      icon={CloudDownload}
+      tone={data.downloads ? "ok" : "warn"}
+      title={<span className="flex flex-wrap items-center gap-2">Installation directe {data.downloads ? <Pill tone="ok">Active</Pill> : <Pill tone="warn">À configurer</Pill>}</span>}
+      desc={data.downloads
+        ? `Les testeurs installent le dernier build de ${data.repo ?? "Passcord"} depuis CordLauncher, sans fichier à récupérer.`
+        : "Pour que les testeurs installent Passcord en un clic, le Compte Cord doit pouvoir lire tes releases privées sur GitHub."}
+      actions={ready && data.downloadsSource === "admin" ? <>
+        <GlassButton size="sm" variant="ghost" onClick={() => setEditing(true)}>Changer le jeton</GlassButton>
+        <GlassButton size="sm" variant="ghost" onClick={remove}>Désactiver</GlassButton>
+      </> : undefined}
+    >
+      <AnimatePresence initial={false} mode="wait">
+        {ready ? (
+          <motion.p key="ready" className="text-[13px] text-fg-muted" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
+            {data.downloadsSource === "env" ? "Jeton fourni par la variable PASSCORD_RELEASES_TOKEN du serveur." : "Jeton GitHub enregistré chiffré dans le Compte Cord — il n’est jamais réaffiché."}
+          </motion.p>
+        ) : (
+          <motion.ol key="setup" className="grid gap-3" initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0, transition: springSoft }} exit={{ opacity: 0 }}>
+            <li className="flex flex-wrap items-center gap-3 rounded-[16px] bg-[var(--control)] p-3.5">
+              <span className="tint-fill grid size-7 shrink-0 place-items-center rounded-full text-[13px] font-semibold text-white">1</span>
+              <p className="min-w-0 flex-1 text-[13.5px]">Crée un jeton sur GitHub : dans <strong>Repository access</strong>, choisis <em>Only select repositories</em> → <strong>passcord</strong>. La permission <em>Contents : lecture</em> est déjà cochée.</p>
+              <GlassButton size="sm" variant="glass" icon={<KeyRound className="size-3.5" />} trailingIcon={<ArrowUpRight className="size-3" />} onClick={() => void openExternal(TOKEN_URL)}>Créer le jeton</GlassButton>
+            </li>
+            <li className="grid gap-3 rounded-[16px] bg-[var(--control)] p-3.5">
+              <div className="flex items-center gap-3">
+                <span className="tint-fill grid size-7 shrink-0 place-items-center rounded-full text-[13px] font-semibold text-white">2</span>
+                <p className="text-[13.5px]">Colle-le ici : le Compte Cord vérifie qu’il ouvre bien le dépôt, puis le garde chiffré.</p>
+              </div>
+              <form className="flex flex-wrap gap-2 sm:pl-10" onSubmit={e => { e.preventDefault(); void save(); }}>
+                <input className="cord-input min-w-0 flex-1 font-mono text-[13px]" type="password" autoComplete="off" spellCheck={false}
+                  placeholder="github_pat_…" value={token} onChange={e => { setToken(e.target.value); setError(null); }} aria-label="Jeton GitHub" />
+                <GlassButton type="submit" variant="primary" disabled={!valid || saving} icon={saving ? <Loader2 className="size-4 animate-spin" /> : <Check className="size-4" />}>
+                  {saving ? "Vérification…" : "Activer"}
+                </GlassButton>
+                {editing && <GlassButton variant="ghost" onClick={() => { setEditing(false); setToken(""); setError(null); }}>Annuler</GlassButton>}
+              </form>
+              <AnimatePresence>
+                {error && (
+                  <motion.p role="alert" className="flex items-start gap-2 text-[13px] text-danger sm:pl-10" initial={{ opacity: 0, y: -4 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }}>
+                    <AlertTriangle className="mt-0.5 size-3.5 shrink-0" />{error}
+                  </motion.p>
+                )}
+              </AnimatePresence>
+            </li>
+          </motion.ol>
+        )}
+      </AnimatePresence>
+    </Panel>
   );
 }
 

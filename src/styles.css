@@ -611,3 +611,7 @@
   user-select: text;
 }
 .cord-input:focus-visible { outline: 2px solid var(--tint-a); outline-offset: 2px; }
+/* Liste native : WebView2 peint les options sur fond blanc en gardant la couleur
+   du texte (clair en thème sombre) → illisible. On leur donne le fond de l'app. */
+select.cord-input { color-scheme: inherit; cursor: pointer; }
+select.cord-input option { background-color: var(--bg); color: var(--fg); }

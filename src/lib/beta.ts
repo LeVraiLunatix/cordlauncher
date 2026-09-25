@@ -16,7 +16,7 @@ export type BetaKey = {
   code?: string;
 };
 export type BetaTester = { userId: string; name: string; email: string; grantedAt: number; keyLabel: string | null; keyHint: string | null };
-export type BetaAdmin = { product: string; name: string; downloads: boolean; release: BetaRelease | null; keys: BetaKey[]; testers: BetaTester[] };
+export type BetaAdmin = { product: string; name: string; downloads: boolean; downloadsSource: "env" | "admin" | null; repo: string | null; release: BetaRelease | null; keys: BetaKey[]; testers: BetaTester[] };
 
 export const hasBeta = (user: CordUser | null | undefined, product: string) =>
   !!user && (!!user.admin || !!user.beta?.includes(product));

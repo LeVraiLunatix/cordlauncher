@@ -18,14 +18,14 @@ const EVENTS: Record<string, [string, LucideIcon, Tone]> = {
   app_authorized: ["App autorisée", AppWindow, "tint"], app_revoked: ["Accès d’une app révoqué", Ban, "muted"],
   session_revoked: ["Session fermée à distance", LogOut, "muted"], sessions_revoked: ["Autres sessions fermées", LogOut, "muted"],
   profile_updated: ["Profil mis à jour", Pencil, "muted"],
-  beta_joined: ["Bêta rejointe", KeyRound, "ok"], beta_download: ["Build de bêta téléchargé", Download, "info"], beta_keys_created: ["Clés de bêta générées", Key, "muted"],
+  beta_joined: ["Bêta rejointe", KeyRound, "ok"], beta_download: ["Build de bêta téléchargé", Download, "info"], beta_keys_created: ["Clés de bêta générées", Key, "muted"], beta_downloads_configured: ["Installation directe de la bêta activée", Download, "ok"],
 };
 const VIA: Record<string, string> = { password: "mot de passe", passkey: "passkey", passcord: "Passcord", reset: "lien de réinitialisation", mfa: "code 2FA incorrect", register: "mot de passe", name: "nom", avatar: "photo" };
 const GROUPS = {
   all: null,
   logins: ["register", "login", "login_failed", "session_revoked", "sessions_revoked"],
   security: ["password_changed", "password_reset", "password_reset_requested", "mfa_enabled", "mfa_disabled", "recovery_used", "recovery_regenerated", "passkey_added", "passkey_removed", "passcord_paired", "passcord_revoked", "email_changed", "email_verified"],
-  apps: ["app_authorized", "app_revoked", "beta_joined", "beta_download", "beta_keys_created"],
+  apps: ["app_authorized", "app_revoked", "beta_joined", "beta_download", "beta_keys_created", "beta_downloads_configured"],
 } as const;
 const FILTER_LABELS = { all: "Tout", logins: "Connexions", security: "Sécurité", apps: "Apps" } as const;
 
