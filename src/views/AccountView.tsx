@@ -1,83 +1,311 @@
-import { useEffect, useState } from "react";
-import { motion } from "motion/react";
-import { GlassButton, GlassCard } from "../components/glass";
+import { ChartColumn, ExternalLink, History, KeyRound, LayoutDashboard, LayoutGrid, LockKeyhole, LogOut, MonitorSmartphone, RefreshCw, Server, ShieldCheck, Smartphone, UserRound, type LucideIcon } from "lucide-react";
+import { AnimatePresence, motion } from "motion/react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { QrCode } from "../components/apps/QrCode";
-import { clearCord, cordRequest, refreshCord, setCordServer, useCordAccount, type CordChallenge } from "../lib/account";
+import { GlassButton, GlassCard, Skeleton } from "../components/glass";
+import { clearCord, cordAsset, CordError, cordRequest, refreshCord, setCordServer, useCordAccount, type CordChallenge } from "../lib/account";
+import { cn } from "../lib/cn";
+import { itemVariants, springSoft, viewVariants } from "../lib/motion";
 import { IS_TAURI, openExternal } from "../lib/platform";
-import { itemVariants, viewVariants } from "../lib/motion";
+import { toast } from "../lib/toast";
+import { Activity } from "./account/Activity";
+import { Admin } from "./account/Admin";
+import { Apps } from "./account/Apps";
+import { AccountContext, type AccountCtx, type AccountTab } from "./account/context";
+import { Devices } from "./account/Devices";
+import { ActionModal, Field, PasswordInput, type ModalSpec } from "./account/kit";
+import { AccountHero, Overview, VerifyBanner } from "./account/Overview";
+import { Privacy } from "./account/Privacy";
+import { Profile } from "./account/Profile";
+import { Security } from "./account/Security";
 
+const TABS: { id: AccountTab; label: string; icon: LucideIcon; admin?: boolean }[] = [
+  { id: "apercu", label: "Aperçu", icon: LayoutDashboard },
+  { id: "securite", label: "Sécurité", icon: ShieldCheck },
+  { id: "appareils", label: "Appareils", icon: MonitorSmartphone },
+  { id: "apps", label: "Apps", icon: LayoutGrid },
+  { id: "profil", label: "Profil", icon: UserRound },
+  { id: "activite", label: "Activité", icon: History },
+  { id: "confidentialite", label: "Confidentialité", icon: LockKeyhole },
+  { id: "admin", label: "Admin", icon: ChartColumn, admin: true },
+];
+
+/**
+ * Compte Cord dans CordLauncher : la même chose que compte.cordsuite.app
+ * (aperçu, sécurité, appareils, apps, profil, activité, confidentialité,
+ * admin), en natif, via le proxy Rust qui garde la session dans le coffre.
+ */
 export function AccountView() {
   const account = useCordAccount();
-  const [server, setServer] = useState(account.server);
-  const [register, setRegister] = useState(false);
-  const [name, setName] = useState(account.user?.name ?? "");
+  const [loading, setLoading] = useState(IS_TAURI);
+
+  useEffect(() => {
+    if (!IS_TAURI || !account.server) return;
+    setLoading(true);
+    refreshCord()
+      .catch(e => toast({ tone: "error", title: "Compte Cord indisponible", description: (e as Error).message }))
+      .finally(() => setLoading(false));
+  }, [account.server]);
+
+  return (
+    <motion.div variants={viewVariants} initial="hidden" animate="show" exit="exit" className="mx-auto flex w-full max-w-[920px] flex-col gap-5 px-8 pt-4 pb-14">
+      {loading && !account.user ? <LoadingState /> : account.user && account.dashboard ? <SignedIn /> : <SignedOut />}
+      <ServerSettings />
+    </motion.div>
+  );
+}
+
+function LoadingState() {
+  return (
+    <motion.div variants={itemVariants} className="grid gap-4">
+      <Skeleton className="h-32 rounded-[28px]" />
+      <Skeleton className="h-10 w-2/3 rounded-full" />
+      <Skeleton className="h-56 rounded-[26px]" />
+    </motion.div>
+  );
+}
+
+// ── Connecté ────────────────────────────────────────────────────────────────
+
+function SignedIn() {
+  const { dashboard } = useCordAccount();
+  const [tab, setTab] = useState<AccountTab>("apercu");
+  const [modal, setModal] = useState<ModalSpec | null>(null);
+  const passwordResolver = useRef<((value: string | null) => void) | null>(null);
+  const d = dashboard!;
+
+  const reload = useCallback(async () => {
+    try {
+      await refreshCord();
+    } catch (e) {
+      toast({ tone: "error", title: "Actualisation impossible", description: (e as Error).message });
+    }
+  }, []);
+  const askPassword = useCallback(() => new Promise<string | null>(resolve => {
+    passwordResolver.current = resolve;
+    setModal({
+      title: "Confirme que c’est bien toi",
+      desc: "Pour ajouter une protection à ton compte, saisis ton mot de passe. On ne te le redemandera pas avant un moment.",
+      icon: KeyRound,
+      submit: "Continuer",
+      body: <Field label="Mot de passe"><PasswordInput name="password" autoFocus /></Field>,
+      onSubmit: f => {
+        passwordResolver.current?.(String(f.get("password")));
+        passwordResolver.current = null;
+      },
+    });
+  }), []);
+  const closeModal = () => {
+    passwordResolver.current?.(null);
+    passwordResolver.current = null;
+    setModal(null);
+  };
+
+  const ctx = useMemo<AccountCtx>(() => ({ d, reload, openModal: setModal, askPassword, go: setTab }), [d, reload, askPassword]);
+  const tabs = TABS.filter(t => !t.admin || d.user.admin);
+
+  const logout = async () => {
+    try {
+      await cordRequest("/api/logout");
+    } finally {
+      clearCord();
+    }
+  };
+
+  return (
+    <AccountContext.Provider value={ctx}>
+      <AccountHero />
+      <VerifyBanner />
+      <motion.nav variants={itemVariants} aria-label="Sections du compte" className="glass-inset flex gap-1 overflow-x-auto rounded-full p-1 [scrollbar-width:none]">
+        {tabs.map(t => {
+          const active = t.id === tab;
+          const Icon = t.icon;
+          return (
+            <button key={t.id} type="button" onClick={() => setTab(t.id)} aria-current={active ? "page" : undefined}
+              className={cn("relative inline-flex h-9 shrink-0 items-center gap-1.5 rounded-full px-3.5 text-[12.5px] font-medium transition-colors", active ? "text-fg" : "text-fg-muted hover:text-fg")}>
+              {active && <motion.span layoutId="account-tab" aria-hidden className="absolute inset-0 rounded-full bg-[var(--glass-fill-hover)] shadow-[inset_0_1px_0_var(--glass-inner),inset_0_0_0_1px_var(--glass-stroke),0_6px_16px_-8px_rgb(0_0_0/0.4)]" transition={{ type: "spring", stiffness: 420, damping: 34 }} />}
+              <Icon className={cn("relative size-3.5", active && "text-[var(--tint-a)]")} />
+              <span className="relative">{t.label}</span>
+            </button>
+          );
+        })}
+      </motion.nav>
+
+      <AnimatePresence mode="wait">
+        <motion.div key={tab} className="flex flex-col gap-4" variants={viewVariants} initial="hidden" animate="show" exit="exit">
+          {tab === "apercu" && <Overview />}
+          {tab === "securite" && <Security />}
+          {tab === "appareils" && <Devices />}
+          {tab === "apps" && <Apps />}
+          {tab === "profil" && <Profile />}
+          {tab === "activite" && <Activity />}
+          {tab === "confidentialite" && <Privacy />}
+          {tab === "admin" && d.user.admin && <Admin />}
+        </motion.div>
+      </AnimatePresence>
+
+      <motion.div variants={itemVariants} className="flex flex-wrap items-center gap-2 pt-2">
+        <GlassButton size="sm" variant="ghost" icon={<RefreshCw className="size-3.5" />} onClick={() => void reload()}>Actualiser</GlassButton>
+        <GlassButton size="sm" variant="ghost" icon={<ExternalLink className="size-3.5" />} onClick={() => void openExternal(`${useCordServer()}/#${tab}`)}>Ouvrir sur le web</GlassButton>
+        <span className="flex-1" />
+        <GlassButton size="sm" variant="danger" icon={<LogOut className="size-3.5" />} onClick={() => void logout()}>Se déconnecter</GlassButton>
+      </motion.div>
+
+      <ActionModal spec={modal} onClose={closeModal} />
+    </AccountContext.Provider>
+  );
+}
+
+const useCordServer = () => useCordAccount().server;
+
+// ── Non connecté ────────────────────────────────────────────────────────────
+
+type Mode = "login" | "register" | "forgot" | "passcord";
+
+function SignedOut() {
+  const [mode, setMode] = useState<Mode>("login");
   const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
-  const [otp, setOtp] = useState("");
   const [needsOtp, setNeedsOtp] = useState(false);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [notice, setNotice] = useState<string | null>(null);
+
+  const run = async (action: () => Promise<void>) => {
+    setBusy(true); setError(null); setNotice(null);
+    try {
+      await action();
+    } catch (e) {
+      if (e instanceof CordError && (e.reason === "mfa_required" || e.reason === "mfa_invalid")) setNeedsOtp(true);
+      setError((e as Error).message);
+    } finally {
+      setBusy(false);
+    }
+  };
+  const submit = (f: FormData) => run(async () => {
+    const addr = String(f.get("email") ?? email).trim();
+    setEmail(addr);
+    if (mode === "forgot") {
+      const r = await cordRequest<{ devUrl?: string }>("/api/password/forgot", { email: addr });
+      setNotice(r.devUrl ?? `Si un compte Cord utilise ${addr}, un lien de réinitialisation vient de partir (valable 30 minutes).`);
+      return;
+    }
+    const otp = String(f.get("otp") ?? "").trim();
+    await cordRequest(mode === "register" ? "/api/register" : "/api/login", {
+      email: addr, password: f.get("password"), name: f.get("name") ?? undefined, ...(otp ? { otp } : {}),
+    });
+    if (mode === "register") await cordRequest("/api/email/send").catch(() => {});
+    await refreshCord();
+    toast({ tone: "ok", title: mode === "register" ? "Bienvenue dans la suite Cord !" : "Connecté à ton compte Cord" });
+  });
+
+  const heading = { login: ["Bon retour", "Connecte-toi à ton compte Cord : une identité pour toute la suite."], register: ["Crée ton compte Cord", "Une identité pour toutes les apps de la suite. Gratuit, sans pub, sans pistage."], forgot: ["Mot de passe oublié", "Indique ton adresse : on t’envoie un lien pour en choisir un nouveau."], passcord: ["Connexion avec Passcord", "Scanne ce code avec l’appareil photo de ton iPhone, puis valide avec Face ID dans Passcord."] }[mode];
+
+  return (
+    <>
+      <motion.header variants={itemVariants}>
+        <p className="text-[11.5px] font-semibold tracking-[0.14em] text-fg-subtle uppercase">Un compte, toute la suite</p>
+        <h1 className="mt-1.5 font-display text-[32px] leading-tight font-semibold tracking-[-0.03em]">Ton espace Cord.</h1>
+        <p className="mt-2 text-sm text-fg-muted">Ton identité commune pour Drivecord, Tunecord, Passcord… Et avec Passcord, ton iPhone devient ta clé.</p>
+      </motion.header>
+      <GlassCard variants={itemVariants} className="rounded-[26px] p-7">
+        <div className="relative z-[3] mx-auto max-w-[460px]">
+          <AnimatePresence mode="wait">
+            <motion.div key={mode} initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0, transition: springSoft }} exit={{ opacity: 0, y: -6, transition: { duration: 0.15 } }}>
+              <h2 className="font-display text-2xl font-semibold tracking-[-0.02em]">{heading[0]}</h2>
+              <p className="mt-1.5 mb-5 text-[13.5px] text-fg-muted">{heading[1]}</p>
+              {mode === "passcord"
+                ? <PasscordLogin onDone={() => void refreshCord()} onCancel={() => setMode("login")} />
+                : (
+                  <form className="grid gap-4" onSubmit={e => { e.preventDefault(); void submit(new FormData(e.currentTarget)); }}>
+                    {mode === "register" && <Field label="Ton prénom ou pseudo"><input className="cord-input" name="name" required maxLength={60} autoComplete="nickname" /></Field>}
+                    <Field label="Adresse email"><input className="cord-input" name="email" type="email" required maxLength={254} autoComplete="username" defaultValue={email} disabled={!IS_TAURI} /></Field>
+                    {mode !== "forgot" && <Field label="Mot de passe" hint={mode === "register" ? "12 caractères minimum. Ce compte reste distinct de ton compte Apple." : undefined}>
+                      <PasswordInput name="password" autoComplete={mode === "register" ? "new-password" : "current-password"} minLength={mode === "register" ? 12 : undefined} />
+                    </Field>}
+                    {mode === "login" && needsOtp && <Field label="Code de double authentification" hint="Code à 6 chiffres de ton application, ou un code de secours.">
+                      <input className="cord-input text-center font-mono tracking-[0.3em]" name="otp" required maxLength={24} inputMode="numeric" autoComplete="one-time-code" autoFocus />
+                    </Field>}
+                    {error && <p role="alert" className="rounded-[12px] bg-danger/12 px-3.5 py-2.5 text-sm text-danger">{error}</p>}
+                    {notice && <p role="status" className="rounded-[12px] bg-ok/12 px-3.5 py-2.5 text-sm break-all text-ok">{notice}</p>}
+                    <GlassButton type="submit" variant="primary" size="lg" loading={busy} disabled={!IS_TAURI}>
+                      {mode === "register" ? "Créer mon compte" : mode === "forgot" ? "Envoyer le lien" : "Se connecter"}
+                    </GlassButton>
+                  </form>
+                )}
+              <div className="mt-5 flex flex-wrap items-center gap-x-4 gap-y-2 text-[13px]">
+                {mode === "login" && <>
+                  <GlassButton variant="glass" icon={<Smartphone className="size-4" />} disabled={!IS_TAURI} onClick={() => { setError(null); setMode("passcord"); }}>Passcord</GlassButton>
+                  <button type="button" className="text-fg-muted hover:text-fg" onClick={() => { setError(null); setMode("forgot"); }}>Mot de passe oublié ?</button>
+                  <span className="flex-1" />
+                  <button type="button" className="font-medium text-[var(--tint-a)] hover:underline" onClick={() => { setError(null); setMode("register"); }}>Créer un compte</button>
+                </>}
+                {mode !== "login" && mode !== "passcord" && <button type="button" className="text-fg-muted hover:text-fg" onClick={() => { setError(null); setNotice(null); setMode("login"); }}>← J’ai déjà un compte</button>}
+              </div>
+            </motion.div>
+          </AnimatePresence>
+          {!IS_TAURI && <p className="mt-4 text-sm text-fg-muted">La session du launcher utilise le coffre Windows. Dans cet aperçu, ouvre le portail Cord pour essayer le compte.</p>}
+        </div>
+      </GlassCard>
+    </>
+  );
+}
+
+function PasscordLogin({ onDone, onCancel }: { onDone: () => void; onCancel: () => void }) {
   const [challenge, setChallenge] = useState<CordChallenge | null>(null);
-  async function run(action: () => Promise<void>) {
-    setError(null); setNotice(null); setBusy(true);
-    try { await action(); } catch (e) {
-      // Le proxy Rust préfixe la raison du serveur : « [mfa_required] message ».
-      const [, reason, message] = String(e).match(/^\[(\w+)\] ([\s\S]*)$/) ?? [];
-      if (reason === "mfa_required" || reason === "mfa_invalid") setNeedsOtp(true);
-      setError(message ?? String(e));
-    } finally { setBusy(false); }
-  }
+  const [error, setError] = useState<string | null>(null);
+  const [left, setLeft] = useState(0);
   useEffect(() => {
-    if (IS_TAURI && account.server) void refreshCord().catch(e => setError(String(e)));
-  }, [account.server]);
-  useEffect(() => { if (account.user) setName(account.user.name); }, [account.user]);
+    let active = true;
+    let timer: ReturnType<typeof setTimeout> | undefined;
+    void cordRequest<CordChallenge>("/api/passcord/login").then(c => {
+      if (!active) return;
+      setChallenge(c);
+      const poll = async () => {
+        if (!active) return;
+        if (Date.now() >= c.expiresAt) { setError("La demande Passcord a expiré. Tu peux recommencer."); return; }
+        try {
+          const r = await cordRequest<{ pending?: boolean }>("/api/passcord/poll", { id: c.id, pollToken: c.pollToken });
+          if (!r.pending) { onDone(); return; }
+        } catch (e) { if (active) setError((e as Error).message); return; }
+        timer = setTimeout(() => void poll(), 2500);
+      };
+      timer = setTimeout(() => void poll(), 2500);
+    }).catch(e => active && setError((e as Error).message));
+    return () => { active = false; clearTimeout(timer); };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
   useEffect(() => {
     if (!challenge) return;
-    let active = true; let timer: ReturnType<typeof setTimeout>;
-    async function poll() {
-      if (!active) return;
-      if (Date.now() >= challenge!.expiresAt) { setChallenge(null); setError("La demande Passcord a expiré. Tu peux recommencer."); return; }
-      try {
-        if (challenge!.pollToken) {
-          const response = await cordRequest<{ pending?: boolean }>("/api/passcord/poll", { id: challenge!.id, pollToken: challenge!.pollToken });
-          if (!active) return;
-          if (!response.pending) { setChallenge(null); await refreshCord(); return; }
-        }
-        if (active) timer = setTimeout(poll, 2500);
-      } catch (e) { if (active) { setChallenge(null); setError(String(e)); } }
-    }
-    timer = setTimeout(poll, 2500);
-    return () => { active = false; clearTimeout(timer); };
+    const tick = () => setLeft(Math.max(0, challenge.expiresAt - Date.now()));
+    tick();
+    const t = setInterval(tick, 1000);
+    return () => clearInterval(t);
   }, [challenge]);
-  return <motion.div variants={viewVariants} initial="hidden" animate="show" exit="exit" className="mx-auto flex max-w-[860px] flex-col gap-6 px-8 pt-4 pb-14">
-    <motion.header variants={itemVariants}><p className="text-xs tracking-widest text-fg-subtle uppercase">Un compte, toute la suite</p><h1 className="mt-2 font-display text-[32px] font-semibold tracking-tight">Ton espace Cord.</h1><p className="mt-2 text-sm text-fg-muted">Ton identité commune. Et avec Passcord, ton iPhone devient ta clé.</p></motion.header>
-    <GlassCard variants={itemVariants} className="rounded-[26px] p-6"><div className="relative z-[3] space-y-4">
-      {!account.user ? <>
-        <form className="space-y-4" onSubmit={e => { e.preventDefault(); const secret = password; const code = otp.trim(); setOtp(""); setChallenge(null); void run(async () => { await cordRequest(register ? "/api/register" : "/api/login", { email, password: secret, name, ...(code && !register ? { otp: code } : {}) }); setPassword(""); setNeedsOtp(false); await refreshCord(); }); }}>
-          <h2 className="font-display text-xl font-semibold">{register ? "Créer ton compte Cord" : "Bienvenue chez toi"}</h2>
-          {register && <label className="block text-sm">Ton nom<input className="cord-input mt-1" required maxLength={60} autoComplete="name" value={name} onChange={e => setName(e.target.value)} /></label>}
-          <label className="block text-sm">Email<input className="cord-input mt-1" type="email" required autoComplete="username" value={email} onChange={e => setEmail(e.target.value)} /></label>
-          <label className="block text-sm">Mot de passe<input className="cord-input mt-1" type="password" minLength={register ? 12 : 1} required autoComplete={register ? "new-password" : "current-password"} value={password} onChange={e => setPassword(e.target.value)} /></label>
-          {register && <p className="text-xs text-fg-subtle">12 caractères minimum. Ce compte reste distinct de ton compte Apple.</p>}
-          {!register && needsOtp && <label className="block text-sm">Code de double authentification<input className="cord-input mt-1" required inputMode="numeric" autoComplete="one-time-code" maxLength={24} value={otp} onChange={e => setOtp(e.target.value)} placeholder="123 456 ou code de secours" /></label>}
-          <div className="flex flex-wrap gap-2"><GlassButton type="submit" variant="primary" disabled={busy || !IS_TAURI || !account.server}>{busy ? "Un instant…" : register ? "Créer mon compte" : "Se connecter"}</GlassButton><GlassButton variant="ghost" disabled={busy} onClick={() => { setRegister(!register); setPassword(""); }}>{register ? "J’ai déjà un compte" : "Créer un compte"}</GlassButton></div>
+  return (
+    <div className="grid justify-items-center gap-4 text-center">
+      {challenge
+        ? <div className="w-52 rounded-[22px] bg-white p-3.5 shadow-[0_24px_60px_-24px_var(--tint-a)]"><QrCode value={challenge.url} colors={["#6E58F0", "#B842EC"]} logo={cordAsset("/assets/icon-180.png") ?? undefined} className="aspect-square w-full" /></div>
+        : !error && <Skeleton className="size-52 rounded-[22px]" />}
+      {challenge && !error && <p className="inline-flex items-center gap-2.5 text-[13.5px] text-fg-muted"><span className="size-2 animate-pulse-dot rounded-full bg-[var(--tint-a)] text-[var(--tint-a)]" />En attente de ton iPhone… <span className="font-mono text-fg-subtle">{Math.floor(left / 60000)}:{String(Math.floor((left % 60000) / 1000)).padStart(2, "0")}</span></p>}
+      {error && <p role="alert" className="rounded-[12px] bg-danger/12 px-3.5 py-2.5 text-sm text-danger">{error}</p>}
+      <GlassButton variant="ghost" onClick={onCancel}>← Retour</GlassButton>
+    </div>
+  );
+}
+
+function ServerSettings() {
+  const account = useCordAccount();
+  const [server, setServer] = useState(account.server);
+  return (
+    <GlassCard variants={itemVariants} className="rounded-[22px] p-5">
+      <details className="relative z-[3]">
+        <summary className="flex cursor-pointer items-center gap-2 text-sm font-medium text-fg-muted"><Server className="size-4" />Serveur Compte Cord <span className="font-mono text-[12px] text-fg-subtle">{account.server.replace(/^https?:\/\//, "")}</span></summary>
+        <p className="mt-3 text-xs text-fg-muted">Par défaut : compte.cordsuite.app. En développement, un service local peut tourner sur le port 4319.</p>
+        <form className="mt-3 flex gap-2" onSubmit={e => { e.preventDefault(); try { setCordServer(server); } catch (err) { toast({ tone: "error", title: "Adresse refusée", description: (err as Error).message }); } }}>
+          <input className="cord-input" type="url" required aria-label="Adresse du service Compte Cord" value={server} onChange={e => setServer(e.target.value)} placeholder="https://compte.cordsuite.app" />
+          <GlassButton type="submit" variant="glass">Utiliser</GlassButton>
         </form>
-        <GlassButton variant="glass" disabled={busy || !!challenge || !IS_TAURI || !account.server} onClick={() => void run(async () => setChallenge(await cordRequest<CordChallenge>("/api/passcord/login")))}>Se connecter avec Passcord</GlassButton>
-      </> : <>
-        <h2 className="font-display text-2xl font-semibold">{account.user.name}</h2><p className="text-sm text-fg-muted">{account.user.email}</p><code className="block break-all text-xs text-fg-subtle">{account.user.id}</code>
-        {!account.user.emailVerified && <div className="space-y-2 rounded-xl bg-[var(--control)] p-3"><p className="text-sm">Confirme ton email avant de connecter Drivecord et les autres apps.</p><GlassButton variant="glass" disabled={busy} onClick={() => void run(async () => { const result = await cordRequest<{ devUrl?: string }>("/api/email/send"); setNotice(result.devUrl ? `Lien local prêt : ${result.devUrl}` : "Lien envoyé : consulte tes emails, puis actualise ton compte."); })}>Envoyer le lien de confirmation</GlassButton></div>}
-        <form className="flex items-end gap-3" onSubmit={e => { e.preventDefault(); void run(async () => { await cordRequest("/api/me", { name }, "PATCH"); await refreshCord(); }); }}><label className="flex-1 text-sm">Nom affiché<input className="cord-input mt-1" required maxLength={60} value={name} onChange={e => setName(e.target.value)} /></label><GlassButton type="submit" variant="glass" disabled={busy}>Enregistrer</GlassButton></form>
-        <h3 className="pt-4 font-semibold">Passcord, ta clé Cord</h3><p className="text-sm text-fg-muted">Associe Passcord, puis valide tes connexions sur ton iPhone avec Face ID.</p>
-        {account.keys.map(key => <div key={key.id} className="flex items-center justify-between rounded-xl bg-[var(--control)] p-3 text-sm"><span>{key.name}</span><GlassButton variant="danger" disabled={busy} onClick={() => void run(async () => { await cordRequest("/api/passcord/keys", { id: key.id }, "DELETE"); await refreshCord(); })}>Révoquer</GlassButton></div>)}
-        <div className="flex gap-2"><GlassButton variant="primary" disabled={busy} onClick={() => void run(async () => setChallenge(await cordRequest<CordChallenge>("/api/passcord/pair")))}>Associer Passcord</GlassButton><GlassButton variant="glass" disabled={busy} onClick={() => void run(refreshCord)}>Actualiser</GlassButton></div>
-        <GlassButton variant="ghost" disabled={busy} onClick={() => void run(async () => { await cordRequest("/api/logout"); clearCord(); setChallenge(null); })}>Se déconnecter</GlassButton>
-      </>}
-      {challenge && <div className="space-y-3 rounded-2xl bg-[var(--control)] p-4"><div className="mx-auto w-48 rounded-xl bg-white p-3"><QrCode value={challenge.url} colors={["#7252bf", "#236f86"]} className="aspect-square w-full" /></div><p className="text-sm">Scanne ce code ou colle le lien dans les réglages « Compte Cord » de Passcord. Vérifie le serveur et valide sur ton iPhone.</p><input className="cord-input text-xs" readOnly value={challenge.url} aria-label="Lien Passcord" /><p className="text-xs text-fg-subtle">Valable trois minutes. {challenge.pollToken ? "En attente de ton iPhone…" : "Après l’association, actualise les appareils."}</p><GlassButton variant="glass" onClick={() => setChallenge(null)}>Fermer</GlassButton></div>}
-      {error && <p role="alert" className="text-sm text-danger">{error}</p>}
-      {notice && <p role="status" className="break-all text-sm text-ok">{notice}</p>}
-      {!IS_TAURI && <p className="text-sm text-fg-muted">La session du launcher utilise le coffre Windows. Dans cet aperçu, ouvre le portail Cord pour essayer le compte.</p>}
-    </div></GlassCard>
-    <GlassCard variants={itemVariants} className="rounded-[26px] p-6"><details className="relative z-[3]" open={!account.server}><summary className="cursor-pointer text-sm font-medium">Serveur Compte Cord</summary><p className="mt-3 text-xs text-fg-muted">Utilise l’adresse commune configurée pour ta suite Cord. En développement, démarre le service local sur le port 4319.</p><form className="mt-3 flex gap-2" onSubmit={e => { e.preventDefault(); void run(async () => { setChallenge(null); setCordServer(server); }); }}><input className="cord-input" type="url" required aria-label="Adresse du service Compte Cord" value={server} onChange={e => setServer(e.target.value)} placeholder="https://compte.example.com" /><GlassButton type="submit" variant="glass" disabled={busy}>Utiliser</GlassButton></form>{account.server && <GlassButton className="mt-3" variant="ghost" onClick={() => void openExternal(account.server)}>Ouvrir le portail Cord</GlassButton>}</details></GlassCard>
-  </motion.div>;
+      </details>
+    </GlassCard>
+  );
 }

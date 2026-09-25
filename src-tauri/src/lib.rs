@@ -63,6 +63,7 @@ pub fn run() {
         .invoke_handler(tauri::generate_handler![
             launch_minimized,
             account::cord_request,
+            account::cord_export,
             apps::apps_detect,
             apps::apps_default_dir,
             apps::app_install,
