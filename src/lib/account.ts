@@ -25,7 +25,7 @@ export async function cordRequest<T>(path: string, body?: unknown, method = "POS
   return invoke<T>("cord_request", { server, path, method, body: body ?? null });
 }
 export async function refreshCord() {
-  const result = await cordRequest<{ user: CordUser; keys: CordKey[] }>("/api/me", undefined, "GET");
+  const result = await cordRequest<{ user: CordUser | null; keys: CordKey[] }>("/api/me", undefined, "GET");
   account.set(s => ({ ...s, ...result }));
 }
 export function clearCord() { account.set(s => ({ ...s, user: null, keys: [] })); }

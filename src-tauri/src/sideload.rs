@@ -134,7 +134,45 @@ pub async fn apple_status(state: State<'_, AppleState>) -> Result<AppleStatus, S
 /// Connexion. La 2FA arrive dans l'interface par l'évènement `apple://2fa` ;
 /// la réponse revient par `apple_2fa_respond`.
 async fn login(app: &AppHandle, email: String, password: String) -> Result<AppleAccount, String> {
+    // Apple répond 429 après trop de tentatives : chaque nouvel essai prolonge
+    // le blocage, donc on s'interdit de réessayer pendant une heure.
+    if let Some(left) = apple_cooldown_left() {
+        return Err(format!(
+            "Apple bloque encore les connexions à ton compte (trop de tentatives). Réessaie dans {} min, sans relancer d'ici là.",
+            left / 60 + 1
+        ));
+    }
     let app = app.clone();
+    let result = login_attempt(app, email, password).await;
+    if let Err(message) = &result {
+        if message.contains("429") {
+            set_apple_cooldown(3600);
+            return Err("Apple limite temporairement les connexions à ce compte (trop de tentatives récentes). \
+                Attends au moins une heure — parfois jusqu'à 24 h — avant de réessayer : chaque essai prolonge le blocage."
+                .into());
+        }
+    }
+    result
+}
+
+fn apple_cooldown_file() -> Option<std::path::PathBuf> {
+    Some(std::path::PathBuf::from(std::env::var_os("LOCALAPPDATA")?).join("app.cordsuite.launcher").join("apple-cooldown"))
+}
+fn unix_now() -> u64 {
+    std::time::SystemTime::now().duration_since(std::time::UNIX_EPOCH).map(|d| d.as_secs()).unwrap_or(0)
+}
+fn apple_cooldown_left() -> Option<u64> {
+    let until: u64 = std::fs::read_to_string(apple_cooldown_file()?).ok()?.trim().parse().ok()?;
+    until.checked_sub(unix_now()).filter(|left| *left > 0)
+}
+fn set_apple_cooldown(seconds: u64) {
+    if let Some(file) = apple_cooldown_file() {
+        let _ = std::fs::create_dir_all(file.parent().unwrap());
+        let _ = std::fs::write(file, (unix_now() + seconds).to_string());
+    }
+}
+
+async fn login_attempt(app: AppHandle, email: String, password: String) -> Result<AppleAccount, String> {
     on_own_thread(move || async move {
         isideload::auth::builder::AppleAccountBuilder::new(&email)
             .login(&password, move |params: TwoFactorCallbackParams| {
