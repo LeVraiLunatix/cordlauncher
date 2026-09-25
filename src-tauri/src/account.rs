@@ -68,7 +68,7 @@ pub async fn cord_request(server: String, path: String, method: String, body: Op
         None => (path.clone(), None),
     };
     if !allowed(&method, &route) {
-        return Err("Opération Cord inconnue.".into());
+        return Err("Cette version de CordLauncher ne connaît pas encore cette fonction du Compte Cord : ferme-le complètement et relance-le.".into());
     }
     if query.as_deref().is_some_and(|q| !q.chars().all(|c| c.is_ascii_alphanumeric() || "=&_-.%".contains(c))) {
         return Err("Paramètres Cord invalides.".into());

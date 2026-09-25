@@ -128,7 +128,7 @@ export async function respondApple(response: "Abort" | "SendToDevices" | "Resend
 }
 export async function sideloadIphone(id: string, name: string, source: { ipaUrl?: string; ipaPath?: string }, udid: string) {
   await operation(async () => {
-    patch({ progress: { id, phase: source.ipaPath ? "signing" : "downloading", progress: -1 } });
+    patch({ progress: { id, phase: source.ipaPath ? "preparing" : "downloading", progress: -1 } });
     await invoke("iphone_sideload", { id, ipaUrl: source.ipaUrl ?? null, ipaPath: source.ipaPath ?? null, udid });
     toast({ tone: "ok", title: `${name} installé sur l’iPhone`, description: "Active le mode développeur et autorise le profil dans les réglages iOS si nécessaire." });
   });

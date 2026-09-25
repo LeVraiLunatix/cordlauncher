@@ -30,6 +30,8 @@ use idevice::usbmuxd::{Connection, UsbmuxdAddr, UsbmuxdConnection};
 use idevice::IdeviceService;
 use isideload::auth::apple_account::{AppleAccount, TwoFactorCallbackParams, TwoFactorCallbackResponse};
 use isideload::dev::developer_session::DeveloperSession;
+use isideload::dev::devices::DevicesApi;
+use isideload::util::device::IdeviceInfo;
 use isideload::sideload::builder::MaxCertsBehavior;
 use isideload::sideload::{SideloaderBuilder, TeamSelection};
 use serde::{Deserialize, Serialize};
@@ -514,6 +516,7 @@ pub async fn iphone_sideload(
     let email = index.active.clone().ok_or("Connecte d'abord un compte Apple.")?;
     let key = profile_key(&email);
     if !sessions.contains_key(&key) {
+        let _ = app.emit(PROGRESS_EVENT, IphoneProgress { id: &id, phase: "account", progress: -1.0 });
         let password = saved_password(&email)
             .ok_or_else(|| format!("Reconnecte {email} : son mot de passe n'est pas mémorisé sur ce PC."))?;
         sessions.insert(key.clone(), login(&app, email.clone(), password).await?);
@@ -577,7 +580,9 @@ async fn sign_and_install(
     let emit = |phase: &str, progress: f32| {
         let _ = app.emit(PROGRESS_EVENT, IphoneProgress { id, phase, progress });
     };
-    emit("signing", -1.0);
+    // Étapes émises vers l'interface (chacune de 0 à 1, ou -1 si inconnue) :
+    // preparing (équipe, appareil) → signing → installing.
+    emit("preparing", -1.0);
 
     let session = match DeveloperSession::from_account(&mut account).await {
         Ok(s) => s,
@@ -598,29 +603,46 @@ async fn sign_and_install(
             .machine_name("CordLauncher".to_string())
             .build();
 
+        // `Sideloader::install_app` enchaîne tout mais ne rapporte que la
+        // signature (0,1 → 0,5) : on refait ses étapes pour suivre aussi l'envoi.
+        let info = IdeviceInfo::from_device(&provider).await.map_err(short_error)?;
+        let team = sideloader.get_team().await.map_err(short_error)?;
+        sideloader
+            .get_dev_session()
+            .ensure_device_registered(&team, &info.name, &info.udid, None)
+            .await
+            .map_err(short_error)?;
+        emit("signing", 0.0);
+
         let app_for_cb = app.clone();
         let id_for_cb = id.to_string();
-        sideloader
-            .install_app(
-                &provider,
+        let (signed, _special) = sideloader
+            .sign_app(
                 ipa,
+                Some(team),
                 false,
                 Some(move |p: f32| {
                     let app = app_for_cb.clone();
                     let id = id_for_cb.clone();
                     async move {
-                        // La signature finit vers 100 % ; l'envoi suit sans progression fine.
-                        let phase = if p >= 1.0 { "installing" } else { "signing" };
-                        let _ = app.emit(
-                            PROGRESS_EVENT,
-                            IphoneProgress { id: &id, phase, progress: if p >= 1.0 { -1.0 } else { p } },
-                        );
+                        let _ = app.emit(PROGRESS_EVENT, IphoneProgress { id: &id, phase: "signing", progress: (p / 0.5).min(0.95) });
                     }
                 }),
             )
             .await
-            .map(|_| ())
-            .map_err(short_error)
+            .map_err(short_error)?;
+        emit("signing", 1.0);
+
+        emit("installing", 0.0);
+        let installed = isideload::sideload::install::install_app(&provider, &signed, |pct: u64| {
+            emit("installing", (pct as f32 / 100.0).min(1.0));
+        })
+        .await
+        .map_err(short_error);
+        let _ = std::fs::remove_dir_all(&signed);
+        installed?;
+        emit("done", 1.0);
+        Ok(())
     }
     .await;
 
