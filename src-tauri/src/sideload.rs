@@ -60,14 +60,36 @@ fn saved_credentials() -> Option<SavedCredentials> {
     serde_json::from_str(&entry.get_password().ok()?).ok()
 }
 
-/// Premier paragraphe d'une erreur isideload (les rapports complets sont
-/// très bavards) ; le détail part dans la console.
+/// Erreur isideload lisible : les rapports `rootcause` sont des arbres
+/// (message, `├ fichier.rs:ligne`, `│`…) ; on garde toute la chaîne des
+/// messages, sans la décoration ni les emplacements de code. Le rapport
+/// complet part dans la console et dans `%LOCALAPPDATA%\app.cordsuite.launcher\logs\iphone.log`.
 fn short_error(e: impl std::fmt::Display + std::fmt::Debug) -> String {
     let full = e.to_string();
     let debug = format!("{e:?}");
     eprintln!("[iphone] {full}\n[iphone details] {debug}");
-    let detail = if debug != full { debug } else { full.clone() };
-    detail.lines().filter(|line| !line.trim().is_empty()).take(3).map(str::trim).collect::<Vec<_>>().join(" — ")
+    log_error(&debug);
+    let mut messages: Vec<String> = Vec::new();
+    for line in full.lines() {
+        let text = line.trim_start_matches(|c: char| "│├╰└─●•┬┴┼ \t".contains(c)).trim();
+        let location = text.contains(".rs:") && !text.contains(' ');
+        if text.is_empty() || location || messages.iter().any(|m| m == text) { continue; }
+        messages.push(text.to_string());
+    }
+    if messages.is_empty() { return full.trim().to_string(); }
+    messages.truncate(6);
+    messages.join(" → ")
+}
+
+fn log_error(detail: &str) {
+    use std::io::Write;
+    let Some(base) = std::env::var_os("LOCALAPPDATA") else { return };
+    let dir = std::path::PathBuf::from(base).join("app.cordsuite.launcher").join("logs");
+    if std::fs::create_dir_all(&dir).is_err() { return; }
+    let stamp = std::time::SystemTime::now().duration_since(std::time::UNIX_EPOCH).map(|d| d.as_secs()).unwrap_or(0);
+    if let Ok(mut file) = std::fs::OpenOptions::new().create(true).append(true).open(dir.join("iphone.log")) {
+        let _ = writeln!(file, "── {stamp} ──\n{detail}\n");
+    }
 }
 
 /// Exécute un futur non-`Send` sur un fil dédié et rend son résultat.

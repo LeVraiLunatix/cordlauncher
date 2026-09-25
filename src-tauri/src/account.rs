@@ -21,7 +21,7 @@ pub async fn cord_request(server: String, path: String, method: String, body: Op
     let mut request = client.request(method.parse::<reqwest::Method>().map_err(|e| e.to_string())?, base);
     if let Ok(token) = entry.get_password() { request = request.bearer_auth(token); }
     if let Some(body) = body { request = request.header("Content-Type", "application/json").body(body.to_string()); }
-    let response = request.send().await.map_err(|_| "Service Compte Cord injoignable. Vérifie l’adresse et que le serveur est démarré.")?;
+    let response = request.send().await.map_err(|e| format!("Service Compte Cord injoignable ({server}) : {e}. Vérifie l’adresse dans « Serveur Compte Cord »."))?;
     let status = response.status();
     let text = response.text().await.map_err(|e| e.to_string())?;
     let mut data: Value = serde_json::from_str(&text).map_err(|_| "Le serveur ne renvoie pas une réponse Compte Cord valide.")?;

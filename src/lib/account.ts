@@ -7,7 +7,9 @@ export type CordKey = { id: string; name: string; createdAt: number };
 export type CordChallenge = { id: string; url: string; pollToken?: string; expiresAt: number };
 /** Service Compte Cord en production (VPS, derrière Caddy). */
 const PRODUCTION_SERVER = "https://compte.cordsuite.app";
-const initialServer = localStorage.getItem("cordlauncher:account-server") ?? import.meta.env.VITE_CORD_ACCOUNT_URL ?? (import.meta.env.DEV ? "http://127.0.0.1:4319" : PRODUCTION_SERVER);
+// Même en dev, le compte est celui de la prod : un service local ne sert que
+// si on le demande (VITE_CORD_ACCOUNT_URL=http://127.0.0.1:4319, ou réglage « Serveur »).
+const initialServer = localStorage.getItem("cordlauncher:account-server") ?? import.meta.env.VITE_CORD_ACCOUNT_URL ?? PRODUCTION_SERVER;
 const account = createStore<{ server: string; user: CordUser | null; keys: CordKey[] }>({ server: initialServer, user: null, keys: [] });
 export const useCordAccount = () => useStore(account, s => s);
 export function setCordServer(server: string) {
