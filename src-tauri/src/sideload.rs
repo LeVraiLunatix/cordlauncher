@@ -18,6 +18,7 @@
 //!  - le mot de passe n'est gardé (coffre Windows) que si l'utilisateur le
 //!    demande : il sert à re-signer les apps chaque semaine.
 
+use std::collections::{HashMap, HashSet};
 use std::future::Future;
 use std::path::PathBuf;
 use std::sync::atomic::AtomicBool;
@@ -36,28 +37,113 @@ use tauri::{AppHandle, Emitter, Manager, State};
 use tokio::sync::oneshot;
 
 const KEYRING_SERVICE: &str = "CordLauncher Apple ID";
-const KEYRING_USER: &str = "account";
+/// Ancien emplacement (un seul compte, JSON email + mot de passe) : migré au premier accès.
+const LEGACY_KEYRING_USER: &str = "account";
 const TWO_FACTOR_EVENT: &str = "apple://2fa";
 const PROGRESS_EVENT: &str = "iphone://progress";
+const SIGNED_IN_EVENT: &str = "apple://signed-in";
 
 #[derive(Default)]
 pub struct AppleState {
-    /// Session ouverte (connexion faite pendant cette exécution).
-    account: tokio::sync::Mutex<Option<AppleAccount>>,
-    email: Mutex<Option<String>>,
+    /// Sessions ouvertes pendant cette exécution, par identifiant (en minuscules).
+    /// Le verrou sert aussi de garde « une seule opération Apple à la fois ».
+    sessions: tokio::sync::Mutex<HashMap<String, AppleAccount>>,
+    /// Copie des clés de `sessions`, lisible même pendant une opération.
+    connected: Mutex<HashSet<String>>,
     /// Réponse attendue par la 2FA en cours.
     pending_2fa: Mutex<Option<oneshot::Sender<TwoFactorCallbackResponse>>>,
 }
 
-#[derive(Serialize, Deserialize)]
-struct SavedCredentials {
+// ── Profils Apple ───────────────────────────────────────────────────────────
+// Plusieurs identifiants Apple, dont un actif (celui qui signe les apps).
+// La liste (sans secret) vit dans `apple-profiles.json` ; chaque mot de passe
+// mémorisé a sa propre entrée du coffre Windows (utilisateur = identifiant).
+
+#[derive(Serialize, Deserialize, Clone)]
+#[serde(rename_all = "camelCase")]
+struct ProfileMeta {
     email: String,
-    password: String,
+    added_at: u64,
+    last_used_at: Option<u64>,
 }
 
-fn saved_credentials() -> Option<SavedCredentials> {
-    let entry = keyring::Entry::new(KEYRING_SERVICE, KEYRING_USER).ok()?;
-    serde_json::from_str(&entry.get_password().ok()?).ok()
+#[derive(Serialize, Deserialize, Default)]
+#[serde(rename_all = "camelCase")]
+struct ProfileIndex {
+    active: Option<String>,
+    profiles: Vec<ProfileMeta>,
+}
+
+impl ProfileIndex {
+    fn upsert(&mut self, email: &str) {
+        let now = unix_now();
+        match self.profiles.iter_mut().find(|p| profile_key(&p.email) == profile_key(email)) {
+            Some(p) => { p.email = email.to_string(); p.last_used_at = Some(now); }
+            None => self.profiles.push(ProfileMeta { email: email.to_string(), added_at: now, last_used_at: Some(now) }),
+        }
+        self.active = Some(email.to_string());
+    }
+    fn find(&self, email: &str) -> Option<&ProfileMeta> {
+        self.profiles.iter().find(|p| profile_key(&p.email) == profile_key(email))
+    }
+}
+
+fn profile_key(email: &str) -> String {
+    email.trim().to_lowercase()
+}
+
+fn launcher_dir() -> Option<PathBuf> {
+    Some(PathBuf::from(std::env::var_os("LOCALAPPDATA")?).join("app.cordsuite.launcher"))
+}
+
+fn password_entry(email: &str) -> Result<keyring::Entry, String> {
+    keyring::Entry::new(KEYRING_SERVICE, &profile_key(email)).map_err(|e| format!("Coffre Windows inaccessible : {e}"))
+}
+
+fn saved_password(email: &str) -> Option<String> {
+    password_entry(email).ok()?.get_password().ok()
+}
+
+fn forget_password(email: &str) {
+    if let Ok(entry) = password_entry(email) {
+        let _ = entry.delete_credential();
+    }
+}
+
+fn load_profiles() -> ProfileIndex {
+    let path = launcher_dir().map(|d| d.join("apple-profiles.json"));
+    let mut index: ProfileIndex = path
+        .as_ref()
+        .and_then(|p| std::fs::read(p).ok())
+        .and_then(|bytes| serde_json::from_slice(&bytes).ok())
+        .unwrap_or_default();
+
+    // Migration de l'ancien compte unique mémorisé.
+    #[derive(Deserialize)]
+    struct Legacy { email: String, password: String }
+    if let Ok(entry) = keyring::Entry::new(KEYRING_SERVICE, LEGACY_KEYRING_USER) {
+        if let Some(legacy) = entry.get_password().ok().and_then(|json| serde_json::from_str::<Legacy>(&json).ok()) {
+            if password_entry(&legacy.email).and_then(|e| e.set_password(&legacy.password).map_err(|e| e.to_string())).is_ok() {
+                if index.find(&legacy.email).is_none() {
+                    index.upsert(&legacy.email);
+                }
+                if index.active.is_none() {
+                    index.active = Some(legacy.email.clone());
+                }
+                if save_profiles(&index).is_ok() {
+                    let _ = entry.delete_credential();
+                }
+            }
+        }
+    }
+    index
+}
+
+fn save_profiles(index: &ProfileIndex) -> Result<(), String> {
+    let dir = launcher_dir().ok_or("Dossier de CordLauncher introuvable.")?;
+    std::fs::create_dir_all(&dir).map_err(|e| e.to_string())?;
+    let json = serde_json::to_vec_pretty(index).map_err(|e| e.to_string())?;
+    std::fs::write(dir.join("apple-profiles.json"), json).map_err(|e| format!("Profils Apple non enregistrés : {e}"))
 }
 
 /// Erreur isideload lisible : les rapports `rootcause` sont des arbres
@@ -115,20 +201,80 @@ where
 
 #[derive(Serialize)]
 #[serde(rename_all = "camelCase")]
-pub struct AppleStatus {
-    email: Option<String>,
+pub struct AppleProfile {
+    email: String,
+    /// Compte qui signe les apps.
+    active: bool,
     /// Session ouverte dans cette exécution de CordLauncher.
     connected: bool,
-    /// Identifiants gardés dans le coffre Windows (reconnexion automatique).
+    /// Mot de passe gardé dans le coffre Windows (reconnexion automatique).
     remembered: bool,
+    added_at: u64,
+    last_used_at: Option<u64>,
+    /// Secondes avant de pouvoir retenter la connexion (pause après des 429).
+    paused_for: Option<u64>,
+}
+
+#[derive(Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct AppleStatus {
+    active: Option<String>,
+    profiles: Vec<AppleProfile>,
+}
+
+fn status_of(state: &AppleState, index: &ProfileIndex) -> AppleStatus {
+    let connected = state.connected.lock().unwrap().clone();
+    let active = index.active.as_deref().map(profile_key);
+    let mut profiles: Vec<AppleProfile> = index
+        .profiles
+        .iter()
+        .map(|p| AppleProfile {
+            email: p.email.clone(),
+            active: active.as_deref() == Some(profile_key(&p.email).as_str()),
+            connected: connected.contains(&profile_key(&p.email)),
+            remembered: saved_password(&p.email).is_some(),
+            added_at: p.added_at,
+            last_used_at: p.last_used_at,
+            paused_for: apple_cooldown_left(&p.email),
+        })
+        .collect();
+    // Actif d'abord, puis du plus récemment utilisé au plus ancien.
+    profiles.sort_by_key(|p| (!p.active, std::cmp::Reverse(p.last_used_at.unwrap_or(p.added_at))));
+    AppleStatus { active: index.active.clone(), profiles }
 }
 
 #[tauri::command]
-pub async fn apple_status(state: State<'_, AppleState>) -> Result<AppleStatus, String> {
-    let connected = state.account.lock().await.is_some();
-    let saved = saved_credentials();
-    let email = state.email.lock().unwrap().clone().or_else(|| saved.as_ref().map(|c| c.email.clone()));
-    Ok(AppleStatus { email, connected, remembered: saved.is_some() })
+pub fn apple_status(state: State<'_, AppleState>) -> AppleStatus {
+    status_of(&state, &load_profiles())
+}
+
+/// Change le compte actif, sans contacter Apple : la connexion se fera à la
+/// prochaine installation (avec le mot de passe mémorisé) ou tout de suite si
+/// une session est déjà ouverte.
+#[tauri::command]
+pub fn apple_switch(state: State<'_, AppleState>, email: String) -> Result<AppleStatus, String> {
+    let mut index = load_profiles();
+    let email = index.find(&email).map(|p| p.email.clone()).ok_or("Ce compte Apple n'est plus enregistré.")?;
+    index.upsert(&email);
+    save_profiles(&index)?;
+    Ok(status_of(&state, &index))
+}
+
+/// Oublie un compte : session fermée, mot de passe retiré du coffre.
+#[tauri::command]
+pub async fn apple_forget(state: State<'_, AppleState>, email: String) -> Result<AppleStatus, String> {
+    let mut sessions = state.sessions.try_lock().map_err(|_| "Une opération Apple est déjà en cours.")?;
+    let key = profile_key(&email);
+    sessions.remove(&key);
+    state.connected.lock().unwrap().remove(&key);
+    forget_password(&email);
+    let mut index = load_profiles();
+    index.profiles.retain(|p| profile_key(&p.email) != key);
+    if index.active.as_deref().map(profile_key).as_deref() == Some(key.as_str()) {
+        index.active = index.profiles.iter().max_by_key(|p| p.last_used_at.unwrap_or(p.added_at)).map(|p| p.email.clone());
+    }
+    save_profiles(&index)?;
+    Ok(status_of(&state, &index))
 }
 
 /// Connexion. La 2FA arrive dans l'interface par l'évènement `apple://2fa` ;
@@ -142,8 +288,11 @@ async fn login(app: &AppHandle, email: String, password: String) -> Result<Apple
             duration_fr(left)
         ));
     }
-    let app = app.clone();
-    let result = login_attempt(app, email.clone(), password).await;
+    let result = login_attempt(app.clone(), email.clone(), password).await;
+    if result.is_ok() {
+        // Ferme la fenêtre du code (animation de réussite) sans attendre la suite de l'opération.
+        let _ = app.emit(SIGNED_IN_EVENT, &email);
+    }
     if let Err(message) = &result {
         if message.contains("429") || message.contains("Too Many Requests") {
             // isideload 0.4 a déjà relancé 10 fois chaque requête : les serveurs d'Apple
@@ -184,15 +333,28 @@ fn set_apple_cooldown(email: &str, seconds: u64) {
     log_error(&format!("Apple 429 : pause jusqu'à {until} ({seconds} s) → {written:?}"));
 }
 
+/// Évènement de 2FA : les paramètres d'isideload + le compte concerné et le
+/// délai laissé pour répondre (la fenêtre du code affiche le compte à rebours).
+#[derive(Serialize, Clone)]
+#[serde(rename_all = "camelCase")]
+struct TwoFactorEvent<'a> {
+    email: &'a str,
+    expires_in: u64,
+    #[serde(flatten)]
+    params: &'a TwoFactorCallbackParams,
+}
+
 async fn login_attempt(app: AppHandle, email: String, password: String) -> Result<AppleAccount, String> {
     on_own_thread(move || async move {
+        let for_callback = email.clone();
         isideload::auth::builder::AppleAccountBuilder::new(&email)
             .login(&password, move |params: TwoFactorCallbackParams| {
                 let app = app.clone();
+                let email = for_callback.clone();
                 async move {
                     let (tx, rx) = oneshot::channel();
                     *app.state::<AppleState>().pending_2fa.lock().unwrap() = Some(tx);
-                    let _ = app.emit(TWO_FACTOR_EVENT, &params);
+                    let _ = app.emit(TWO_FACTOR_EVENT, TwoFactorEvent { email: &email, expires_in: 180, params: &params });
                     let response = tokio::time::timeout(std::time::Duration::from_secs(180), rx).await;
                     app.state::<AppleState>().pending_2fa.lock().unwrap().take();
                     Ok(response.ok().and_then(Result::ok).unwrap_or(TwoFactorCallbackResponse::Abort))
@@ -212,20 +374,24 @@ pub async fn apple_login(
     password: String,
     remember: bool,
 ) -> Result<AppleStatus, String> {
-    let mut guard = state.account.try_lock().map_err(|_| "Une opération Apple est déjà en cours.")?;
+    let mut sessions = state.sessions.try_lock().map_err(|_| "Une opération Apple est déjà en cours.")?;
     let email = email.trim().to_string();
-    let account = login(&app, email.clone(), password.clone()).await?;
-    *guard = Some(account);
-    *state.email.lock().unwrap() = Some(email.clone());
-
-    let entry = keyring::Entry::new(KEYRING_SERVICE, KEYRING_USER).map_err(|e| e.to_string())?;
-    if remember {
-        let json = serde_json::to_string(&SavedCredentials { email: email.clone(), password }).map_err(|e| e.to_string())?;
-        entry.set_password(&json).map_err(|e| format!("Coffre Windows inaccessible : {e}"))?;
-    } else {
-        let _ = entry.delete_credential();
+    if email.is_empty() || password.is_empty() {
+        return Err("Entre l'identifiant et le mot de passe du compte Apple.".into());
     }
-    Ok(AppleStatus { email: Some(email), connected: true, remembered: remember })
+    let account = login(&app, email.clone(), password.clone()).await?;
+    sessions.insert(profile_key(&email), account);
+    state.connected.lock().unwrap().insert(profile_key(&email));
+
+    if remember {
+        password_entry(&email)?.set_password(&password).map_err(|e| format!("Coffre Windows inaccessible : {e}"))?;
+    } else {
+        forget_password(&email);
+    }
+    let mut index = load_profiles();
+    index.upsert(&email);
+    save_profiles(&index)?;
+    Ok(status_of(&state, &index))
 }
 
 #[tauri::command]
@@ -234,23 +400,14 @@ pub fn apple_2fa_respond(state: State<'_, AppleState>, response: TwoFactorCallba
     sender.send(response).map_err(|_| "La vérification a expiré.".to_string())
 }
 
-#[tauri::command]
-pub async fn apple_logout(state: State<'_, AppleState>) -> Result<(), String> {
-    *state.account.lock().await = None;
-    *state.email.lock().unwrap() = None;
-    if let Ok(entry) = keyring::Entry::new(KEYRING_SERVICE, KEYRING_USER) {
-        let _ = entry.delete_credential();
-    }
-    Ok(())
-}
-
 /// Oublie l'« appareil » que CordLauncher présente à Apple (identité anisette
 /// gardée par isideload dans le coffre Windows) : la prochaine connexion en crée
 /// un nouveau, et Apple redemandera un code de vérification. Lève aussi les pauses.
 #[tauri::command]
 pub async fn apple_reset_device(state: State<'_, AppleState>) -> Result<(), String> {
-    let mut guard = state.account.try_lock().map_err(|_| "Une opération Apple est déjà en cours.")?;
-    *guard = None;
+    let mut sessions = state.sessions.try_lock().map_err(|_| "Une opération Apple est déjà en cours.")?;
+    sessions.clear();
+    state.connected.lock().unwrap().clear();
     match keyring::Entry::new("isideload", "anisette_state").and_then(|e| e.delete_credential()) {
         Ok(()) | Err(keyring::Error::NoEntry) => {}
         Err(e) => return Err(format!("Coffre Windows inaccessible : {e}")),
@@ -351,14 +508,19 @@ pub async fn iphone_sideload(
     udid: String,
 ) -> Result<(), String> {
     crate::apps::validate_id(&id)?;
-    // Session : celle ouverte, sinon reconnexion avec les identifiants gardés.
-    let mut guard = state.account.try_lock().map_err(|_| "Une opération Apple est déjà en cours.")?;
-    if guard.is_none() {
-        let saved = saved_credentials().ok_or("Connecte d'abord ton compte Apple.")?;
-        *guard = Some(login(&app, saved.email.clone(), saved.password).await?);
-        *state.email.lock().unwrap() = Some(saved.email);
+    // Compte actif : sa session ouverte, sinon reconnexion avec le mot de passe mémorisé.
+    let mut sessions = state.sessions.try_lock().map_err(|_| "Une opération Apple est déjà en cours.")?;
+    let mut index = load_profiles();
+    let email = index.active.clone().ok_or("Connecte d'abord un compte Apple.")?;
+    let key = profile_key(&email);
+    if !sessions.contains_key(&key) {
+        let password = saved_password(&email)
+            .ok_or_else(|| format!("Reconnecte {email} : son mot de passe n'est pas mémorisé sur ce PC."))?;
+        sessions.insert(key.clone(), login(&app, email.clone(), password).await?);
+        state.connected.lock().unwrap().insert(key.clone());
     }
-    let email = state.email.lock().unwrap().clone().unwrap_or_default();
+    index.upsert(&email);
+    let _ = save_profiles(&index);
 
     // 1. IPA : fichier local fourni, sinon téléchargement. Le fichier local
     //    n'est jamais supprimé (il appartient à l'utilisateur).
@@ -386,14 +548,18 @@ pub async fn iphone_sideload(
     };
 
     // 2 + 3. Signature et envoi, sur un fil dédié. Le compte y part et revient.
-    let account = guard.take().expect("session ouverte ci-dessus");
+    let account = sessions.remove(&key).expect("session ouverte ci-dessus");
     let (app2, id2, ipa2) = (app.clone(), id.clone(), ipa.clone());
-    let (result, account) = on_own_thread(move || async move {
+    let outcome = on_own_thread(move || async move {
         let r = sign_and_install(&app2, &id2, account, email, ipa2, udid).await;
         Ok(r)
     })
-    .await?;
-    *guard = account;
+    .await;
+    let result = match outcome {
+        Ok((result, Some(account))) => { sessions.insert(key, account); result }
+        Ok((result, None)) => { state.connected.lock().unwrap().remove(&key); result }
+        Err(e) => { state.connected.lock().unwrap().remove(&key); Err(e) }
+    };
     if remove_after {
         let _ = std::fs::remove_file(&ipa);
     }

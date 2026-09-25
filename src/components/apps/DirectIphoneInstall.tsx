@@ -1,7 +1,7 @@
 import { invoke } from "@tauri-apps/api/core";
 import { FileUp } from "lucide-react";
 import { useEffect, useState } from "react";
-import { sideloadIphone, useApple, type IphoneDevice } from "../../lib/apple";
+import { canInstall, sideloadIphone, useApple, type IphoneDevice } from "../../lib/apple";
 import type { CatalogApp } from "../../lib/catalog/types";
 import { IS_TAURI, openExternal, pickIpaFile } from "../../lib/platform";
 import { GlassButton, GlassProgress } from "../glass";
@@ -25,7 +25,7 @@ export function DirectIphoneInstall({ app }: { app: CatalogApp }) {
   const publicUrl = app.ios?.ipaUrl ?? null;
   const needsFile = !publicUrl;
   const source = ipaPath ? { ipaPath } : publicUrl ? { ipaUrl: publicUrl } : null;
-  const connected = apple.status.connected || apple.status.remembered;
+  const connected = canInstall(apple.status);
 
   async function scan() {
     if (!IS_TAURI) return;
