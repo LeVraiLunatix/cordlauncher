@@ -112,9 +112,10 @@ export function ScoreRing({ value, size = 104, caption = "sécurité" }: { value
           strokeDasharray={length} initial={{ strokeDashoffset: length }} animate={{ strokeDashoffset: length * (1 - value / 100) }}
           transition={{ duration: 1.1, ease: [0.22, 1, 0.36, 1] }} />
       </svg>
+      {/* Texte proportionnel à l'anneau ; la légende disparaît sous 80 px, où elle débordait. */}
       <div className="absolute inset-0 grid place-content-center text-center">
-        <strong className="font-display text-[26px] leading-none tracking-[-0.03em]">{value}</strong>
-        <small className="mt-1 text-[9.5px] font-semibold tracking-[0.14em] text-fg-subtle uppercase">{caption}</small>
+        <strong className="font-display leading-none tracking-[-0.03em]" style={{ fontSize: Math.round(size * 0.25) }}>{value}</strong>
+        {size >= 80 && <small className="mt-1 text-[9.5px] font-semibold tracking-[0.14em] text-fg-subtle uppercase">{caption}</small>}
       </div>
     </div>
   );
