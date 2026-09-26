@@ -102,19 +102,21 @@ kbd { display: inline-flex; align-items: center; gap: 3px; margin-left: auto; pa
   transition: transform 500ms var(--ease);
 }
 .cc-holo {
+  /* Halos ronds qui dérivent : aucun bord droit (le dégradé conique tournant
+     laissait des lignes diagonales visibles, même flouté). */
   position: absolute;
   z-index: -1;
-  /* Assez grand pour couvrir la carte à tout angle de rotation (sinon ses bords
-     apparaissent en diagonale dans les coins), et flouté : pas de tourbillon net. */
-  inset: -110%;
-  background: conic-gradient(from 0deg at 50% 50%, transparent 0deg, rgba(120, 220, 255, 0.22) 60deg, rgba(255, 120, 220, 0.24) 140deg, transparent 220deg, rgba(160, 255, 200, 0.18) 300deg, transparent 360deg);
-  filter: blur(46px);
-  opacity: 0.85;
+  inset: 0;
+  background:
+    radial-gradient(42% 58% at 22% 30%, rgba(120, 220, 255, 0.24), transparent 72%),
+    radial-gradient(46% 62% at 78% 72%, rgba(255, 120, 220, 0.24), transparent 72%),
+    radial-gradient(36% 48% at 62% 18%, rgba(160, 255, 200, 0.16), transparent 72%);
+  background-size: 180% 180%;
   mix-blend-mode: screen;
-  animation: holo-spin 16s linear infinite;
+  animation: holo-drift 18s ease-in-out infinite alternate;
 }
 .cc-shine { position: absolute; z-index: -1; inset: 0; background: radial-gradient(460px circle at var(--px) var(--py), rgba(255, 255, 255, 0.24), transparent 45%); transition: background 200ms linear; }
-@keyframes holo-spin { to { transform: rotate(360deg); } }
+@keyframes holo-drift { from { background-position: 0% 0%; } to { background-position: 100% 100%; } }
 .cc-top { display: flex; align-items: center; gap: 10px; }
 .cc-top img { border-radius: 9px; box-shadow: 0 6px 16px -6px rgba(0, 0, 0, 0.6); }
 .cc-brand { font: 600 12px/1 var(--font-mono); letter-spacing: 0.22em; text-transform: uppercase; opacity: 0.85; }

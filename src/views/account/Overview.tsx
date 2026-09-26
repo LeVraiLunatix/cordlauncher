@@ -121,9 +121,9 @@ function CordCard({ d, linked }: { d: CordDashboard; linked: number }) {
       className="relative isolate flex min-h-[290px] flex-col gap-5 overflow-hidden rounded-[30px] p-6 text-white shadow-[inset_0_1px_0_rgb(255_255_255/0.28),inset_0_0_0_1px_rgb(255_255_255/0.12),0_34px_80px_-34px_rgb(139_92_255/0.75)]"
     >
       <span aria-hidden className="absolute inset-0 -z-20" style={{ background: "radial-gradient(120% 90% at 0% 0%, rgb(110 88 240 / 0.95) 0%, transparent 55%), radial-gradient(90% 80% at 100% 100%, rgb(210 75 239 / 0.85) 0%, transparent 60%), linear-gradient(135deg, #150d2e, #2b1454 55%, #3b1257)" }} />
-      {/* Calque holographique : assez grand pour couvrir la carte à tout angle, flouté. */}
-      <span aria-hidden className={cn("absolute inset-[-110%] -z-10 opacity-85 mix-blend-screen blur-[46px]", !reduce && "animate-[holo-spin_16s_linear_infinite]")}
-        style={{ background: "conic-gradient(from 0deg at 50% 50%, transparent 0deg, rgb(120 220 255 / 0.22) 60deg, rgb(255 120 220 / 0.24) 140deg, transparent 220deg, rgb(160 255 200 / 0.18) 300deg, transparent 360deg)" }} />
+      {/* Halos ronds qui dérivent : aucun bord droit visible (contrairement à un dégradé conique tournant). */}
+      <span aria-hidden className={cn("absolute inset-0 -z-10 mix-blend-screen", !reduce && "animate-[holo-drift_18s_ease-in-out_infinite_alternate]")}
+        style={{ background: "radial-gradient(42% 58% at 22% 30%, rgb(120 220 255 / 0.24), transparent 72%), radial-gradient(46% 62% at 78% 72%, rgb(255 120 220 / 0.24), transparent 72%), radial-gradient(36% 48% at 62% 18%, rgb(160 255 200 / 0.16), transparent 72%)", backgroundSize: "180% 180%" }} />
       <motion.span aria-hidden className="absolute inset-0 -z-10" style={{ background: shine }} />
 
       <div className="flex flex-wrap items-center gap-2.5">
