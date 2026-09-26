@@ -1,4 +1,4 @@
-import { ChartColumn, ExternalLink, History, KeyRound, LayoutDashboard, LayoutGrid, LockKeyhole, LogOut, MonitorSmartphone, RefreshCw, Server, ShieldCheck, Smartphone, UserRound, type LucideIcon } from "lucide-react";
+import { Bell, ChartColumn, ExternalLink, History, House, KeyRound, LayoutGrid, LockKeyhole, LogOut, MonitorSmartphone, RefreshCw, Server, ShieldCheck, Smartphone, UserRound, type LucideIcon } from "lucide-react";
 import { AnimatePresence, motion } from "motion/react";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { QrCode } from "../components/apps/QrCode";
@@ -14,13 +14,13 @@ import { Apps } from "./account/Apps";
 import { AccountContext, type AccountCtx, type AccountTab } from "./account/context";
 import { Devices } from "./account/Devices";
 import { ActionModal, Field, PasswordInput, type ModalSpec } from "./account/kit";
-import { AccountHero, Overview, VerifyBanner } from "./account/Overview";
+import { AccountHero, InboxModal, Overview } from "./account/Overview";
 import { Privacy } from "./account/Privacy";
 import { Profile } from "./account/Profile";
 import { Security } from "./account/Security";
 
 const TABS: { id: AccountTab; label: string; icon: LucideIcon; admin?: boolean }[] = [
-  { id: "apercu", label: "Aperçu", icon: LayoutDashboard },
+  { id: "apercu", label: "Accueil", icon: House },
   { id: "securite", label: "Sécurité", icon: ShieldCheck },
   { id: "appareils", label: "Appareils", icon: MonitorSmartphone },
   { id: "apps", label: "Apps", icon: LayoutGrid },
@@ -71,6 +71,8 @@ function SignedIn() {
   const { dashboard } = useCordAccount();
   const [tab, setTab] = useState<AccountTab>("apercu");
   const [modal, setModal] = useState<ModalSpec | null>(null);
+  const [inboxOpen, setInboxOpen] = useState(false);
+  const unread = useCordAccount().hub?.unread ?? 0;
   const passwordResolver = useRef<((value: string | null) => void) | null>(null);
   const d = dashboard!;
 
@@ -114,9 +116,8 @@ function SignedIn() {
 
   return (
     <AccountContext.Provider value={ctx}>
-      <AccountHero />
-      <VerifyBanner />
-      <motion.nav variants={itemVariants} aria-label="Sections du compte" className="glass-inset flex gap-1 overflow-x-auto rounded-full p-1 [scrollbar-width:none]">
+      <motion.div variants={itemVariants} className="flex items-center gap-2">
+      <nav aria-label="Sections du compte" className="glass-inset flex min-w-0 flex-1 gap-1 overflow-x-auto rounded-full p-1 [scrollbar-width:none]">
         {tabs.map(t => {
           const active = t.id === tab;
           const Icon = t.icon;
@@ -129,10 +130,17 @@ function SignedIn() {
             </button>
           );
         })}
-      </motion.nav>
+      </nav>
+      <button type="button" onClick={() => setInboxOpen(true)} aria-label={`Notifications${unread ? ` (${unread} non lues)` : ""}`}
+        className="glass-inset relative grid size-11 shrink-0 place-items-center rounded-full text-fg-muted transition-colors hover:text-fg">
+        <Bell className="size-4" />
+        {unread > 0 && <span className="tint-fill absolute -top-0.5 -right-0.5 grid h-[18px] min-w-[18px] place-items-center rounded-full px-1 font-mono text-[10px] font-bold text-white">{unread > 9 ? "9+" : unread}</span>}
+      </button>
+      </motion.div>
 
       <AnimatePresence mode="wait">
         <motion.div key={tab} className="flex flex-col gap-4" variants={viewVariants} initial="hidden" animate="show" exit="exit">
+          {tab !== "apercu" && <AccountHero />}
           {tab === "apercu" && <Overview />}
           {tab === "securite" && <Security />}
           {tab === "appareils" && <Devices />}
@@ -152,6 +160,7 @@ function SignedIn() {
       </motion.div>
 
       <ActionModal spec={modal} onClose={closeModal} />
+      <InboxModal open={inboxOpen} onClose={() => setInboxOpen(false)} />
     </AccountContext.Provider>
   );
 }

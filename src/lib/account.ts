@@ -31,22 +31,33 @@ export type CordDashboard = {
   sessions: CordSession[];
   apps: CordApp[];
   activity: CordEvent[];
+  unread?: number;
 };
+/** État qu'une app publie sur le Compte Cord (tuile du hub). */
+export type CordAppStatus = { headline: string; detail: string | null; metrics: { label: string; value: string }[]; tone: string | null; url: string | null; updatedAt: number };
+export type CordHubApp = {
+  slug: string; name: string; status: "live" | "beta" | "soon"; tagline: string; description: string; url: string | null; launch: string | null;
+  accent: [string, string]; logo: string; connected: boolean; connectedAt: number | null; lastUsedAt: number | null;
+  appStatus: CordAppStatus | null; beta: { access: boolean } | null;
+};
+/** Le hub (`GET /api/hub`) : la suite telle que le compte la voit. */
+export type CordHub = { apps: CordHubApp[]; launcher: CordAppStatus | null; unread: number };
+export type CordNotification = { id: string; app: string; name: string; logo: string | null; title: string; body: string | null; url: string | null; createdAt: number; readAt: number | null };
 
 /** Service Compte Cord en production. */
 export const PRODUCTION_SERVER = "https://compte.cordsuite.app";
 // Même en dev, le compte est celui de la prod : un service local ne sert que
 // si on le demande (VITE_CORD_ACCOUNT_URL=http://127.0.0.1:4319, ou réglage « Serveur »).
 const initialServer = localStorage.getItem("cordlauncher:account-server") ?? import.meta.env.VITE_CORD_ACCOUNT_URL ?? PRODUCTION_SERVER;
-type AccountState = { server: string; user: CordUser | null; keys: CordKey[]; dashboard: CordDashboard | null; suite: SuiteApp[] };
-const account = createStore<AccountState>({ server: initialServer, user: null, keys: [], dashboard: null, suite: [] });
+type AccountState = { server: string; user: CordUser | null; keys: CordKey[]; dashboard: CordDashboard | null; suite: SuiteApp[]; hub: CordHub | null; inbox: CordNotification[] | null };
+const account = createStore<AccountState>({ server: initialServer, user: null, keys: [], dashboard: null, suite: [], hub: null, inbox: null });
 export const useCordAccount = () => useStore(account, s => s);
 
 export function setCordServer(server: string) {
   const url = new URL(server.trim());
   if (url.username || url.password || url.search || url.hash || url.pathname !== "/" || (url.protocol !== "https:" && !(url.protocol === "http:" && ["127.0.0.1", "localhost", "[::1]"].includes(url.hostname)))) throw new Error("Utilise une adresse HTTPS, ou localhost pour le développement.");
   localStorage.setItem("cordlauncher:account-server", url.origin);
-  account.set({ server: url.origin, user: null, keys: [], dashboard: null, suite: [] });
+  account.set({ server: url.origin, user: null, keys: [], dashboard: null, suite: [], hub: null, inbox: null });
 }
 
 /** Erreur du service : message lisible + raison machine (`mfa_required`…). */
@@ -89,13 +100,36 @@ export async function publishLauncherStatus(apps: { id: string; name: string }[]
 
 export async function refreshCord() {
   const result = await cordRequest<{ user: CordUser | null; keys: CordKey[] }>("/api/me", undefined, "GET");
-  const dashboard = result.user ? await cordRequest<CordDashboard>("/api/account", undefined, "GET") : null;
-  account.set(s => ({ ...s, ...result, user: dashboard?.user ?? result.user, dashboard }));
+  const [dashboard, hub] = result.user
+    ? await Promise.all([
+        cordRequest<CordDashboard>("/api/account", undefined, "GET"),
+        cordRequest<CordHub>("/api/hub", undefined, "GET").catch(() => null),
+      ])
+    : [null, null];
+  account.set(s => ({ ...s, ...result, user: dashboard?.user ?? result.user, dashboard, hub }));
   if (result.user && !account.get().suite.length) {
     void cordRequest<{ apps: SuiteApp[] }>("/api/suite", undefined, "GET").then(({ apps }) => account.set(s => ({ ...s, suite: apps }))).catch(() => {});
   }
 }
-export function clearCord() { account.set(s => ({ ...s, user: null, keys: [], dashboard: null })); }
+export function clearCord() { account.set(s => ({ ...s, user: null, keys: [], dashboard: null, hub: null, inbox: null })); }
+
+// ── Notifications envoyées par les apps de la suite ────────────────────────
+const setUnread = (unread: number) => account.set(s => ({ ...s, hub: s.hub ? { ...s.hub, unread } : s.hub }));
+export async function loadInbox() {
+  const page = await cordRequest<{ items: CordNotification[]; unread: number }>("/api/notifications", undefined, "GET");
+  account.set(s => ({ ...s, inbox: page.items }));
+  setUnread(page.unread);
+}
+export async function markInboxRead(ids?: string[]) {
+  await cordRequest("/api/notifications/read", ids ? { ids } : { all: true });
+  const now = Date.now();
+  account.set(s => ({ ...s, inbox: s.inbox?.map(n => (!ids || ids.includes(n.id) ? { ...n, readAt: n.readAt ?? now } : n)) ?? null }));
+  setUnread(account.get().inbox?.filter(n => !n.readAt).length ?? 0);
+}
+export async function deleteNotification(id: string) {
+  await cordRequest("/api/notifications", { id }, "DELETE");
+  account.set(s => ({ ...s, inbox: s.inbox?.filter(n => n.id !== id) ?? null }));
+}
 
 /** Télécharge l'export RGPD dans Téléchargements ; renvoie le chemin. */
 export async function exportCord(): Promise<string> {

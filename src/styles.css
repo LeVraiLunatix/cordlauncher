@@ -91,6 +91,11 @@
   --animate-caret: caret 1.1s step-end infinite;
 }
 
+@keyframes holo-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
 @keyframes caret {
   0%,
   100% {

@@ -6,7 +6,7 @@ import { cn } from "../../lib/cn";
 import { useAccount } from "./context";
 import { dateLong, dateTime, Empty, IconBadge, Panel, relative, timeOnly, type Tone } from "./kit";
 
-const EVENTS: Record<string, [string, LucideIcon, Tone]> = {
+export const EVENTS: Record<string, [string, LucideIcon, Tone]> = {
   register: ["Compte créé", Sparkles, "tint"], login: ["Connexion", LogIn, "info"], login_failed: ["Tentative de connexion refusée", Ban, "danger"],
   email_verified: ["Adresse email confirmée", MailCheck, "ok"], email_changed: ["Adresse email modifiée", AtSign, "warn"],
   password_changed: ["Mot de passe modifié", KeyRound, "warn"], password_reset: ["Mot de passe réinitialisé", RotateCcw, "warn"],

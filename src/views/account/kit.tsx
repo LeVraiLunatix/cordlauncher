@@ -10,7 +10,7 @@ import { itemVariants } from "../../lib/motion";
  * compte.cordsuite.app, dessinées avec le verre de CordLauncher. */
 
 export type Tone = "tint" | "ok" | "warn" | "danger" | "info" | "muted";
-const TONES: Record<Tone, string> = {
+export const TONES: Record<Tone, string> = {
   tint: "tint-fill text-white",
   ok: "bg-ok/14 text-ok ring-1 ring-inset ring-ok/25",
   warn: "bg-warn/14 text-warn ring-1 ring-inset ring-warn/25",
