@@ -7,6 +7,9 @@ messages({
     'auth.login.title': 'Bon retour', 'auth.login.desc': 'Connecte-toi à ton compte Cord.',
     'auth.login.context': 'Connecte-toi pour continuer vers {app}.',
     'auth.email': 'Adresse email', 'auth.password': 'Mot de passe', 'auth.name': 'Ton prénom ou pseudo',
+    'auth.register.context': 'Un seul compte pour {app} et toute la suite Cord. Ça prend 30 secondes.',
+    'auth.verify.title': 'Vérifie ta boîte mail', 'auth.verify.desc': 'On a envoyé un code à 6 chiffres à {email}. Tape-le ici pour activer ton compte.',
+    'auth.verify.submit': 'Activer mon compte', 'auth.verify.later': 'Plus tard', 'auth.verify.resent': 'Nouveau code envoyé.',
     'auth.forgot': 'Mot de passe oublié ?', 'auth.submit.login': 'Se connecter', 'auth.submit.register': 'Créer mon compte',
     'auth.passkey': 'Passkey', 'auth.passcord': 'Passcord',
     'auth.noAccount': 'Pas encore de compte ?', 'auth.createOne': 'Créer un compte Cord',
@@ -38,6 +41,9 @@ messages({
     'auth.login.title': 'Welcome back', 'auth.login.desc': 'Sign in to your Cord account.',
     'auth.login.context': 'Sign in to continue to {app}.',
     'auth.email': 'Email address', 'auth.password': 'Password', 'auth.name': 'Your first name or nickname',
+    'auth.register.context': 'One account for {app} and the whole Cord suite. Takes 30 seconds.',
+    'auth.verify.title': 'Check your inbox', 'auth.verify.desc': 'We sent a 6-digit code to {email}. Type it here to activate your account.',
+    'auth.verify.submit': 'Activate my account', 'auth.verify.later': 'Later', 'auth.verify.resent': 'New code sent.',
     'auth.forgot': 'Forgot password?', 'auth.submit.login': 'Sign in', 'auth.submit.register': 'Create my account',
     'auth.passkey': 'Passkey', 'auth.passcord': 'Passcord',
     'auth.noAccount': 'No account yet?', 'auth.createOne': 'Create a Cord account',
@@ -69,10 +75,12 @@ messages({
 
 /**
  * Monte la carte d'authentification dans `host`.
- * options : { mode, resetToken, context: { appName }, onSuccess(result, meta) }
+ * options : { mode, email, resetToken, context: { appName }, onSuccess(result, meta) }
+ * `email` préremplit le champ (login_hint d'une app) ; après une inscription,
+ * l'étape « verify » demande le code à 6 chiffres reçu par email.
  */
-function mountAuth(host, { mode = 'login', resetToken, context, onSuccess }) {
-  const local = { mode, email: '', password: '', recovery: false, resetInfo: null, stop: [], passkeyAbort: null };
+function mountAuth(host, { mode = 'login', email = '', resetToken, context, onSuccess }) {
+  const local = { mode, email: String(email ?? '').slice(0, 254), password: '', recovery: false, resetInfo: null, stop: [], passkeyAbort: null };
   host.dataset.scope = 'auth';
 
   const cleanup = () => {
@@ -101,7 +109,7 @@ function mountAuth(host, { mode = 'login', resetToken, context, onSuccess }) {
       </div>
       <p class="auth-foot">${t('auth.noAccount')} <button type="button" class="link-btn" data-go="register">${t('auth.createOne')}</button></p>`,
 
-    register: () => html`${head(t('auth.register.title'), t('auth.register.desc'))}
+    register: () => html`${head(t('auth.register.title'), context?.appName ? t('auth.register.context', { app: context.appName }) : t('auth.register.desc'))}
       <form data-form="register" novalidate>
         <div class="field"><label for="a-name">${t('auth.name')}</label><input class="input" id="a-name" name="name" autocomplete="nickname" required maxlength="60" autofocus></div>
         ${emailField(false)}
@@ -110,6 +118,15 @@ function mountAuth(host, { mode = 'login', resetToken, context, onSuccess }) {
       </form>
       <p class="legal">${t('auth.register.legal')}</p>
       <p class="auth-foot">${t('auth.hasAccount')} <button type="button" class="link-btn" data-go="login">${t('auth.signIn')}</button></p>`,
+
+    verify: () => html`<div class="auth-illu"><div class="icon-badge grad">${icon('mail-check')}</div></div>
+      ${head(t('auth.verify.title'), t('auth.verify.desc', { email: local.email }))}
+      <form data-form="verify" novalidate>
+        <div class="field"><label for="a-code" class="sr-only">${t('verify.code')}</label><input class="input input-otp" id="a-code" name="code" inputmode="numeric" autocomplete="one-time-code" pattern="[0-9 ]{6,7}" required maxlength="7" autofocus placeholder="••••••"></div>
+        <button class="btn btn-primary btn-lg btn-block" type="submit">${t('auth.verify.submit')}${icon('arrow-right')}</button>
+      </form>
+      ${local.devUrl ? html`<a class="btn btn-glass btn-block" href="${local.devUrl}">${icon('external-link')}${t('auth.devLink')}</a>` : ''}
+      <div class="row-wrap"><button type="button" class="link-btn" data-do="resend-code">${t('verify.resend')}</button><span class="spacer"></span><button type="button" class="link-btn muted" data-do="skip-verify">${t('auth.verify.later')}</button></div>`,
 
     mfa: () => html`<div class="auth-illu"><div class="icon-badge grad">${icon('shield-check')}</div></div>
       ${head(t('auth.mfa.title'), local.recovery ? t('auth.mfa.recoveryHint') : t('auth.mfa.desc'))}
@@ -279,9 +296,20 @@ function mountAuth(host, { mode = 'login', resetToken, context, onSuccess }) {
     async register(form) {
       local.email = form.email.value.trim();
       const result = await api('/api/register', { name: form.name.value.trim(), email: local.email, password: form.password.value });
-      let delivery = {};
+      let delivery = null;
       try { delivery = await api('/api/email/send', {}); } catch { /* renvoyable depuis le compte */ }
-      await done(result, { registered: true, devUrl: delivery.devUrl });
+      if (!delivery) return done(result, { registered: true });
+      // Code à 6 chiffres tout de suite : l'utilisateur ne quitte pas l'écran
+      // (ni l'app qui l'a envoyé ici) pour aller cliquer un lien.
+      local.registered = result;
+      local.devUrl = delivery.devUrl;
+      if (delivery.devCode) console.info('[dev] code email :', delivery.devCode);
+      go('verify');
+    },
+    async verify(form) {
+      await api('/api/email/verify-code', { code: form.code.value });
+      celebrate();
+      await done(local.registered, { registered: true, verified: true });
     },
     async mfa(form) {
       try {
@@ -326,7 +354,7 @@ function mountAuth(host, { mode = 'login', resetToken, context, onSuccess }) {
         await submitters[form.dataset.form](form.elements);
       } catch (e) {
         toastError(e);
-        const field = form.elements.otp ?? form.elements.password;
+        const field = form.elements.otp ?? form.elements.code ?? form.elements.password;
         if (field && e.status && e.status < 500) { field.select?.(); field.setAttribute('aria-invalid', 'true'); }
       }
     });
@@ -347,6 +375,8 @@ function mountAuth(host, { mode = 'login', resetToken, context, onSuccess }) {
     if (what === 'toggle-recovery') { local.recovery = !local.recovery; local.interacted = true; return draw(); }
     if (what === 'copy-passcord') return copyText(doer.dataset.url);
     if (what === 'passkey') await busy(doer, () => passkeyLogin().catch(toastError));
+    if (what === 'resend-code') await busy(doer, () => api('/api/email/send', {}).then(() => toast(t('auth.verify.resent'))).catch(toastError));
+    if (what === 'skip-verify') await done(local.registered, { registered: true });
   });
 
   draw();

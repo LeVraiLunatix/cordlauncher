@@ -11,7 +11,8 @@ messages({
     'consent.allow': 'Autoriser', 'consent.deny': 'Annuler', 'consent.redirect': 'Tu seras redirigé vers {host}',
     'consent.continuing': 'Connexion à {app}…', 'consent.invalid': 'Lien de connexion invalide',
     'consent.invalidDesc': 'Cette demande ne vient pas d’une app reconnue par le Compte Cord, ou son adresse de retour n’est pas autorisée. Retourne dans l’app et réessaie.',
-    'consent.verify': 'Confirme ton email pour continuer', 'consent.verifyDesc': '{app} a besoin d’une adresse vérifiée. Clique sur le lien reçu, puis reviens sur cette page.',
+    'consent.verify': 'Confirme ton email pour continuer', 'consent.verifyDesc': '{app} a besoin d’une adresse vérifiée. Tape le code à 6 chiffres envoyé à {email}.',
+    'consent.verifySubmit': 'Continuer vers {app}', 'consent.firstParty': '{app} fait partie de la suite Cord : pas besoin d’autorisation.',
     'consent.verifyCheck': 'J’ai confirmé mon adresse', 'consent.home': 'Aller à mon compte',
   },
   en: {
@@ -24,7 +25,8 @@ messages({
     'consent.allow': 'Allow', 'consent.deny': 'Cancel', 'consent.redirect': 'You’ll be redirected to {host}',
     'consent.continuing': 'Signing in to {app}…', 'consent.invalid': 'Invalid sign-in link',
     'consent.invalidDesc': 'This request doesn’t come from an app Cord Account recognizes, or its return address isn’t allowed. Go back to the app and try again.',
-    'consent.verify': 'Confirm your email to continue', 'consent.verifyDesc': '{app} needs a verified address. Click the link you received, then come back to this page.',
+    'consent.verify': 'Confirm your email to continue', 'consent.verifyDesc': '{app} needs a verified address. Type the 6-digit code sent to {email}.',
+    'consent.verifySubmit': 'Continue to {app}', 'consent.firstParty': '{app} is part of the Cord suite: no permission needed.',
     'consent.verifyCheck': 'I confirmed my address', 'consent.home': 'Go to my account',
   },
 });
@@ -58,15 +60,32 @@ async function showConsent() {
 
   if (!context.user) {
     frame(html`${visual}<div id="consent-auth" class="auth-card"></div>`);
-    mountAuth($('#consent-auth'), { context: { appName: client.name }, onSuccess: () => showConsent() });
+    const signup = params.prompt === 'create' || params.screen_hint === 'signup';
+    mountAuth($('#consent-auth'), { mode: signup ? 'register' : 'login', email: params.login_hint ?? '', context: { appName: client.name }, onSuccess: () => showConsent() });
     return;
   }
   const user = context.user;
   if (!user.emailVerified) {
-    frame(html`${visual}<div><h1>${t('consent.verify')}</h1><p class="sub">${t('consent.verifyDesc', { app: client.name })}</p></div>
-      <div class="account-chip">${avatar(user, 'sm')}<div class="who"><strong>${user.name}</strong><span>${user.email}</span></div></div>
-      <div class="stack-sm"><button class="btn btn-glass btn-block" data-action="send-verification">${icon('send')}${t('verify.send')}</button>
-      <button class="btn btn-primary btn-block" data-action="consent-reload">${t('consent.verifyCheck')}</button></div>`);
+    frame(html`${visual}<div><h1>${t('consent.verify')}</h1><p class="sub">${t('consent.verifyDesc', { app: client.name, email: user.email })}</p></div>
+      <form id="consent-code" class="stack-sm" novalidate>
+        <input class="input input-otp" name="code" inputmode="numeric" autocomplete="one-time-code" maxlength="7" placeholder="••••••" aria-label="${t('verify.code')}" required autofocus>
+        <button class="btn btn-primary btn-lg btn-block" type="submit">${t('consent.verifySubmit', { app: client.name })}${icon('arrow-right')}</button>
+      </form>
+      <div class="row-wrap"><button class="link-btn" data-action="send-verification">${t('verify.resend')}</button><span class="spacer"></span><button class="link-btn muted" data-action="consent-reload">${t('consent.verifyCheck')}</button></div>`);
+    const codeForm = $('#consent-code');
+    codeForm.addEventListener('submit', async (event) => {
+      event.preventDefault();
+      const input = $('[name="code"]', codeForm);
+      try {
+        await busy(event.submitter ?? $('[type="submit"]', codeForm), () => api('/api/email/verify-code', { code: input.value }));
+        showConsent();
+      } catch (e) {
+        input.setAttribute('aria-invalid', 'true');
+        input.select();
+        toastError(e);
+      }
+    });
+    setTimeout(() => $('[name="code"]', codeForm)?.focus(), 60);
     return;
   }
 
@@ -74,7 +93,7 @@ async function showConsent() {
     const result = await (button ? busy(button, () => api('/api/authorize', params)) : api('/api/authorize', params));
     if (result?.redirect) location.assign(result.redirect);
   };
-  if (context.consented && params.prompt !== 'consent') {
+  if ((context.consented || client.firstParty) && params.prompt !== 'consent') {
     frame(html`${visual}<div class="consent-loading"><span class="pulse-dot"></span><p class="muted">${t('consent.continuing', { app: client.name })}</p></div>`);
     try { await allow(); } catch (e) { toastError(e); }
     return;

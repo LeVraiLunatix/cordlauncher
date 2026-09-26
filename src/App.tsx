@@ -4,18 +4,18 @@ import { AppDetail } from "./components/apps/AppDetail";
 import { InstallSheet } from "./components/apps/InstallSheet";
 import { AppleVerification } from "./components/apps/AppleAccount";
 import { BetaKeySheet } from "./components/apps/BetaKeySheet";
-import { refreshCord } from "./lib/account";
+import { publishLauncherStatus, refreshCord } from "./lib/account";
 import { NAVIGATE_EVENT } from "./lib/beta";
 import { IphoneInstallSheet } from "./components/apps/IphoneInstallSheet";
 import { AnimatedGradientBackground } from "./components/glass";
-import { Sidebar, type Route } from "./components/shell/Sidebar";
+import { LAUNCHER_VERSION, Sidebar, type Route } from "./components/shell/Sidebar";
 import { SplashIntro } from "./components/shell/SplashIntro";
 import { TitleBar } from "./components/shell/TitleBar";
 import { Toaster } from "./components/shell/Toaster";
 import { AmbientProvider, useAmbient } from "./lib/ambient";
 import { loadCatalog, useCatalog } from "./lib/catalog/load";
 import type { CatalogApp } from "./lib/catalog/types";
-import { detectInstalled } from "./lib/installer";
+import { detectInstalled, installedSnapshot } from "./lib/installer";
 import { useSettings } from "./lib/settings";
 import { DiscoverView } from "./views/DiscoverView";
 import { LibraryView } from "./views/LibraryView";
@@ -28,9 +28,12 @@ const NO_APPS: CatalogApp[] = [];
 
 async function boot() {
   // Session Cord chargée dès le lancement : elle ouvre les bêtas (Passcord) dans le catalogue.
-  void refreshCord().catch(() => {});
+  const cord = refreshCord().catch(() => {});
   const catalog = await loadCatalog();
   if (catalog) await detectInstalled(catalog.apps);
+  // Le Compte Cord montre ce que ce PC a installé (tuile CordLauncher du hub).
+  await cord;
+  if (catalog) void publishLauncherStatus(catalog.apps, installedSnapshot(), LAUNCHER_VERSION).catch(() => {});
 }
 
 export default function App() {

@@ -631,3 +631,77 @@ test('beta downloads can be configured from the admin: the GitHub token is check
   await request('/api/admin/beta/token', { token: admin, method: 'DELETE', body: { product: 'passcord' } });
   assert.equal((await request('/api/admin/beta', { token: admin })).data.downloads, false);
 });
+
+// ── Inscription express et suite interconnectée ──────────────────────────
+test('email can be confirmed with the 6-digit code from the email, attempts are limited', async (t) => {
+  const ctx = await setup(t);
+  const r = await ctx.request('/api/register', { body: { name: 'Nova', email: 'nova@example.test', password: 'Un mot de passe Nova' } });
+  const token = r.data.token;
+  await ctx.request('/api/email/send', { token, body: {} });
+  const mail = ctx.lastMail('verify');
+  const code = mail.html.match(/>(\d{3})&nbsp;(\d{3})</).slice(1).join('');
+  assert.match(mail.subject, /^\d{3} \d{3} — ton code Compte Cord$/);
+  assert.ok(mail.text.includes(`Ton code : ${code}`));
+  const wrong = code === '000000' ? '111111' : '000000';
+  assert.equal((await ctx.request('/api/email/verify-code', { token, body: { code: wrong } })).data.reason, 'code_invalid');
+  assert.equal((await ctx.request('/api/me', { token })).data.user.emailVerified, false);
+  assert.equal((await ctx.request('/api/email/verify-code', { token, body: { code: `${code.slice(0, 3)} ${code.slice(3)}` } })).status, 200);
+  assert.equal((await ctx.request('/api/me', { token })).data.user.emailVerified, true);
+  // Brute force : bloqué après 8 essais.
+  const other = await ctx.request('/api/register', { body: { name: 'Bruno', email: 'bruno@example.test', password: 'Un mot de passe Bruno' } });
+  await ctx.request('/api/email/send', { token: other.data.token, body: {} });
+  let last;
+  for (let i = 0; i < 9; i++) last = await ctx.request('/api/email/verify-code', { token: other.data.token, body: { code: String(100000 + i) } });
+  assert.equal(last.status, 429);
+});
+
+test('apps publish a status card and notifications for users who authorized them, the hub shows it all', async (t) => {
+  const ctx = await setup(t);
+  const { request, token, user } = ctx;
+  const secret = 'test-client-secret';
+  const status = { headline: '12,4 Go stockés', detail: '3 drives · dernière sauvegarde hier', metrics: [{ label: 'Fichiers', value: 1834 }], url: 'http://localhost:3000/drive' };
+
+  // Pas encore autorisée : refus.
+  assert.equal((await request('/api/apps/status', { body: { client_id: 'drivecord', client_secret: secret, sub: user.id, status } })).data.reason, 'not_connected');
+  const params = {
+    client_id: 'drivecord', redirect_uri: 'http://localhost:3000/api/auth/callback/cord', scope: 'openid email', response_type: 'code',
+    code_challenge_method: 'S256', code_challenge: createHash('sha256').update(randomBytes(32).toString('base64url')).digest('base64url'),
+  };
+  await request('/api/authorize', { token, body: params });
+
+  assert.equal((await request('/api/apps/status', { body: { client_id: 'drivecord', client_secret: 'faux', sub: user.id, status } })).status, 401);
+  assert.equal((await request('/api/apps/status', { body: { client_id: 'drivecord', client_secret: secret, sub: user.id, status: { ...status, url: 'https://phishing.example/login' } } })).status, 400, 'lien hors du domaine de l’app refusé');
+  assert.equal((await request('/api/apps/status', { body: { client_id: 'drivecord', client_secret: secret, sub: user.id, status } })).status, 200);
+  assert.equal((await request('/api/apps/notify', { body: { client_id: 'drivecord', client_secret: secret, sub: user.id, title: 'Sauvegarde terminée', body: '248 photos envoyées', url: 'http://localhost:3000/backup' } })).status, 201);
+
+  const hub = (await request('/api/hub', { token })).data;
+  const drivecord = hub.apps.find((a) => a.slug === 'drivecord');
+  assert.equal(drivecord.connected, true);
+  assert.equal(drivecord.appStatus.headline, '12,4 Go stockés');
+  assert.deepEqual(drivecord.appStatus.metrics, [{ label: 'Fichiers', value: '1834' }]);
+  assert.equal(drivecord.launch, 'https://drivecord.app/login?via=cord');
+  assert.equal(hub.apps.find((a) => a.slug === 'passcord').beta.access, false);
+  assert.equal(hub.unread, 1);
+  assert.equal((await request('/api/account', { token })).data.unread, 1);
+
+  // CordLauncher publie avec la session (app sans client OAuth).
+  assert.equal((await request('/api/me/app-status', { token, body: { app: 'cordlauncher', status: { headline: 'PC de Luna', metrics: [{ label: 'Apps', value: 2 }] } } })).status, 200);
+  assert.equal((await request('/api/me/app-status', { token, body: { app: 'drivecord', status: { headline: 'usurpation' } } })).status, 400);
+  assert.equal((await request('/api/hub', { token })).data.launcher.headline, 'PC de Luna');
+
+  const inbox = (await request('/api/notifications', { token })).data;
+  assert.equal(inbox.items[0].title, 'Sauvegarde terminée');
+  assert.equal(inbox.items[0].name, 'Drivecord');
+  await request('/api/notifications/read', { token, body: { all: true } });
+  assert.equal((await request('/api/notifications', { token })).data.unread, 0);
+  await request('/api/notifications', { token, method: 'DELETE', body: { id: inbox.items[0].id } });
+  assert.equal((await request('/api/notifications', { token })).data.items.length, 0);
+
+  // Révoquer l'app coupe ses remontées ; supprimer le compte efface tout.
+  await request('/api/connected-apps', { token, method: 'DELETE', body: { clientId: 'drivecord' } });
+  assert.equal((await request('/api/apps/notify', { body: { client_id: 'drivecord', client_secret: secret, sub: user.id, title: 'x' } })).data.reason, 'not_connected');
+  await request('/api/me', { token, method: 'DELETE', body: {} });
+  for (const table of ['app_status', 'notifications']) {
+    assert.equal(Number((await ctx.sql(`SELECT COUNT(*) AS n FROM ${table} WHERE user_id = $1`, [user.id]))[0].n), 0, table);
+  }
+});

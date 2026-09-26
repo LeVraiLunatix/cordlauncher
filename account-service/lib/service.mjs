@@ -1,4 +1,4 @@
-import { randomBytes, randomUUID, scrypt as rawScrypt, createPublicKey, verify, sign } from 'node:crypto';
+import { randomBytes, randomInt, randomUUID, scrypt as rawScrypt, createPublicKey, verify, sign } from 'node:crypto';
 import { promisify } from 'node:util';
 import * as PORTAL from './portal.mjs';
 import { secret, hash, now, b64u, error, safeEqual, maskIp, SESSION_TTL, CHALLENGE_TTL, DAY } from './util.mjs';
@@ -46,7 +46,7 @@ const maskEmail = (email) => {
   return `${local.slice(0, 1)}${'•'.repeat(Math.max(2, Math.min(6, local.length - 1)))}@${domain}`;
 };
 
-export const SCHEMA_VERSION = 5;
+export const SCHEMA_VERSION = 6;
 
 export const SCHEMA = `
   CREATE TABLE IF NOT EXISTS users (id TEXT PRIMARY KEY, email TEXT UNIQUE NOT NULL, name TEXT NOT NULL, salt TEXT NOT NULL, password_hash TEXT NOT NULL, created_at BIGINT NOT NULL, email_verified_at BIGINT);
@@ -92,6 +92,10 @@ const MIGRATIONS = [
   'CREATE INDEX IF NOT EXISTS beta_keys_product_idx ON beta_keys (product, created_at)',
   // v5 : réglages du service posés depuis l'administration (secrets chiffrés).
   'CREATE TABLE IF NOT EXISTS service_settings (key TEXT PRIMARY KEY, value TEXT NOT NULL, updated_at BIGINT NOT NULL, updated_by TEXT)',
+  // v6 : suite interconnectée (état remonté par chaque app, notifications).
+  'CREATE TABLE IF NOT EXISTS app_status (user_id TEXT NOT NULL REFERENCES users(id), app TEXT NOT NULL, data TEXT NOT NULL, updated_at BIGINT NOT NULL, PRIMARY KEY (user_id, app))',
+  'CREATE TABLE IF NOT EXISTS notifications (id TEXT PRIMARY KEY, user_id TEXT NOT NULL REFERENCES users(id), app TEXT NOT NULL, title TEXT NOT NULL, body TEXT, url TEXT, created_at BIGINT NOT NULL, read_at BIGINT)',
+  'CREATE INDEX IF NOT EXISTS notifications_user_idx ON notifications (user_id, created_at)',
 ];
 
 /** Applique le schéma. À appeler une fois au démarrage (idempotent). */
@@ -209,6 +213,110 @@ export function createService({
       console.error('[cord-account] releases', e);
       return null;
     }
+  }
+  // ── Suite interconnectée : état des apps, notifications, hub ─────────────
+  const FIRST_PARTY_STATUS = ['cordlauncher', 'passcord'];
+  const APP_NAMES = { cordlauncher: 'CordLauncher', passcord: 'Passcord' };
+  const emailCodeHash = (userId, code) => hash(`email-code:${userId}:${code}`);
+  const appMeta = (app) => {
+    const d = describeClient(app, clients[app]);
+    return { name: APP_NAMES[app] ?? d.name, logo: app === 'cordlauncher' ? '/assets/icon-180.png' : d.logo };
+  };
+  /** Lien fourni par une app : HTTPS, et sur un domaine de ses adresses de retour. */
+  function appUrl(value, client) {
+    let parsed;
+    try {
+      parsed = new URL(String(value));
+    } catch {
+      throw error(400, 'Lien invalide.');
+    }
+    const hosts = (client?.redirectUris ?? []).map((u) => { try { return new URL(u).host; } catch { return null; } });
+    const local = ['localhost', '127.0.0.1'].includes(parsed.hostname);
+    if ((parsed.protocol !== 'https:' && !local) || String(value).length > 300 || (client && !hosts.includes(parsed.host)))
+      throw error(400, 'Le lien doit pointer vers le site de l’app, en HTTPS.');
+    return parsed.href;
+  }
+  function cleanStatus(input, client) {
+    const s = input && typeof input === 'object' ? input : {};
+    const text = (v, max) => (typeof v === 'string' && v.trim() ? v.trim().slice(0, max) : null);
+    const headline = text(s.headline, 80);
+    if (!headline) throw error(400, 'Il faut au moins un titre (headline).');
+    const metrics = Array.isArray(s.metrics)
+      ? s.metrics.slice(0, 4).map((m) => ({ label: text(m?.label, 24), value: text(String(m?.value ?? ''), 24) })).filter((m) => m.label && m.value)
+      : [];
+    return {
+      headline,
+      detail: text(s.detail, 140),
+      metrics,
+      tone: ['ok', 'warn', 'danger', 'info'].includes(s.tone) ? s.tone : null,
+      url: s.url == null ? null : appUrl(s.url, client),
+    };
+  }
+  async function saveStatus(userId, app, status) {
+    await sql(
+      `INSERT INTO app_status (user_id, app, data, updated_at) VALUES ($1, $2, $3, $4)
+       ON CONFLICT (user_id, app) DO UPDATE SET data = $3, updated_at = $4`,
+      [userId, app, JSON.stringify(status), now()],
+    );
+  }
+  function authenticateClient(req, data) {
+    let clientId = data.client_id;
+    let clientSecret = data.client_secret;
+    if (req.headers.authorization?.startsWith('Basic ')) {
+      const basic = Buffer.from(req.headers.authorization.slice(6), 'base64').toString();
+      const colon = basic.indexOf(':');
+      clientId = decodeURIComponent(basic.slice(0, colon));
+      clientSecret = decodeURIComponent(basic.slice(colon + 1));
+    }
+    const client = Object.hasOwn(clients, clientId ?? '') ? clients[clientId] : undefined;
+    if (!client?.secret || typeof clientSecret !== 'string' || !safeEqual(client.secret, clientSecret))
+      throw error(401, 'Client OAuth inconnu.');
+    return { clientId, client };
+  }
+  const describeNotification = (n) => ({
+    id: n.id,
+    app: n.app,
+    ...appMeta(n.app),
+    title: n.title,
+    body: n.body ?? null,
+    url: n.url ?? null,
+    createdAt: Number(n.created_at),
+    readAt: n.read_at ? Number(n.read_at) : null,
+  });
+  /** Le hub : chaque app de la suite avec ce que le compte en sait. */
+  async function hub(u) {
+    const [consents, statuses, unread, beta] = await Promise.all([
+      sql('SELECT client_id, granted_at, last_used_at FROM oauth_consents WHERE user_id = $1', [u.id]),
+      sql('SELECT app, data, updated_at FROM app_status WHERE user_id = $1', [u.id]),
+      one('SELECT COUNT(*) AS n FROM notifications WHERE user_id = $1 AND read_at IS NULL', [u.id]),
+      betaAccess(u),
+    ]);
+    const consentOf = new Map(consents.map((c) => [c.client_id, c]));
+    const statusOf = new Map(statuses.map((s) => [s.app, { ...JSON.parse(s.data), updatedAt: Number(s.updated_at) }]));
+    const passcordPaired = await one('SELECT COUNT(*) AS n FROM passcord_keys WHERE user_id = $1', [u.id]);
+    return {
+      apps: SUITE.map((a) => {
+        const consent = consentOf.get(a.slug);
+        return {
+          slug: a.slug,
+          name: a.name,
+          status: a.status,
+          tagline: a.tagline,
+          description: a.description,
+          url: a.url,
+          launch: a.launch ?? a.url,
+          accent: a.accent,
+          logo: `/assets/logos/${a.slug}.png`,
+          connected: Boolean(consent) || (a.slug === 'passcord' && Number(passcordPaired?.n ?? 0) > 0),
+          connectedAt: consent ? Number(consent.granted_at) : null,
+          lastUsedAt: consent ? Number(consent.last_used_at) : null,
+          appStatus: statusOf.get(a.slug) ?? null,
+          beta: Object.hasOwn(BETA_PRODUCTS, a.slug) ? { access: beta.includes(a.slug) } : null,
+        };
+      }),
+      launcher: statusOf.get('cordlauncher') ?? null,
+      unread: Number(unread?.n ?? 0),
+    };
   }
   const avatarUrl = (u) => (u.avatar ? `${issuer}/avatar/${u.id}?v=${hash(u.avatar).slice(0, 10)}` : null);
 
@@ -542,8 +650,10 @@ export function createService({
       one('SELECT COUNT(*) AS n FROM recovery_codes WHERE user_id = $1 AND used_at IS NULL', [u.id]),
       betaAccess(u),
     ]);
+    const unread = await one('SELECT COUNT(*) AS n FROM notifications WHERE user_id = $1 AND read_at IS NULL', [u.id]);
     return {
       user: { ...profile(u), beta },
+      unread: Number(unread?.n ?? 0),
       security: {
         mfa: Boolean(u.mfa_enabled_at),
         mfaSince: u.mfa_enabled_at ? Number(u.mfa_enabled_at) : null,
@@ -628,6 +738,7 @@ export function createService({
           scopes_supported: ['openid', 'profile', 'email'],
           claims_supported: ['sub', 'name', 'email', 'email_verified', 'picture'],
           code_challenge_methods_supported: ['S256'],
+          prompt_values_supported: ['consent', 'login', 'create'],
           grant_types_supported: ['authorization_code'],
         });
       if (method === 'GET' && path === '/.well-known/jwks.json') return json({ keys: [jwk] });
@@ -738,6 +849,19 @@ export function createService({
         };
         res.setHeader('Content-Disposition', `attachment; filename="compte-cord-${new Date().toISOString().slice(0, 10)}.json"`);
         return json(body);
+      }
+      if (method === 'GET' && path === '/api/hub') {
+        const { user } = await session(req);
+        return json(await hub(user));
+      }
+      if (method === 'GET' && path === '/api/notifications') {
+        const { user } = await session(req);
+        const before = Number(url.searchParams.get('before')) || now() + 1;
+        const [rows, unread] = await Promise.all([
+          sql('SELECT * FROM notifications WHERE user_id = $1 AND created_at < $2 ORDER BY created_at DESC LIMIT 30', [user.id, before]),
+          one('SELECT COUNT(*) AS n FROM notifications WHERE user_id = $1 AND read_at IS NULL', [user.id]),
+        ]);
+        return json({ items: rows.map(describeNotification), unread: Number(unread?.n ?? 0), more: rows.length === 30 });
       }
       if (method === 'GET' && path.startsWith('/api/beta/')) {
         const { user } = await session(req);
@@ -867,21 +991,38 @@ export function createService({
           throw error(429, 'Attends une minute avant de renvoyer l’email.');
         const token = secret();
         const id = hash(token);
+        // Lien ET code à 6 chiffres : le code se tape sans quitter l'app en cours
+        // (inscription depuis Drivecord, etc.). Seule son empreinte est gardée.
+        const code = String(randomInt(0, 1_000_000)).padStart(6, '0');
         await sql('INSERT INTO challenges (id, kind, user_id, challenge, expires) VALUES ($1, $2, $3, $4, $5)', [
           id,
           'email',
           user.id,
-          '',
+          emailCodeHash(user.id, code),
           now() + 15 * 60_000,
         ]);
         let delivery;
         try {
-          delivery = await mail(user.email, 'verify', { url: `${issuer}/?verify=${token}` }, { required: true });
+          delivery = await mail(user.email, 'verify', { url: `${issuer}/?verify=${token}`, code }, { required: true });
         } catch (e) {
           await sql('DELETE FROM challenges WHERE id = $1', [id]);
           throw e;
         }
-        return json({ ok: true, ...(delivery?.devUrl ? { devUrl: delivery.devUrl } : {}) });
+        return json({ ok: true, ...(delivery?.devUrl ? { devUrl: delivery.devUrl, devCode: code } : {}) });
+      }
+      if (path === '/api/email/verify-code' && method === 'POST') {
+        const { user } = await session(req);
+        if (user.email_verified_at) return json({ ok: true });
+        if (await overLimit(`email-code:${user.id}`, 8, 15 * 60_000)) throw error(429, 'Trop d’essais. Demande un nouveau code dans quelques minutes.');
+        const code = String(data.code ?? '').replace(/\D/g, '');
+        const match = code.length === 6
+          ? await one("SELECT id FROM challenges WHERE kind = 'email' AND user_id = $1 AND challenge = $2 AND expires > $3", [user.id, emailCodeHash(user.id, code), now()])
+          : null;
+        if (!match) throw error(400, 'Code incorrect ou expiré.', 'code_invalid');
+        await sql('UPDATE users SET email_verified_at = $1 WHERE id = $2', [now(), user.id]);
+        await sql("DELETE FROM challenges WHERE kind = 'email' AND user_id = $1", [user.id]);
+        await record(user.id, 'email_verified', req);
+        return json({ ok: true });
       }
       if (path === '/api/email/verify' && method === 'POST') {
         const c = await challenge(hash(field(data, 'token')), 'email');
@@ -1002,7 +1143,7 @@ export function createService({
       }
       if (path === '/api/me' && method === 'DELETE') {
         const { user } = await session(req);
-        for (const table of ['sessions', 'challenges', 'codes', 'passcord_keys', 'passkeys', 'oauth_consents', 'recovery_codes', 'account_events', 'beta_access']) {
+        for (const table of ['sessions', 'challenges', 'codes', 'passcord_keys', 'passkeys', 'oauth_consents', 'recovery_codes', 'account_events', 'beta_access', 'app_status', 'notifications']) {
           await sql(`DELETE FROM ${table} WHERE user_id = $1`, [user.id]);
         }
         await sql('DELETE FROM users WHERE id = $1', [user.id]);
@@ -1201,6 +1342,57 @@ export function createService({
         await sql('UPDATE passkeys SET sign_count = $1, last_used_at = $2, backed_up = $3 WHERE id = $4', [result.signCount, now(), Number(result.backedUp), pk.id]);
         const u = await one('SELECT * FROM users WHERE id = $1', [pk.user_id]);
         return json(await completeLogin(req, res, u, 'passkey'));
+      }
+
+      // ── Suite interconnectée ───────────────────────────────────────────
+      if (path === '/api/notifications/read' && method === 'POST') {
+        const { user } = await session(req);
+        const ids = Array.isArray(data.ids) ? data.ids.filter((x) => typeof x === 'string').slice(0, 100) : [];
+        if (data.all === true) await sql('UPDATE notifications SET read_at = $1 WHERE user_id = $2 AND read_at IS NULL', [now(), user.id]);
+        else for (const id of ids) await sql('UPDATE notifications SET read_at = $1 WHERE id = $2 AND user_id = $3 AND read_at IS NULL', [now(), id, user.id]);
+        return json({ ok: true });
+      }
+      if (path === '/api/notifications' && method === 'DELETE') {
+        const { user } = await session(req);
+        await sql('DELETE FROM notifications WHERE id = $1 AND user_id = $2', [field(data, 'id', 64), user.id]);
+        return json({ ok: true });
+      }
+      // Apps de la suite sans client OAuth (CordLauncher, Passcord) : elles
+      // publient leur état avec la session de l'utilisateur.
+      if (path === '/api/me/app-status' && method === 'POST') {
+        const { user } = await session(req);
+        const app = typeof data.app === 'string' && FIRST_PARTY_STATUS.includes(data.app) ? data.app : null;
+        if (!app) throw error(400, 'App inconnue.');
+        if (await overLimit(`status:${user.id}:${app}`, 60, 3600_000)) throw error(429, 'Trop de mises à jour.');
+        await saveStatus(user.id, app, cleanStatus(data.status, null));
+        return json({ ok: true });
+      }
+      // Serveur d'une app (client OAuth) → Compte Cord : état et notifications
+      // d'un utilisateur qui a autorisé cette app. Authentifié par le secret du client.
+      if (['/api/apps/status', '/api/apps/notify'].includes(path) && ['POST', 'DELETE'].includes(method)) {
+        const { clientId, client } = authenticateClient(req, data);
+        const sub = field(data, 'sub', 80);
+        const consent = await one('SELECT 1 AS x FROM oauth_consents WHERE user_id = $1 AND client_id = $2', [sub, clientId]);
+        if (!consent) throw error(404, 'Cet utilisateur n’a pas autorisé cette app.', 'not_connected');
+        if (path === '/api/apps/status') {
+          if (method === 'DELETE') {
+            await sql('DELETE FROM app_status WHERE user_id = $1 AND app = $2', [sub, clientId]);
+            return json({ ok: true });
+          }
+          if (await overLimit(`status:${sub}:${clientId}`, 120, 3600_000)) throw error(429, 'Trop de mises à jour.');
+          await saveStatus(sub, clientId, cleanStatus(data.status, client));
+          return json({ ok: true });
+        }
+        if (method !== 'POST') throw error(404, 'Introuvable.');
+        if (await overLimit(`notify:${sub}:${clientId}`, 30, 3600_000)) throw error(429, 'Trop de notifications pour cet utilisateur.');
+        const title = field(data, 'title', 80);
+        const body = typeof data.body === 'string' && data.body.trim() ? data.body.trim().slice(0, 240) : null;
+        const link = data.url == null ? null : appUrl(data.url, client);
+        const id = randomUUID();
+        await sql('INSERT INTO notifications (id, user_id, app, title, body, url, created_at) VALUES ($1, $2, $3, $4, $5, $6, $7)', [id, sub, clientId, title, body, link, now()]);
+        // On garde les 100 plus récentes par compte.
+        await sql('DELETE FROM notifications WHERE user_id = $1 AND id NOT IN (SELECT id FROM notifications WHERE user_id = $1 ORDER BY created_at DESC LIMIT 100)', [sub]);
+        return json({ ok: true, id }, 201);
       }
 
       // ── Bêtas fermées ──────────────────────────────────────────────────

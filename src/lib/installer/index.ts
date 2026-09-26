@@ -163,6 +163,9 @@ export function useDetecting(): boolean {
   return useStore(store, (s) => s.detecting);
 }
 
+/** Instantané des apps installées (hors React), pour les publier sur le Compte Cord. */
+export const installedSnapshot = () => store.get().installed;
+
 export function useInstalled(appId: string): InstalledInfo | null | undefined {
   return useStore(store, (s) => s.installed[appId]);
 }

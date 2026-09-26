@@ -153,7 +153,7 @@ async function afterLogin(result, meta = {}) {
   const name = state.account.user.name;
   if (meta.registered) {
     celebrate();
-    toast(t('auth.verifySent', { email: state.account.user.email }), {
+    toast(meta.verified ? t('verify.done') : t('auth.verifySent', { email: state.account.user.email }), {
       type: 'success',
       duration: 8000,
       ...(meta.devUrl ? { action: { href: meta.devUrl, label: t('auth.devLink') } } : {}),

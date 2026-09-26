@@ -2,6 +2,7 @@
 
 const state = {
   account: null, // réponse de /api/account
+  hub: null, // réponse de /api/hub (apps de la suite, état remonté, notifications)
   suite: [],
   features: { mail: true },
   route: 'apercu',
@@ -14,7 +15,9 @@ const passkeysSupported = () =>
   location.hostname !== '[::1]';
 
 async function loadAccount() {
-  state.account = await api('/api/account');
+  const [account, hubData] = await Promise.all([api('/api/account'), api('/api/hub').catch(() => null)]);
+  state.account = account;
+  state.hub = hubData;
   activityState.events = null;
   const user = state.account.user;
   if (user.locale && user.locale !== locale) setLocale(user.locale);

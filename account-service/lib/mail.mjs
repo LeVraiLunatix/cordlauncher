@@ -15,7 +15,7 @@ const FONT = "'Inter','Segoe UI',Roboto,Helvetica,Arial,sans-serif";
 const DISPLAY = "'Space Grotesk','Inter','Segoe UI',Helvetica,Arial,sans-serif";
 const MONO = "'JetBrains Mono',Consolas,Menlo,monospace";
 
-function layout({ issuer, preheader, eyebrow, title, intro, button, details = [], outro, tone = 'brand' }) {
+function layout({ issuer, preheader, eyebrow, title, intro, code, button, details = [], outro, tone = 'brand' }) {
   const accent = tone === 'alert' ? '#f0617d' : '#8b5cff';
   const eyebrowColor = tone === 'alert' ? '#ff9aae' : '#b9a6ff';
   const rows = details
@@ -23,6 +23,10 @@ function layout({ issuer, preheader, eyebrow, title, intro, button, details = []
       ([label, value]) => `<tr><td style="padding:10px 0;border-top:1px solid #2a2440;font:500 12px ${MONO};letter-spacing:.08em;text-transform:uppercase;color:#8e88a8;width:38%;vertical-align:top">${esc(label)}</td><td style="padding:10px 0;border-top:1px solid #2a2440;font:500 14px ${FONT};color:#ece8ff;vertical-align:top">${esc(value)}</td></tr>`,
     )
     .join('');
+  const codeBlock = code
+    ? `<table role="presentation" cellpadding="0" cellspacing="0" style="margin:26px 0 4px"><tr><td style="border-radius:16px;background:#1d1733;border:1px solid #3a2f63;padding:16px 26px;font:700 34px ${MONO};letter-spacing:.32em;color:#f7f5ff">${esc(code.slice(0, 3))}&nbsp;${esc(code.slice(3))}</td></tr></table>
+       <p style="margin:8px 0 0;font:400 12px/1.6 ${FONT};color:#8e88a8">Tape ce code dans la fenêtre ouverte, ou utilise le bouton.</p>`
+    : '';
   const cta = button
     ? `<table role="presentation" cellpadding="0" cellspacing="0" style="margin:28px 0 8px"><tr><td style="border-radius:14px;background:${accent};background-image:linear-gradient(120deg,#6e58f0,#b842ec 60%,#d24bef)"><a href="${esc(button.url)}" style="display:inline-block;padding:15px 26px;font:600 15px ${FONT};color:#ffffff;text-decoration:none;border-radius:14px">${esc(button.label)}</a></td></tr></table>
        <p style="margin:14px 0 0;font:400 12px/1.6 ${FONT};color:#8e88a8">Le bouton ne marche pas ? Copie ce lien :<br><a href="${esc(button.url)}" style="color:#b9a6ff;word-break:break-all">${esc(button.url)}</a></p>`
@@ -40,6 +44,7 @@ function layout({ issuer, preheader, eyebrow, title, intro, button, details = []
 <p style="margin:0 0 12px;font:600 11px ${MONO};letter-spacing:.18em;text-transform:uppercase;color:${eyebrowColor}">${esc(eyebrow)}</p>
 <h1 style="margin:0 0 14px;font:600 26px/1.2 ${DISPLAY};letter-spacing:-.02em;color:#f7f5ff">${esc(title)}</h1>
 <p style="margin:0;font:400 15px/1.65 ${FONT};color:#c9c3de">${intro}</p>
+${codeBlock}
 ${cta}
 ${rows ? `<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="margin-top:26px">${rows}</table>` : ''}
 ${outro ? `<p style="margin:24px 0 0;font:400 13px/1.65 ${FONT};color:#9d97b5">${outro}</p>` : ''}
@@ -62,13 +67,14 @@ export function renderMail(kind, data, { issuer }) {
     switch (kind) {
       case 'verify':
         return {
-          subject: 'Confirme ton adresse — Compte Cord',
-          preheader: 'Un clic pour activer ton compte Cord dans toute la suite.',
+          subject: data.code ? `${data.code.slice(0, 3)} ${data.code.slice(3)} — ton code Compte Cord` : 'Confirme ton adresse — Compte Cord',
+          preheader: data.code ? `Ton code : ${data.code}. Il active ton compte Cord dans toute la suite.` : 'Un clic pour activer ton compte Cord dans toute la suite.',
           eyebrow: 'Bienvenue',
           title: 'Confirme ton adresse email',
           intro: 'Encore une étape : confirme que cette adresse est bien la tienne pour utiliser ton compte Cord dans les apps de la suite.',
+          code: data.code,
           button: { label: 'Confirmer mon adresse', url: data.url },
-          outro: 'Ce lien est valable 15 minutes. Si tu n’as pas créé de compte Cord, ignore simplement cet email.',
+          outro: 'Le code et le lien sont valables 15 minutes. Si tu n’as pas créé de compte Cord, ignore simplement cet email.',
         };
       case 'reset':
         return {
@@ -172,6 +178,7 @@ export function renderMail(kind, data, { issuer }) {
     spec.title,
     '',
     strip(spec.intro),
+    ...(spec.code ? ['', `Ton code : ${spec.code}`] : []),
     ...(spec.button ? ['', `${spec.button.label} : ${spec.button.url}`] : []),
     ...(spec.details?.length ? ['', ...spec.details.map(([k, v]) => `${k} : ${v}`)] : []),
     ...(spec.outro ? ['', spec.outro] : []),

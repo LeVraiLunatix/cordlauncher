@@ -10,9 +10,9 @@ const KEYRING_SERVICE: &str = "CordLauncher Cord Account";
 fn allowed(method: &str, path: &str) -> bool {
     matches!(
         (method, path),
-        ("GET", "/api/me" | "/api/account" | "/api/sessions" | "/api/activity" | "/api/connected-apps" | "/api/suite" | "/api/admin/overview" | "/api/admin/beta" | "/api/beta/passcord")
+        ("GET", "/api/me" | "/api/account" | "/api/sessions" | "/api/activity" | "/api/connected-apps" | "/api/suite" | "/api/admin/overview" | "/api/admin/beta" | "/api/beta/passcord" | "/api/hub" | "/api/notifications")
             | ("PATCH", "/api/me" | "/api/passcord/keys" | "/api/passkeys")
-            | ("DELETE", "/api/me" | "/api/passcord/keys" | "/api/passkeys" | "/api/sessions" | "/api/connected-apps" | "/api/admin/beta/keys" | "/api/admin/beta/testers" | "/api/admin/beta/token")
+            | ("DELETE", "/api/me" | "/api/passcord/keys" | "/api/passkeys" | "/api/sessions" | "/api/connected-apps" | "/api/admin/beta/keys" | "/api/admin/beta/testers" | "/api/admin/beta/token" | "/api/notifications")
             | (
                 "POST",
                 "/api/register"
@@ -32,6 +32,9 @@ fn allowed(method: &str, path: &str) -> bool {
                     | "/api/beta/passcord/download"
                     | "/api/admin/beta/keys"
                     | "/api/admin/beta/token"
+                    | "/api/me/app-status"
+                    | "/api/notifications/read"
+                    | "/api/email/verify-code"
             )
     )
 }

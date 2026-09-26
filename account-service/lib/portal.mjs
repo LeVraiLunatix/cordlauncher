@@ -1,7 +1,7 @@
 // Portail Compte Cord, embarqué en chaînes pour être servi par la fonction
 // serverless (aucun fichier statique exposé). Source : dossier portal/ —
 // régénérer avec `npm run portal` après une modification.
-export const PORTAL_VERSION = "5421bee8280c";
+export const PORTAL_VERSION = "195bbea2f16f";
 
 export const PORTAL_HTML = `<!doctype html>
 <html lang="fr">
@@ -20,11 +20,11 @@ export const PORTAL_HTML = `<!doctype html>
 <link rel="apple-touch-icon" href="/assets/icon-180.png">
 <link rel="preload" href="/assets/fonts/inter.woff2" as="font" type="font/woff2" crossorigin>
 <link rel="preload" href="/assets/fonts/space-grotesk.woff2" as="font" type="font/woff2" crossorigin>
-<link rel="stylesheet" href="/portal.css?v=5421bee8280c">
-<script type="module" src="/portal.js?v=5421bee8280c"></script>
+<link rel="stylesheet" href="/portal.css?v=195bbea2f16f">
+<script type="module" src="/portal.js?v=195bbea2f16f"></script>
 </head>
 <body>
-<svg xmlns="http://www.w3.org/2000/svg" class="sprite" aria-hidden="true" focusable="false"><symbol id="i-activity" viewBox="0 0 24 24"><path d="M22 12h-2.48a2 2 0 0 0-1.93 1.46l-2.35 8.36a.25.25 0 0 1-.48 0L9.24 2.18a.25.25 0 0 0-.48 0l-2.35 8.36A2 2 0 0 1 4.49 12H2" /></symbol><symbol id="i-app-window" viewBox="0 0 24 24"><rect x="2" y="4" width="20" height="16" rx="2" /><path d="M10 4v4" /><path d="M2 8h20" /><path d="M6 4v4" /></symbol><symbol id="i-arrow-left" viewBox="0 0 24 24"><path d="m12 19-7-7 7-7" /><path d="M19 12H5" /></symbol><symbol id="i-arrow-right" viewBox="0 0 24 24"><path d="M5 12h14" /><path d="m12 5 7 7-7 7" /></symbol><symbol id="i-at-sign" viewBox="0 0 24 24"><circle cx="12" cy="12" r="4" /><path d="M16 8v5a3 3 0 0 0 6 0v-1a10 10 0 1 0-4 8" /></symbol><symbol id="i-badge-check" viewBox="0 0 24 24"><path d="M3.85 8.62a4 4 0 0 1 4.78-4.77 4 4 0 0 1 6.74 0 4 4 0 0 1 4.78 4.78 4 4 0 0 1 0 6.74 4 4 0 0 1-4.77 4.78 4 4 0 0 1-6.75 0 4 4 0 0 1-4.78-4.77 4 4 0 0 1 0-6.76Z" /><path d="m16 9-5.5 5.5L8 12" /></symbol><symbol id="i-ban" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10" /><path d="M4.929 4.929 19.07 19.071" /></symbol><symbol id="i-bell-off" viewBox="0 0 24 24"><path d="M10.268 21a2 2 0 0 0 3.464 0" /><path d="M17 17H4a1 1 0 0 1-.74-1.673C4.59 13.956 6 12.499 6 8a6 6 0 0 1 .258-1.742" /><path d="m2 2 20 20" /><path d="M8.668 3.01A6 6 0 0 1 18 8c0 2.687.77 4.653 1.707 6.05" /></symbol><symbol id="i-bell" viewBox="0 0 24 24"><path d="M10.268 21a2 2 0 0 0 3.464 0" /><path d="M3.262 15.326A1 1 0 0 0 4 17h16a1 1 0 0 0 .74-1.673C19.41 13.956 18 12.499 18 8A6 6 0 0 0 6 8c0 4.499-1.411 5.956-2.738 7.326" /></symbol><symbol id="i-camera" viewBox="0 0 24 24"><path d="M13.997 4a2 2 0 0 1 1.76 1.05l.486.9A2 2 0 0 0 18.003 7H20a2 2 0 0 1 2 2v9a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V9a2 2 0 0 1 2-2h1.997a2 2 0 0 0 1.759-1.048l.489-.904A2 2 0 0 1 10.004 4z" /><circle cx="12" cy="13" r="3" /></symbol><symbol id="i-chart-column" viewBox="0 0 24 24"><path d="M3 3v16a2 2 0 0 0 2 2h16" /><path d="M18 17V9" /><path d="M13 17V5" /><path d="M8 17v-3" /></symbol><symbol id="i-check" viewBox="0 0 24 24"><path d="M20 6 9 17l-5-5" /></symbol><symbol id="i-chevron-down" viewBox="0 0 24 24"><path d="m6 9 6 6 6-6" /></symbol><symbol id="i-chevron-right" viewBox="0 0 24 24"><path d="m9 18 6-6-6-6" /></symbol><symbol id="i-circle-alert" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10" /><line x1="12" x2="12" y1="8" y2="12" /><line x1="12" x2="12.01" y1="16" y2="16" /></symbol><symbol id="i-circle-check" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10" /><path d="m16 9-5.5 5.5L8 12" /></symbol><symbol id="i-circle-help" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10" /><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3" /><path d="M12 17h.01" /></symbol><symbol id="i-circle-x" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10" /><path d="m15 9-6 6" /><path d="m9 9 6 6" /></symbol><symbol id="i-clock" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10" /><path d="M12 6v6l4 2" /></symbol><symbol id="i-cloud" viewBox="0 0 24 24"><path d="M17.5 19H9a7 7 0 1 1 6.71-9h1.79a4.5 4.5 0 1 1 0 9Z" /></symbol><symbol id="i-copy" viewBox="0 0 24 24"><rect width="14" height="14" x="8" y="8" rx="2" ry="2" /><path d="M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2" /></symbol><symbol id="i-cpu" viewBox="0 0 24 24"><path d="M12 20v2" /><path d="M12 2v2" /><path d="M17 20v2" /><path d="M17 2v2" /><path d="M2 12h2" /><path d="M2 17h2" /><path d="M2 7h2" /><path d="M20 12h2" /><path d="M20 17h2" /><path d="M20 7h2" /><path d="M7 20v2" /><path d="M7 2v2" /><rect x="4" y="4" width="16" height="16" rx="2" /><rect x="8" y="8" width="8" height="8" rx="1" /></symbol><symbol id="i-database" viewBox="0 0 24 24"><ellipse cx="12" cy="5" rx="9" ry="3" /><path d="M3 5V19A9 3 0 0 0 21 19V5" /><path d="M3 12A9 3 0 0 0 21 12" /></symbol><symbol id="i-download" viewBox="0 0 24 24"><path d="M12 15V3" /><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" /><path d="m7 10 5 5 5-5" /></symbol><symbol id="i-ellipsis" viewBox="0 0 24 24"><circle cx="12" cy="12" r="1" /><circle cx="19" cy="12" r="1" /><circle cx="5" cy="12" r="1" /></symbol><symbol id="i-external-link" viewBox="0 0 24 24"><path d="M15 3h6v6" /><path d="M10 14 21 3" /><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6" /></symbol><symbol id="i-eye-off" viewBox="0 0 24 24"><path d="M10.733 5.076a10.744 10.744 0 0 1 11.205 6.575 1 1 0 0 1 0 .696 10.747 10.747 0 0 1-1.444 2.49" /><path d="M14.084 14.158a3 3 0 0 1-4.242-4.242" /><path d="M17.479 17.499a10.75 10.75 0 0 1-15.417-5.151 1 1 0 0 1 0-.696 10.75 10.75 0 0 1 4.446-5.143" /><path d="m2 2 20 20" /></symbol><symbol id="i-eye" viewBox="0 0 24 24"><path d="M2.062 12.348a1 1 0 0 1 0-.696 10.75 10.75 0 0 1 19.876 0 1 1 0 0 1 0 .696 10.75 10.75 0 0 1-19.876 0" /><circle cx="12" cy="12" r="3" /></symbol><symbol id="i-file-json" viewBox="0 0 24 24"><path d="M6 22a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h8a2.4 2.4 0 0 1 1.704.706l3.588 3.588A2.4 2.4 0 0 1 20 8v12a2 2 0 0 1-2 2z" /><path d="M14 2v5a1 1 0 0 0 1 1h5" /><path d="M10 12a1 1 0 0 0-1 1v1a1 1 0 0 1-1 1 1 1 0 0 1 1 1v1a1 1 0 0 0 1 1" /><path d="M14 18a1 1 0 0 0 1-1v-1a1 1 0 0 1 1-1 1 1 0 0 1-1-1v-1a1 1 0 0 0-1-1" /></symbol><symbol id="i-fingerprint-pattern" viewBox="0 0 24 24"><path d="M12 10a2 2 0 0 0-2 2c0 1.02-.1 2.51-.26 4" /><path d="M14 13.12c0 2.38 0 6.38-1 8.88" /><path d="M17.29 21.02c.12-.6.43-2.3.5-3.02" /><path d="M2 12a10 10 0 0 1 18-6" /><path d="M2 16h.01" /><path d="M21.8 16c.2-2 .131-5.354 0-6" /><path d="M5 19.5C5.5 18 6 15 6 12a6 6 0 0 1 .34-2" /><path d="M8.65 22c.21-.66.45-1.32.57-2" /><path d="M9 6.8a6 6 0 0 1 9 5.2v2" /></symbol><symbol id="i-globe" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10" /><path d="M12 2a14.5 14.5 0 0 0 0 20 14.5 14.5 0 0 0 0-20" /><path d="M2 12h20" /></symbol><symbol id="i-hard-drive" viewBox="0 0 24 24"><path d="M10 16h.01" /><path d="M2.212 11.577a2 2 0 0 0-.212.896V18a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2v-5.527a2 2 0 0 0-.212-.896L18.55 5.11A2 2 0 0 0 16.76 4H7.24a2 2 0 0 0-1.79 1.11z" /><path d="M21.946 12.013H2.054" /><path d="M6 16h.01" /></symbol><symbol id="i-history" viewBox="0 0 24 24"><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8" /><path d="M3 3v5h5" /><path d="M12 7v5l4 2" /></symbol><symbol id="i-house" viewBox="0 0 24 24"><path d="M15 21v-8a1 1 0 0 0-1-1h-4a1 1 0 0 0-1 1v8" /><path d="M3 10a2 2 0 0 1 .709-1.528l7-6a2 2 0 0 1 2.582 0l7 6A2 2 0 0 1 21 10v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z" /></symbol><symbol id="i-id-card" viewBox="0 0 24 24"><path d="M13 19a4 4 0 00-8 0" /><path d="M16 10h2" /><path d="M16 14h2" /><circle cx="9" cy="12" r="3" /><rect x="2" y="5" width="20" height="14" rx="2" /></symbol><symbol id="i-info" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10" /><path d="M12 16v-4" /><path d="M12 8h.01" /></symbol><symbol id="i-key-round" viewBox="0 0 24 24"><path d="M2.586 17.414A2 2 0 0 0 2 18.828V21a1 1 0 0 0 1 1h3a1 1 0 0 0 1-1v-1a1 1 0 0 1 1-1h1a1 1 0 0 0 1-1v-1a1 1 0 0 1 1-1h.172a2 2 0 0 0 1.414-.586l.814-.814a6.5 6.5 0 1 0-4-4z" /><circle cx="16.5" cy="7.5" r=".5" fill="currentColor" /></symbol><symbol id="i-key" viewBox="0 0 24 24"><path d="m2 21 9.6-9.6" /><path d="m7.5 15.5 2.3 2.3a1 1 0 0 1 0 1.4l-2.1 2.1a1 1 0 0 1-1.4 0L4 19" /><circle cx="15.5" cy="7.5" r="5.5" /></symbol><symbol id="i-languages" viewBox="0 0 24 24"><path d="m5 8 6 6" /><path d="m4 14 6-6 2-3" /><path d="M2 5h12" /><path d="M7 2h1" /><path d="m22 22-5-10-5 10" /><path d="M14 18h6" /></symbol><symbol id="i-laptop" viewBox="0 0 24 24"><path d="M18 5a2 2 0 0 1 2 2v8.526a2 2 0 0 0 .212.897l1.068 2.127a1 1 0 0 1-.9 1.45H3.62a1 1 0 0 1-.9-1.45l1.068-2.127A2 2 0 0 0 4 15.526V7a2 2 0 0 1 2-2z" /><path d="M20.054 15.987H3.946" /></symbol><symbol id="i-layout-dashboard" viewBox="0 0 24 24"><rect width="7" height="9" x="3" y="3" rx="1" /><rect width="7" height="5" x="14" y="3" rx="1" /><rect width="7" height="9" x="14" y="12" rx="1" /><rect width="7" height="5" x="3" y="16" rx="1" /></symbol><symbol id="i-layout-grid" viewBox="0 0 24 24"><rect width="7" height="7" x="3" y="3" rx="1" /><rect width="7" height="7" x="14" y="3" rx="1" /><rect width="7" height="7" x="14" y="14" rx="1" /><rect width="7" height="7" x="3" y="14" rx="1" /></symbol><symbol id="i-link-2" viewBox="0 0 24 24"><path d="M9 17H7A5 5 0 0 1 7 7h2" /><path d="M15 7h2a5 5 0 1 1 0 10h-2" /><line x1="8" x2="16" y1="12" y2="12" /></symbol><symbol id="i-lock-keyhole" viewBox="0 0 24 24"><circle cx="12" cy="16" r="1" /><rect x="3" y="10" width="18" height="12" rx="2" /><path d="M7 10V7a5 5 0 0 1 10 0v3" /></symbol><symbol id="i-lock" viewBox="0 0 24 24"><rect width="18" height="11" x="3" y="11" rx="2" ry="2" /><path d="M7 11V7a5 5 0 0 1 10 0v4" /></symbol><symbol id="i-log-in" viewBox="0 0 24 24"><path d="m10 17 5-5-5-5" /><path d="M15 12H3" /><path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4" /></symbol><symbol id="i-log-out" viewBox="0 0 24 24"><path d="m16 17 5-5-5-5" /><path d="M21 12H9" /><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" /></symbol><symbol id="i-mail-check" viewBox="0 0 24 24"><path d="M22 13V6a2 2 0 0 0-2-2H4a2 2 0 0 0-2 2v12c0 1.1.9 2 2 2h8" /><path d="m22 7-8.97 5.7a1.94 1.94 0 0 1-2.06 0L2 7" /><path d="m16 19 2 2 4-4" /></symbol><symbol id="i-mail" viewBox="0 0 24 24"><path d="m22 7-8.991 5.727a2 2 0 0 1-2.009 0L2 7" /><rect x="2" y="4" width="20" height="16" rx="2" /></symbol><symbol id="i-menu" viewBox="0 0 24 24"><path d="M4 5h16" /><path d="M4 12h16" /><path d="M4 19h16" /></symbol><symbol id="i-monitor-smartphone" viewBox="0 0 24 24"><path d="M18 8V6a2 2 0 0 0-2-2H4a2 2 0 0 0-2 2v7a2 2 0 0 0 2 2h8" /><path d="M10 19v-3.96 3.15" /><path d="M7 19h5" /><rect width="6" height="10" x="16" y="12" rx="2" /></symbol><symbol id="i-monitor" viewBox="0 0 24 24"><rect width="20" height="14" x="2" y="3" rx="2" /><line x1="8" x2="16" y1="21" y2="21" /><line x1="12" x2="12" y1="17" y2="21" /></symbol><symbol id="i-moon" viewBox="0 0 24 24"><path d="M20.985 12.486a9 9 0 1 1-9.473-9.472c.405-.022.617.46.402.803a6 6 0 0 0 8.268 8.268c.344-.215.825-.004.803.401" /></symbol><symbol id="i-palette" viewBox="0 0 24 24"><path d="M12 22a1 1 0 0 1 0-20 10 9 0 0 1 10 9 5 5 0 0 1-5 5h-2.25a1.75 1.75 0 0 0-1.4 2.8l.3.4a1.75 1.75 0 0 1-1.4 2.8z" /><circle cx="13.5" cy="6.5" r=".5" fill="currentColor" /><circle cx="17.5" cy="10.5" r=".5" fill="currentColor" /><circle cx="6.5" cy="12.5" r=".5" fill="currentColor" /><circle cx="8.5" cy="7.5" r=".5" fill="currentColor" /></symbol><symbol id="i-party-popper" viewBox="0 0 24 24"><path d="M5.8 11.3 2 22l10.7-3.79" /><path d="M4 3h.01" /><path d="M22 8h.01" /><path d="M15 2h.01" /><path d="M22 20h.01" /><path d="m22 2-2.24.75a2.9 2.9 0 0 0-1.96 3.12c.1.86-.57 1.63-1.45 1.63h-.38c-.86 0-1.6.6-1.76 1.44L14 10" /><path d="m22 13-.82-.33c-.86-.34-1.82.2-1.98 1.11c-.11.7-.72 1.22-1.43 1.22H17" /><path d="m11 2 .33.82c.34.86-.2 1.82-1.11 1.98C9.52 4.9 9 5.52 9 6.23V7" /><path d="M11 13c1.93 1.93 2.83 4.17 2 5-.83.83-3.07-.07-5-2-1.93-1.93-2.83-4.17-2-5 .83-.83 3.07.07 5 2Z" /></symbol><symbol id="i-pencil" viewBox="0 0 24 24"><path d="M21.174 6.812a1 1 0 0 0-3.986-3.987L3.842 16.174a2 2 0 0 0-.5.83l-1.321 4.352a.5.5 0 0 0 .623.622l4.353-1.32a2 2 0 0 0 .83-.497z" /><path d="m15 5 4 4" /></symbol><symbol id="i-plus" viewBox="0 0 24 24"><path d="M5 12h14" /><path d="M12 5v14" /></symbol><symbol id="i-podcast" viewBox="0 0 24 24"><path d="M12 17v4" /><path d="M18 11a6 6 0 00-3-5.197" /><path d="M2 11a10 10 0 015-8.662" /><path d="M22 11a10 10 0 00-5-8.662" /><path d="M6 11a6 6 0 013-5.197" /><path d="M9 21h6" /><rect x="10" y="9" width="4" height="8" rx="2" /></symbol><symbol id="i-qr-code" viewBox="0 0 24 24"><rect width="5" height="5" x="3" y="3" rx="1" /><rect width="5" height="5" x="16" y="3" rx="1" /><rect width="5" height="5" x="3" y="16" rx="1" /><path d="M21 16h-3a2 2 0 0 0-2 2v3" /><path d="M21 21v.01" /><path d="M12 7v3a2 2 0 0 1-2 2H7" /><path d="M3 12h.01" /><path d="M12 3h.01" /><path d="M12 16v.01" /><path d="M16 12h1" /><path d="M21 12v.01" /><path d="M12 21v-1" /></symbol><symbol id="i-refresh-cw" viewBox="0 0 24 24"><path d="M3 12a9 9 0 0 1 9-9 9.75 9.75 0 0 1 6.74 2.74L21 8" /><path d="M21 3v5h-5" /><path d="M21 12a9 9 0 0 1-9 9 9.75 9.75 0 0 1-6.74-2.74L3 16" /><path d="M8 16H3v5" /></symbol><symbol id="i-rotate-ccw" viewBox="0 0 24 24"><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8" /><path d="M3 3v5h5" /></symbol><symbol id="i-scan-face" viewBox="0 0 24 24"><path d="M3 7V5a2 2 0 0 1 2-2h2" /><path d="M17 3h2a2 2 0 0 1 2 2v2" /><path d="M21 17v2a2 2 0 0 1-2 2h-2" /><path d="M7 21H5a2 2 0 0 1-2-2v-2" /><path d="M8 14s1.5 2 4 2 4-2 4-2" /><path d="M9 9h.01" /><path d="M15 9h.01" /></symbol><symbol id="i-send" viewBox="0 0 24 24"><path d="M14.536 21.686a.5.5 0 0 0 .937-.024l6.5-19a.496.496 0 0 0-.635-.635l-19 6.5a.5.5 0 0 0-.024.937l7.93 3.18a2 2 0 0 1 1.112 1.11z" /><path d="m21.854 2.147-10.94 10.939" /></symbol><symbol id="i-server" viewBox="0 0 24 24"><rect width="20" height="8" x="2" y="2" rx="2" ry="2" /><rect width="20" height="8" x="2" y="14" rx="2" ry="2" /><line x1="6" x2="6.01" y1="6" y2="6" /><line x1="6" x2="6.01" y1="18" y2="18" /></symbol><symbol id="i-settings" viewBox="0 0 24 24"><path d="M9.671 4.136a2.34 2.34 0 0 1 4.659 0 2.34 2.34 0 0 0 3.319 1.915 2.34 2.34 0 0 1 2.33 4.033 2.34 2.34 0 0 0 0 3.831 2.34 2.34 0 0 1-2.33 4.033 2.34 2.34 0 0 0-3.319 1.915 2.34 2.34 0 0 1-4.659 0 2.34 2.34 0 0 0-3.32-1.915 2.34 2.34 0 0 1-2.33-4.033 2.34 2.34 0 0 0 0-3.831A2.34 2.34 0 0 1 6.35 6.051a2.34 2.34 0 0 0 3.319-1.915" /><circle cx="12" cy="12" r="3" /></symbol><symbol id="i-shield-alert" viewBox="0 0 24 24"><path d="M20 13c0 5-3.5 7.5-7.66 8.95a1 1 0 0 1-.67-.01C7.5 20.5 4 18 4 13V6a1 1 0 0 1 1-1c2 0 4.5-1.2 6.24-2.72a1.17 1.17 0 0 1 1.52 0C14.51 3.81 17 5 19 5a1 1 0 0 1 1 1z" /><path d="M12 8v4" /><path d="M12 16h.01" /></symbol><symbol id="i-shield-check" viewBox="0 0 24 24"><path d="M20 13c0 5-3.5 7.5-7.66 8.95a1 1 0 0 1-.67-.01C7.5 20.5 4 18 4 13V6a1 1 0 0 1 1-1c2 0 4.5-1.2 6.24-2.72a1.17 1.17 0 0 1 1.52 0C14.51 3.81 17 5 19 5a1 1 0 0 1 1 1z" /><path d="m9 12 2 2 4-4" /></symbol><symbol id="i-shield" viewBox="0 0 24 24"><path d="M20 13c0 5-3.5 7.5-7.66 8.95a1 1 0 0 1-.67-.01C7.5 20.5 4 18 4 13V6a1 1 0 0 1 1-1c2 0 4.5-1.2 6.24-2.72a1.17 1.17 0 0 1 1.52 0C14.51 3.81 17 5 19 5a1 1 0 0 1 1 1z" /></symbol><symbol id="i-sliders-horizontal" viewBox="0 0 24 24"><path d="M10 5H3" /><path d="M12 19H3" /><path d="M14 3v4" /><path d="M16 17v4" /><path d="M21 12h-9" /><path d="M21 19h-5" /><path d="M21 5h-7" /><path d="M8 10v4" /><path d="M8 12H3" /></symbol><symbol id="i-smartphone" viewBox="0 0 24 24"><rect width="14" height="20" x="5" y="2" rx="2" ry="2" /><path d="M12 18h.01" /></symbol><symbol id="i-sparkles" viewBox="0 0 24 24"><path d="M11.017 2.814a1 1 0 0 1 1.966 0l1.051 5.558a2 2 0 0 0 1.594 1.594l5.558 1.051a1 1 0 0 1 0 1.966l-5.558 1.051a2 2 0 0 0-1.594 1.594l-1.051 5.558a1 1 0 0 1-1.966 0l-1.051-5.558a2 2 0 0 0-1.594-1.594l-5.558-1.051a1 1 0 0 1 0-1.966l5.558-1.051a2 2 0 0 0 1.594-1.594z" /><path d="M20 2v4" /><path d="M22 4h-4" /><circle cx="4" cy="20" r="2" /></symbol><symbol id="i-sun-moon" viewBox="0 0 24 24"><path d="M12 2v2" /><path d="M14.837 16.385a6 6 0 1 1-7.223-7.222c.624-.147.97.66.715 1.248a4 4 0 0 0 5.26 5.259c.589-.255 1.396.09 1.248.715" /><path d="M16 12a4 4 0 0 0-4-4" /><path d="m19 5-1.256 1.256" /><path d="M20 12h2" /></symbol><symbol id="i-sun" viewBox="0 0 24 24"><circle cx="12" cy="12" r="4" /><path d="M12 2v2" /><path d="M12 20v2" /><path d="m4.93 4.93 1.41 1.41" /><path d="m17.66 17.66 1.41 1.41" /><path d="M2 12h2" /><path d="M20 12h2" /><path d="m6.34 17.66-1.41 1.41" /><path d="m19.07 4.93-1.41 1.41" /></symbol><symbol id="i-tablet-smartphone" viewBox="0 0 24 24"><rect width="10" height="14" x="3" y="8" rx="2" /><path d="M5 4a2 2 0 0 1 2-2h12a2 2 0 0 1 2 2v16a2 2 0 0 1-2 2h-2.4" /><path d="M8 18h.01" /></symbol><symbol id="i-trash-2" viewBox="0 0 24 24"><path d="M10 11v6" /><path d="M14 11v6" /><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6" /><path d="M3 6h18" /><path d="M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" /></symbol><symbol id="i-triangle-alert" viewBox="0 0 24 24"><path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3" /><path d="M12 9v4" /><path d="M12 17h.01" /></symbol><symbol id="i-upload" viewBox="0 0 24 24"><path d="M12 3v12" /><path d="m17 8-5-5-5 5" /><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" /></symbol><symbol id="i-user-check" viewBox="0 0 24 24"><path d="m16 11 2 2 4-4" /><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2" /><circle cx="9" cy="7" r="4" /></symbol><symbol id="i-user-round" viewBox="0 0 24 24"><circle cx="12" cy="8" r="5" /><path d="M20 21a8 8 0 0 0-16 0" /></symbol><symbol id="i-user" viewBox="0 0 24 24"><path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2" /><circle cx="12" cy="7" r="4" /></symbol><symbol id="i-users" viewBox="0 0 24 24"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2" /><path d="M16 3.128a4 4 0 0 1 0 7.744" /><path d="M22 21v-2a4 4 0 0 0-3-3.87" /><circle cx="9" cy="7" r="4" /></symbol><symbol id="i-wand-sparkles" viewBox="0 0 24 24"><path d="m21.64 3.64-1.28-1.28a1.21 1.21 0 0 0-1.72 0L2.36 18.64a1.21 1.21 0 0 0 0 1.72l1.28 1.28a1.2 1.2 0 0 0 1.72 0L21.64 5.36a1.2 1.2 0 0 0 0-1.72" /><path d="m14 7 3 3" /><path d="M5 6v4" /><path d="M19 14v4" /><path d="M10 2v2" /><path d="M7 8H3" /><path d="M21 16h-4" /><path d="M11 3H9" /></symbol><symbol id="i-x" viewBox="0 0 24 24"><path d="M18 6 6 18" /><path d="m6 6 12 12" /></symbol><symbol id="i-zap" viewBox="0 0 24 24"><path d="M15.914 4a1.5 1.5 0 00-2.474-1.561l-9 9A1.5 1.5 0 005.5 14h4.002a.5.5 0 01.471.666L8.086 20a1.5 1.5 0 002.475 1.56l9-9A1.5 1.5 0 0018.5 10h-3.997a.5.5 0 01-.472-.667z" /></symbol></svg>
+<svg xmlns="http://www.w3.org/2000/svg" class="sprite" aria-hidden="true" focusable="false"><symbol id="i-activity" viewBox="0 0 24 24"><path d="M22 12h-2.48a2 2 0 0 0-1.93 1.46l-2.35 8.36a.25.25 0 0 1-.48 0L9.24 2.18a.25.25 0 0 0-.48 0l-2.35 8.36A2 2 0 0 1 4.49 12H2" /></symbol><symbol id="i-app-window" viewBox="0 0 24 24"><rect x="2" y="4" width="20" height="16" rx="2" /><path d="M10 4v4" /><path d="M2 8h20" /><path d="M6 4v4" /></symbol><symbol id="i-arrow-left" viewBox="0 0 24 24"><path d="m12 19-7-7 7-7" /><path d="M19 12H5" /></symbol><symbol id="i-arrow-right" viewBox="0 0 24 24"><path d="M5 12h14" /><path d="m12 5 7 7-7 7" /></symbol><symbol id="i-arrow-up-right" viewBox="0 0 24 24"><path d="M7 7h10v10" /><path d="M7 17 17 7" /></symbol><symbol id="i-at-sign" viewBox="0 0 24 24"><circle cx="12" cy="12" r="4" /><path d="M16 8v5a3 3 0 0 0 6 0v-1a10 10 0 1 0-4 8" /></symbol><symbol id="i-badge-check" viewBox="0 0 24 24"><path d="M3.85 8.62a4 4 0 0 1 4.78-4.77 4 4 0 0 1 6.74 0 4 4 0 0 1 4.78 4.78 4 4 0 0 1 0 6.74 4 4 0 0 1-4.77 4.78 4 4 0 0 1-6.75 0 4 4 0 0 1-4.78-4.77 4 4 0 0 1 0-6.76Z" /><path d="m16 9-5.5 5.5L8 12" /></symbol><symbol id="i-ban" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10" /><path d="M4.929 4.929 19.07 19.071" /></symbol><symbol id="i-bell-dot" viewBox="0 0 24 24"><path d="M10.268 21a2 2 0 0 0 3.464 0" /><path d="M11.68 2.009A6 6 0 0 0 6 8c0 4.499-1.411 5.956-2.738 7.326A1 1 0 0 0 4 17h16a1 1 0 0 0 .74-1.673c-.824-.85-1.678-1.731-2.21-3.348" /><circle cx="18" cy="5" r="3" /></symbol><symbol id="i-bell-off" viewBox="0 0 24 24"><path d="M10.268 21a2 2 0 0 0 3.464 0" /><path d="M17 17H4a1 1 0 0 1-.74-1.673C4.59 13.956 6 12.499 6 8a6 6 0 0 1 .258-1.742" /><path d="m2 2 20 20" /><path d="M8.668 3.01A6 6 0 0 1 18 8c0 2.687.77 4.653 1.707 6.05" /></symbol><symbol id="i-bell" viewBox="0 0 24 24"><path d="M10.268 21a2 2 0 0 0 3.464 0" /><path d="M3.262 15.326A1 1 0 0 0 4 17h16a1 1 0 0 0 .74-1.673C19.41 13.956 18 12.499 18 8A6 6 0 0 0 6 8c0 4.499-1.411 5.956-2.738 7.326" /></symbol><symbol id="i-camera" viewBox="0 0 24 24"><path d="M13.997 4a2 2 0 0 1 1.76 1.05l.486.9A2 2 0 0 0 18.003 7H20a2 2 0 0 1 2 2v9a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V9a2 2 0 0 1 2-2h1.997a2 2 0 0 0 1.759-1.048l.489-.904A2 2 0 0 1 10.004 4z" /><circle cx="12" cy="13" r="3" /></symbol><symbol id="i-chart-column" viewBox="0 0 24 24"><path d="M3 3v16a2 2 0 0 0 2 2h16" /><path d="M18 17V9" /><path d="M13 17V5" /><path d="M8 17v-3" /></symbol><symbol id="i-check-check" viewBox="0 0 24 24"><path d="M18 6 7 17l-5-5" /><path d="m22 10-7.5 7.5L13 16" /></symbol><symbol id="i-check" viewBox="0 0 24 24"><path d="M20 6 9 17l-5-5" /></symbol><symbol id="i-chevron-down" viewBox="0 0 24 24"><path d="m6 9 6 6 6-6" /></symbol><symbol id="i-chevron-right" viewBox="0 0 24 24"><path d="m9 18 6-6-6-6" /></symbol><symbol id="i-circle-alert" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10" /><line x1="12" x2="12" y1="8" y2="12" /><line x1="12" x2="12.01" y1="16" y2="16" /></symbol><symbol id="i-circle-check" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10" /><path d="m16 9-5.5 5.5L8 12" /></symbol><symbol id="i-circle-help" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10" /><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3" /><path d="M12 17h.01" /></symbol><symbol id="i-circle-x" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10" /><path d="m15 9-6 6" /><path d="m9 9 6 6" /></symbol><symbol id="i-clock" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10" /><path d="M12 6v6l4 2" /></symbol><symbol id="i-cloud" viewBox="0 0 24 24"><path d="M17.5 19H9a7 7 0 1 1 6.71-9h1.79a4.5 4.5 0 1 1 0 9Z" /></symbol><symbol id="i-command" viewBox="0 0 24 24"><path d="M15 6v12a3 3 0 1 0 3-3H6a3 3 0 1 0 3 3V6a3 3 0 1 0-3 3h12a3 3 0 1 0-3-3" /></symbol><symbol id="i-copy" viewBox="0 0 24 24"><rect width="14" height="14" x="8" y="8" rx="2" ry="2" /><path d="M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2" /></symbol><symbol id="i-corner-down-left" viewBox="0 0 24 24"><path d="M20 4v7a4 4 0 0 1-4 4H4" /><path d="m9 10-5 5 5 5" /></symbol><symbol id="i-cpu" viewBox="0 0 24 24"><path d="M12 20v2" /><path d="M12 2v2" /><path d="M17 20v2" /><path d="M17 2v2" /><path d="M2 12h2" /><path d="M2 17h2" /><path d="M2 7h2" /><path d="M20 12h2" /><path d="M20 17h2" /><path d="M20 7h2" /><path d="M7 20v2" /><path d="M7 2v2" /><rect x="4" y="4" width="16" height="16" rx="2" /><rect x="8" y="8" width="8" height="8" rx="1" /></symbol><symbol id="i-database" viewBox="0 0 24 24"><ellipse cx="12" cy="5" rx="9" ry="3" /><path d="M3 5V19A9 3 0 0 0 21 19V5" /><path d="M3 12A9 3 0 0 0 21 12" /></symbol><symbol id="i-download" viewBox="0 0 24 24"><path d="M12 15V3" /><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" /><path d="m7 10 5 5 5-5" /></symbol><symbol id="i-ellipsis" viewBox="0 0 24 24"><circle cx="12" cy="12" r="1" /><circle cx="19" cy="12" r="1" /><circle cx="5" cy="12" r="1" /></symbol><symbol id="i-external-link" viewBox="0 0 24 24"><path d="M15 3h6v6" /><path d="M10 14 21 3" /><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6" /></symbol><symbol id="i-eye-off" viewBox="0 0 24 24"><path d="M10.733 5.076a10.744 10.744 0 0 1 11.205 6.575 1 1 0 0 1 0 .696 10.747 10.747 0 0 1-1.444 2.49" /><path d="M14.084 14.158a3 3 0 0 1-4.242-4.242" /><path d="M17.479 17.499a10.75 10.75 0 0 1-15.417-5.151 1 1 0 0 1 0-.696 10.75 10.75 0 0 1 4.446-5.143" /><path d="m2 2 20 20" /></symbol><symbol id="i-eye" viewBox="0 0 24 24"><path d="M2.062 12.348a1 1 0 0 1 0-.696 10.75 10.75 0 0 1 19.876 0 1 1 0 0 1 0 .696 10.75 10.75 0 0 1-19.876 0" /><circle cx="12" cy="12" r="3" /></symbol><symbol id="i-file-json" viewBox="0 0 24 24"><path d="M6 22a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h8a2.4 2.4 0 0 1 1.704.706l3.588 3.588A2.4 2.4 0 0 1 20 8v12a2 2 0 0 1-2 2z" /><path d="M14 2v5a1 1 0 0 0 1 1h5" /><path d="M10 12a1 1 0 0 0-1 1v1a1 1 0 0 1-1 1 1 1 0 0 1 1 1v1a1 1 0 0 0 1 1" /><path d="M14 18a1 1 0 0 0 1-1v-1a1 1 0 0 1 1-1 1 1 0 0 1-1-1v-1a1 1 0 0 0-1-1" /></symbol><symbol id="i-fingerprint-pattern" viewBox="0 0 24 24"><path d="M12 10a2 2 0 0 0-2 2c0 1.02-.1 2.51-.26 4" /><path d="M14 13.12c0 2.38 0 6.38-1 8.88" /><path d="M17.29 21.02c.12-.6.43-2.3.5-3.02" /><path d="M2 12a10 10 0 0 1 18-6" /><path d="M2 16h.01" /><path d="M21.8 16c.2-2 .131-5.354 0-6" /><path d="M5 19.5C5.5 18 6 15 6 12a6 6 0 0 1 .34-2" /><path d="M8.65 22c.21-.66.45-1.32.57-2" /><path d="M9 6.8a6 6 0 0 1 9 5.2v2" /></symbol><symbol id="i-globe" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10" /><path d="M12 2a14.5 14.5 0 0 0 0 20 14.5 14.5 0 0 0 0-20" /><path d="M2 12h20" /></symbol><symbol id="i-hard-drive" viewBox="0 0 24 24"><path d="M10 16h.01" /><path d="M2.212 11.577a2 2 0 0 0-.212.896V18a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2v-5.527a2 2 0 0 0-.212-.896L18.55 5.11A2 2 0 0 0 16.76 4H7.24a2 2 0 0 0-1.79 1.11z" /><path d="M21.946 12.013H2.054" /><path d="M6 16h.01" /></symbol><symbol id="i-history" viewBox="0 0 24 24"><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8" /><path d="M3 3v5h5" /><path d="M12 7v5l4 2" /></symbol><symbol id="i-house" viewBox="0 0 24 24"><path d="M15 21v-8a1 1 0 0 0-1-1h-4a1 1 0 0 0-1 1v8" /><path d="M3 10a2 2 0 0 1 .709-1.528l7-6a2 2 0 0 1 2.582 0l7 6A2 2 0 0 1 21 10v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z" /></symbol><symbol id="i-id-card" viewBox="0 0 24 24"><path d="M13 19a4 4 0 00-8 0" /><path d="M16 10h2" /><path d="M16 14h2" /><circle cx="9" cy="12" r="3" /><rect x="2" y="5" width="20" height="14" rx="2" /></symbol><symbol id="i-inbox" viewBox="0 0 24 24"><polyline points="22 12 16 12 14 15 10 15 8 12 2 12" /><path d="M5.45 5.11 2 12v6a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2v-6l-3.45-6.89A2 2 0 0 0 16.76 4H7.24a2 2 0 0 0-1.79 1.11z" /></symbol><symbol id="i-info" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10" /><path d="M12 16v-4" /><path d="M12 8h.01" /></symbol><symbol id="i-key-round" viewBox="0 0 24 24"><path d="M2.586 17.414A2 2 0 0 0 2 18.828V21a1 1 0 0 0 1 1h3a1 1 0 0 0 1-1v-1a1 1 0 0 1 1-1h1a1 1 0 0 0 1-1v-1a1 1 0 0 1 1-1h.172a2 2 0 0 0 1.414-.586l.814-.814a6.5 6.5 0 1 0-4-4z" /><circle cx="16.5" cy="7.5" r=".5" fill="currentColor" /></symbol><symbol id="i-key" viewBox="0 0 24 24"><path d="m2 21 9.6-9.6" /><path d="m7.5 15.5 2.3 2.3a1 1 0 0 1 0 1.4l-2.1 2.1a1 1 0 0 1-1.4 0L4 19" /><circle cx="15.5" cy="7.5" r="5.5" /></symbol><symbol id="i-keyboard" viewBox="0 0 24 24"><path d="M10 8h.01" /><path d="M12 12h.01" /><path d="M14 8h.01" /><path d="M16 12h.01" /><path d="M18 8h.01" /><path d="M6 8h.01" /><path d="M7 16h10" /><path d="M8 12h.01" /><rect width="20" height="16" x="2" y="4" rx="2" /></symbol><symbol id="i-languages" viewBox="0 0 24 24"><path d="m5 8 6 6" /><path d="m4 14 6-6 2-3" /><path d="M2 5h12" /><path d="M7 2h1" /><path d="m22 22-5-10-5 10" /><path d="M14 18h6" /></symbol><symbol id="i-laptop" viewBox="0 0 24 24"><path d="M18 5a2 2 0 0 1 2 2v8.526a2 2 0 0 0 .212.897l1.068 2.127a1 1 0 0 1-.9 1.45H3.62a1 1 0 0 1-.9-1.45l1.068-2.127A2 2 0 0 0 4 15.526V7a2 2 0 0 1 2-2z" /><path d="M20.054 15.987H3.946" /></symbol><symbol id="i-layout-dashboard" viewBox="0 0 24 24"><rect width="7" height="9" x="3" y="3" rx="1" /><rect width="7" height="5" x="14" y="3" rx="1" /><rect width="7" height="9" x="14" y="12" rx="1" /><rect width="7" height="5" x="3" y="16" rx="1" /></symbol><symbol id="i-layout-grid" viewBox="0 0 24 24"><rect width="7" height="7" x="3" y="3" rx="1" /><rect width="7" height="7" x="14" y="3" rx="1" /><rect width="7" height="7" x="14" y="14" rx="1" /><rect width="7" height="7" x="3" y="14" rx="1" /></symbol><symbol id="i-link-2" viewBox="0 0 24 24"><path d="M9 17H7A5 5 0 0 1 7 7h2" /><path d="M15 7h2a5 5 0 1 1 0 10h-2" /><line x1="8" x2="16" y1="12" y2="12" /></symbol><symbol id="i-lock-keyhole" viewBox="0 0 24 24"><circle cx="12" cy="16" r="1" /><rect x="3" y="10" width="18" height="12" rx="2" /><path d="M7 10V7a5 5 0 0 1 10 0v3" /></symbol><symbol id="i-lock" viewBox="0 0 24 24"><rect width="18" height="11" x="3" y="11" rx="2" ry="2" /><path d="M7 11V7a5 5 0 0 1 10 0v4" /></symbol><symbol id="i-log-in" viewBox="0 0 24 24"><path d="m10 17 5-5-5-5" /><path d="M15 12H3" /><path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4" /></symbol><symbol id="i-log-out" viewBox="0 0 24 24"><path d="m16 17 5-5-5-5" /><path d="M21 12H9" /><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" /></symbol><symbol id="i-mail-check" viewBox="0 0 24 24"><path d="M22 13V6a2 2 0 0 0-2-2H4a2 2 0 0 0-2 2v12c0 1.1.9 2 2 2h8" /><path d="m22 7-8.97 5.7a1.94 1.94 0 0 1-2.06 0L2 7" /><path d="m16 19 2 2 4-4" /></symbol><symbol id="i-mail" viewBox="0 0 24 24"><path d="m22 7-8.991 5.727a2 2 0 0 1-2.009 0L2 7" /><rect x="2" y="4" width="20" height="16" rx="2" /></symbol><symbol id="i-menu" viewBox="0 0 24 24"><path d="M4 5h16" /><path d="M4 12h16" /><path d="M4 19h16" /></symbol><symbol id="i-monitor-smartphone" viewBox="0 0 24 24"><path d="M18 8V6a2 2 0 0 0-2-2H4a2 2 0 0 0-2 2v7a2 2 0 0 0 2 2h8" /><path d="M10 19v-3.96 3.15" /><path d="M7 19h5" /><rect width="6" height="10" x="16" y="12" rx="2" /></symbol><symbol id="i-monitor" viewBox="0 0 24 24"><rect width="20" height="14" x="2" y="3" rx="2" /><line x1="8" x2="16" y1="21" y2="21" /><line x1="12" x2="12" y1="17" y2="21" /></symbol><symbol id="i-moon" viewBox="0 0 24 24"><path d="M20.985 12.486a9 9 0 1 1-9.473-9.472c.405-.022.617.46.402.803a6 6 0 0 0 8.268 8.268c.344-.215.825-.004.803.401" /></symbol><symbol id="i-orbit" viewBox="0 0 24 24"><path d="M20.341 6.484A10 10 0 0 1 10.266 21.85" /><path d="M3.659 17.516A10 10 0 0 1 13.74 2.152" /><circle cx="12" cy="12" r="3" /><circle cx="19" cy="5" r="2" /><circle cx="5" cy="19" r="2" /></symbol><symbol id="i-palette" viewBox="0 0 24 24"><path d="M12 22a1 1 0 0 1 0-20 10 9 0 0 1 10 9 5 5 0 0 1-5 5h-2.25a1.75 1.75 0 0 0-1.4 2.8l.3.4a1.75 1.75 0 0 1-1.4 2.8z" /><circle cx="13.5" cy="6.5" r=".5" fill="currentColor" /><circle cx="17.5" cy="10.5" r=".5" fill="currentColor" /><circle cx="6.5" cy="12.5" r=".5" fill="currentColor" /><circle cx="8.5" cy="7.5" r=".5" fill="currentColor" /></symbol><symbol id="i-party-popper" viewBox="0 0 24 24"><path d="M5.8 11.3 2 22l10.7-3.79" /><path d="M4 3h.01" /><path d="M22 8h.01" /><path d="M15 2h.01" /><path d="M22 20h.01" /><path d="m22 2-2.24.75a2.9 2.9 0 0 0-1.96 3.12c.1.86-.57 1.63-1.45 1.63h-.38c-.86 0-1.6.6-1.76 1.44L14 10" /><path d="m22 13-.82-.33c-.86-.34-1.82.2-1.98 1.11c-.11.7-.72 1.22-1.43 1.22H17" /><path d="m11 2 .33.82c.34.86-.2 1.82-1.11 1.98C9.52 4.9 9 5.52 9 6.23V7" /><path d="M11 13c1.93 1.93 2.83 4.17 2 5-.83.83-3.07-.07-5-2-1.93-1.93-2.83-4.17-2-5 .83-.83 3.07.07 5 2Z" /></symbol><symbol id="i-pencil" viewBox="0 0 24 24"><path d="M21.174 6.812a1 1 0 0 0-3.986-3.987L3.842 16.174a2 2 0 0 0-.5.83l-1.321 4.352a.5.5 0 0 0 .623.622l4.353-1.32a2 2 0 0 0 .83-.497z" /><path d="m15 5 4 4" /></symbol><symbol id="i-plus" viewBox="0 0 24 24"><path d="M5 12h14" /><path d="M12 5v14" /></symbol><symbol id="i-podcast" viewBox="0 0 24 24"><path d="M12 17v4" /><path d="M18 11a6 6 0 00-3-5.197" /><path d="M2 11a10 10 0 015-8.662" /><path d="M22 11a10 10 0 00-5-8.662" /><path d="M6 11a6 6 0 013-5.197" /><path d="M9 21h6" /><rect x="10" y="9" width="4" height="8" rx="2" /></symbol><symbol id="i-qr-code" viewBox="0 0 24 24"><rect width="5" height="5" x="3" y="3" rx="1" /><rect width="5" height="5" x="16" y="3" rx="1" /><rect width="5" height="5" x="3" y="16" rx="1" /><path d="M21 16h-3a2 2 0 0 0-2 2v3" /><path d="M21 21v.01" /><path d="M12 7v3a2 2 0 0 1-2 2H7" /><path d="M3 12h.01" /><path d="M12 3h.01" /><path d="M12 16v.01" /><path d="M16 12h1" /><path d="M21 12v.01" /><path d="M12 21v-1" /></symbol><symbol id="i-refresh-cw" viewBox="0 0 24 24"><path d="M3 12a9 9 0 0 1 9-9 9.75 9.75 0 0 1 6.74 2.74L21 8" /><path d="M21 3v5h-5" /><path d="M21 12a9 9 0 0 1-9 9 9.75 9.75 0 0 1-6.74-2.74L3 16" /><path d="M8 16H3v5" /></symbol><symbol id="i-rocket" viewBox="0 0 24 24"><path d="M12 15v5s3.03-.55 4-2c1.08-1.62 0-5 0-5" /><path d="M4.5 16.5c-1.5 1.26-2 5-2 5s3.74-.5 5-2c.71-.84.7-2.13-.09-2.91a2.18 2.18 0 0 0-2.91-.09" /><path d="M9 12a22 22 0 0 1 2-3.95A12.88 12.88 0 0 1 22 2c0 2.72-.78 7.5-6 11a22.4 22.4 0 0 1-4 2z" /><path d="M9 12H4s.55-3.03 2-4c1.62-1.08 5 .05 5 .05" /></symbol><symbol id="i-rotate-ccw" viewBox="0 0 24 24"><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8" /><path d="M3 3v5h5" /></symbol><symbol id="i-scan-face" viewBox="0 0 24 24"><path d="M3 7V5a2 2 0 0 1 2-2h2" /><path d="M17 3h2a2 2 0 0 1 2 2v2" /><path d="M21 17v2a2 2 0 0 1-2 2h-2" /><path d="M7 21H5a2 2 0 0 1-2-2v-2" /><path d="M8 14s1.5 2 4 2 4-2 4-2" /><path d="M9 9h.01" /><path d="M15 9h.01" /></symbol><symbol id="i-search" viewBox="0 0 24 24"><path d="m21 21-4.34-4.34" /><circle cx="11" cy="11" r="8" /></symbol><symbol id="i-send" viewBox="0 0 24 24"><path d="M14.536 21.686a.5.5 0 0 0 .937-.024l6.5-19a.496.496 0 0 0-.635-.635l-19 6.5a.5.5 0 0 0-.024.937l7.93 3.18a2 2 0 0 1 1.112 1.11z" /><path d="m21.854 2.147-10.94 10.939" /></symbol><symbol id="i-server" viewBox="0 0 24 24"><rect width="20" height="8" x="2" y="2" rx="2" ry="2" /><rect width="20" height="8" x="2" y="14" rx="2" ry="2" /><line x1="6" x2="6.01" y1="6" y2="6" /><line x1="6" x2="6.01" y1="18" y2="18" /></symbol><symbol id="i-settings" viewBox="0 0 24 24"><path d="M9.671 4.136a2.34 2.34 0 0 1 4.659 0 2.34 2.34 0 0 0 3.319 1.915 2.34 2.34 0 0 1 2.33 4.033 2.34 2.34 0 0 0 0 3.831 2.34 2.34 0 0 1-2.33 4.033 2.34 2.34 0 0 0-3.319 1.915 2.34 2.34 0 0 1-4.659 0 2.34 2.34 0 0 0-3.32-1.915 2.34 2.34 0 0 1-2.33-4.033 2.34 2.34 0 0 0 0-3.831A2.34 2.34 0 0 1 6.35 6.051a2.34 2.34 0 0 0 3.319-1.915" /><circle cx="12" cy="12" r="3" /></symbol><symbol id="i-shield-alert" viewBox="0 0 24 24"><path d="M20 13c0 5-3.5 7.5-7.66 8.95a1 1 0 0 1-.67-.01C7.5 20.5 4 18 4 13V6a1 1 0 0 1 1-1c2 0 4.5-1.2 6.24-2.72a1.17 1.17 0 0 1 1.52 0C14.51 3.81 17 5 19 5a1 1 0 0 1 1 1z" /><path d="M12 8v4" /><path d="M12 16h.01" /></symbol><symbol id="i-shield-check" viewBox="0 0 24 24"><path d="M20 13c0 5-3.5 7.5-7.66 8.95a1 1 0 0 1-.67-.01C7.5 20.5 4 18 4 13V6a1 1 0 0 1 1-1c2 0 4.5-1.2 6.24-2.72a1.17 1.17 0 0 1 1.52 0C14.51 3.81 17 5 19 5a1 1 0 0 1 1 1z" /><path d="m9 12 2 2 4-4" /></symbol><symbol id="i-shield" viewBox="0 0 24 24"><path d="M20 13c0 5-3.5 7.5-7.66 8.95a1 1 0 0 1-.67-.01C7.5 20.5 4 18 4 13V6a1 1 0 0 1 1-1c2 0 4.5-1.2 6.24-2.72a1.17 1.17 0 0 1 1.52 0C14.51 3.81 17 5 19 5a1 1 0 0 1 1 1z" /></symbol><symbol id="i-sliders-horizontal" viewBox="0 0 24 24"><path d="M10 5H3" /><path d="M12 19H3" /><path d="M14 3v4" /><path d="M16 17v4" /><path d="M21 12h-9" /><path d="M21 19h-5" /><path d="M21 5h-7" /><path d="M8 10v4" /><path d="M8 12H3" /></symbol><symbol id="i-smartphone" viewBox="0 0 24 24"><rect width="14" height="20" x="5" y="2" rx="2" ry="2" /><path d="M12 18h.01" /></symbol><symbol id="i-sparkles" viewBox="0 0 24 24"><path d="M11.017 2.814a1 1 0 0 1 1.966 0l1.051 5.558a2 2 0 0 0 1.594 1.594l5.558 1.051a1 1 0 0 1 0 1.966l-5.558 1.051a2 2 0 0 0-1.594 1.594l-1.051 5.558a1 1 0 0 1-1.966 0l-1.051-5.558a2 2 0 0 0-1.594-1.594l-5.558-1.051a1 1 0 0 1 0-1.966l5.558-1.051a2 2 0 0 0 1.594-1.594z" /><path d="M20 2v4" /><path d="M22 4h-4" /><circle cx="4" cy="20" r="2" /></symbol><symbol id="i-sun-moon" viewBox="0 0 24 24"><path d="M12 2v2" /><path d="M14.837 16.385a6 6 0 1 1-7.223-7.222c.624-.147.97.66.715 1.248a4 4 0 0 0 5.26 5.259c.589-.255 1.396.09 1.248.715" /><path d="M16 12a4 4 0 0 0-4-4" /><path d="m19 5-1.256 1.256" /><path d="M20 12h2" /></symbol><symbol id="i-sun" viewBox="0 0 24 24"><circle cx="12" cy="12" r="4" /><path d="M12 2v2" /><path d="M12 20v2" /><path d="m4.93 4.93 1.41 1.41" /><path d="m17.66 17.66 1.41 1.41" /><path d="M2 12h2" /><path d="M20 12h2" /><path d="m6.34 17.66-1.41 1.41" /><path d="m19.07 4.93-1.41 1.41" /></symbol><symbol id="i-tablet-smartphone" viewBox="0 0 24 24"><rect width="10" height="14" x="3" y="8" rx="2" /><path d="M5 4a2 2 0 0 1 2-2h12a2 2 0 0 1 2 2v16a2 2 0 0 1-2 2h-2.4" /><path d="M8 18h.01" /></symbol><symbol id="i-trash-2" viewBox="0 0 24 24"><path d="M10 11v6" /><path d="M14 11v6" /><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6" /><path d="M3 6h18" /><path d="M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" /></symbol><symbol id="i-triangle-alert" viewBox="0 0 24 24"><path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3" /><path d="M12 9v4" /><path d="M12 17h.01" /></symbol><symbol id="i-upload" viewBox="0 0 24 24"><path d="M12 3v12" /><path d="m17 8-5-5-5 5" /><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" /></symbol><symbol id="i-user-check" viewBox="0 0 24 24"><path d="m16 11 2 2 4-4" /><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2" /><circle cx="9" cy="7" r="4" /></symbol><symbol id="i-user-round" viewBox="0 0 24 24"><circle cx="12" cy="8" r="5" /><path d="M20 21a8 8 0 0 0-16 0" /></symbol><symbol id="i-user" viewBox="0 0 24 24"><path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2" /><circle cx="12" cy="7" r="4" /></symbol><symbol id="i-users" viewBox="0 0 24 24"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2" /><path d="M16 3.128a4 4 0 0 1 0 7.744" /><path d="M22 21v-2a4 4 0 0 0-3-3.87" /><circle cx="9" cy="7" r="4" /></symbol><symbol id="i-wand-sparkles" viewBox="0 0 24 24"><path d="m21.64 3.64-1.28-1.28a1.21 1.21 0 0 0-1.72 0L2.36 18.64a1.21 1.21 0 0 0 0 1.72l1.28 1.28a1.2 1.2 0 0 0 1.72 0L21.64 5.36a1.2 1.2 0 0 0 0-1.72" /><path d="m14 7 3 3" /><path d="M5 6v4" /><path d="M19 14v4" /><path d="M10 2v2" /><path d="M7 8H3" /><path d="M21 16h-4" /><path d="M11 3H9" /></symbol><symbol id="i-x" viewBox="0 0 24 24"><path d="M18 6 6 18" /><path d="m6 6 12 12" /></symbol><symbol id="i-zap" viewBox="0 0 24 24"><path d="M15.914 4a1.5 1.5 0 00-2.474-1.561l-9 9A1.5 1.5 0 005.5 14h4.002a.5.5 0 01.471.666L8.086 20a1.5 1.5 0 002.475 1.56l9-9A1.5 1.5 0 0018.5 10h-3.997a.5.5 0 01-.472-.667z" /></symbol></svg>
 <a class="skip-link" href="#main">Aller au contenu</a>
 <div class="backdrop" aria-hidden="true">
   <div class="orb orb-a"></div>
@@ -2845,6 +2845,7 @@ function startCountdown(el, expiresAt, onExpire) {
 
 const state = {
   account: null, // réponse de /api/account
+  hub: null, // réponse de /api/hub (apps de la suite, état remonté, notifications)
   suite: [],
   features: { mail: true },
   route: 'apercu',
@@ -2857,7 +2858,9 @@ const passkeysSupported = () =>
   location.hostname !== '[::1]';
 
 async function loadAccount() {
-  state.account = await api('/api/account');
+  const [account, hubData] = await Promise.all([api('/api/account'), api('/api/hub').catch(() => null)]);
+  state.account = account;
+  state.hub = hubData;
   activityState.events = null;
   const user = state.account.user;
   if (user.locale && user.locale !== locale) setLocale(user.locale);
@@ -2905,6 +2908,9 @@ messages({
     'auth.login.title': 'Bon retour', 'auth.login.desc': 'Connecte-toi à ton compte Cord.',
     'auth.login.context': 'Connecte-toi pour continuer vers {app}.',
     'auth.email': 'Adresse email', 'auth.password': 'Mot de passe', 'auth.name': 'Ton prénom ou pseudo',
+    'auth.register.context': 'Un seul compte pour {app} et toute la suite Cord. Ça prend 30 secondes.',
+    'auth.verify.title': 'Vérifie ta boîte mail', 'auth.verify.desc': 'On a envoyé un code à 6 chiffres à {email}. Tape-le ici pour activer ton compte.',
+    'auth.verify.submit': 'Activer mon compte', 'auth.verify.later': 'Plus tard', 'auth.verify.resent': 'Nouveau code envoyé.',
     'auth.forgot': 'Mot de passe oublié ?', 'auth.submit.login': 'Se connecter', 'auth.submit.register': 'Créer mon compte',
     'auth.passkey': 'Passkey', 'auth.passcord': 'Passcord',
     'auth.noAccount': 'Pas encore de compte ?', 'auth.createOne': 'Créer un compte Cord',
@@ -2936,6 +2942,9 @@ messages({
     'auth.login.title': 'Welcome back', 'auth.login.desc': 'Sign in to your Cord account.',
     'auth.login.context': 'Sign in to continue to {app}.',
     'auth.email': 'Email address', 'auth.password': 'Password', 'auth.name': 'Your first name or nickname',
+    'auth.register.context': 'One account for {app} and the whole Cord suite. Takes 30 seconds.',
+    'auth.verify.title': 'Check your inbox', 'auth.verify.desc': 'We sent a 6-digit code to {email}. Type it here to activate your account.',
+    'auth.verify.submit': 'Activate my account', 'auth.verify.later': 'Later', 'auth.verify.resent': 'New code sent.',
     'auth.forgot': 'Forgot password?', 'auth.submit.login': 'Sign in', 'auth.submit.register': 'Create my account',
     'auth.passkey': 'Passkey', 'auth.passcord': 'Passcord',
     'auth.noAccount': 'No account yet?', 'auth.createOne': 'Create a Cord account',
@@ -2967,10 +2976,12 @@ messages({
 
 /**
  * Monte la carte d'authentification dans \`host\`.
- * options : { mode, resetToken, context: { appName }, onSuccess(result, meta) }
+ * options : { mode, email, resetToken, context: { appName }, onSuccess(result, meta) }
+ * \`email\` préremplit le champ (login_hint d'une app) ; après une inscription,
+ * l'étape « verify » demande le code à 6 chiffres reçu par email.
  */
-function mountAuth(host, { mode = 'login', resetToken, context, onSuccess }) {
-  const local = { mode, email: '', password: '', recovery: false, resetInfo: null, stop: [], passkeyAbort: null };
+function mountAuth(host, { mode = 'login', email = '', resetToken, context, onSuccess }) {
+  const local = { mode, email: String(email ?? '').slice(0, 254), password: '', recovery: false, resetInfo: null, stop: [], passkeyAbort: null };
   host.dataset.scope = 'auth';
 
   const cleanup = () => {
@@ -2999,7 +3010,7 @@ function mountAuth(host, { mode = 'login', resetToken, context, onSuccess }) {
       </div>
       <p class="auth-foot">\${t('auth.noAccount')} <button type="button" class="link-btn" data-go="register">\${t('auth.createOne')}</button></p>\`,
 
-    register: () => html\`\${head(t('auth.register.title'), t('auth.register.desc'))}
+    register: () => html\`\${head(t('auth.register.title'), context?.appName ? t('auth.register.context', { app: context.appName }) : t('auth.register.desc'))}
       <form data-form="register" novalidate>
         <div class="field"><label for="a-name">\${t('auth.name')}</label><input class="input" id="a-name" name="name" autocomplete="nickname" required maxlength="60" autofocus></div>
         \${emailField(false)}
@@ -3008,6 +3019,15 @@ function mountAuth(host, { mode = 'login', resetToken, context, onSuccess }) {
       </form>
       <p class="legal">\${t('auth.register.legal')}</p>
       <p class="auth-foot">\${t('auth.hasAccount')} <button type="button" class="link-btn" data-go="login">\${t('auth.signIn')}</button></p>\`,
+
+    verify: () => html\`<div class="auth-illu"><div class="icon-badge grad">\${icon('mail-check')}</div></div>
+      \${head(t('auth.verify.title'), t('auth.verify.desc', { email: local.email }))}
+      <form data-form="verify" novalidate>
+        <div class="field"><label for="a-code" class="sr-only">\${t('verify.code')}</label><input class="input input-otp" id="a-code" name="code" inputmode="numeric" autocomplete="one-time-code" pattern="[0-9 ]{6,7}" required maxlength="7" autofocus placeholder="••••••"></div>
+        <button class="btn btn-primary btn-lg btn-block" type="submit">\${t('auth.verify.submit')}\${icon('arrow-right')}</button>
+      </form>
+      \${local.devUrl ? html\`<a class="btn btn-glass btn-block" href="\${local.devUrl}">\${icon('external-link')}\${t('auth.devLink')}</a>\` : ''}
+      <div class="row-wrap"><button type="button" class="link-btn" data-do="resend-code">\${t('verify.resend')}</button><span class="spacer"></span><button type="button" class="link-btn muted" data-do="skip-verify">\${t('auth.verify.later')}</button></div>\`,
 
     mfa: () => html\`<div class="auth-illu"><div class="icon-badge grad">\${icon('shield-check')}</div></div>
       \${head(t('auth.mfa.title'), local.recovery ? t('auth.mfa.recoveryHint') : t('auth.mfa.desc'))}
@@ -3177,9 +3197,20 @@ function mountAuth(host, { mode = 'login', resetToken, context, onSuccess }) {
     async register(form) {
       local.email = form.email.value.trim();
       const result = await api('/api/register', { name: form.name.value.trim(), email: local.email, password: form.password.value });
-      let delivery = {};
+      let delivery = null;
       try { delivery = await api('/api/email/send', {}); } catch { /* renvoyable depuis le compte */ }
-      await done(result, { registered: true, devUrl: delivery.devUrl });
+      if (!delivery) return done(result, { registered: true });
+      // Code à 6 chiffres tout de suite : l'utilisateur ne quitte pas l'écran
+      // (ni l'app qui l'a envoyé ici) pour aller cliquer un lien.
+      local.registered = result;
+      local.devUrl = delivery.devUrl;
+      if (delivery.devCode) console.info('[dev] code email :', delivery.devCode);
+      go('verify');
+    },
+    async verify(form) {
+      await api('/api/email/verify-code', { code: form.code.value });
+      celebrate();
+      await done(local.registered, { registered: true, verified: true });
     },
     async mfa(form) {
       try {
@@ -3224,7 +3255,7 @@ function mountAuth(host, { mode = 'login', resetToken, context, onSuccess }) {
         await submitters[form.dataset.form](form.elements);
       } catch (e) {
         toastError(e);
-        const field = form.elements.otp ?? form.elements.password;
+        const field = form.elements.otp ?? form.elements.code ?? form.elements.password;
         if (field && e.status && e.status < 500) { field.select?.(); field.setAttribute('aria-invalid', 'true'); }
       }
     });
@@ -3245,6 +3276,8 @@ function mountAuth(host, { mode = 'login', resetToken, context, onSuccess }) {
     if (what === 'toggle-recovery') { local.recovery = !local.recovery; local.interacted = true; return draw(); }
     if (what === 'copy-passcord') return copyText(doer.dataset.url);
     if (what === 'passkey') await busy(doer, () => passkeyLogin().catch(toastError));
+    if (what === 'resend-code') await busy(doer, () => api('/api/email/send', {}).then(() => toast(t('auth.verify.resent'))).catch(toastError));
+    if (what === 'skip-verify') await done(local.registered, { registered: true });
   });
 
   draw();
@@ -3407,7 +3440,7 @@ async function afterLogin(result, meta = {}) {
   const name = state.account.user.name;
   if (meta.registered) {
     celebrate();
-    toast(t('auth.verifySent', { email: state.account.user.email }), {
+    toast(meta.verified ? t('verify.done') : t('auth.verifySent', { email: state.account.user.email }), {
       type: 'success',
       duration: 8000,
       ...(meta.devUrl ? { action: { href: meta.devUrl, label: t('auth.devLink') } } : {}),
@@ -3451,7 +3484,7 @@ Object.assign(ACTIONS, {
 
 messages({
   fr: {
-    'nav.overview': 'Aperçu', 'nav.profile': 'Profil', 'nav.security': 'Sécurité', 'nav.devices': 'Appareils',
+    'nav.overview': 'Accueil', 'nav.search': 'Rechercher ou aller à…', 'nav.inbox': 'Notifications', 'nav.profile': 'Profil', 'nav.security': 'Sécurité', 'nav.devices': 'Appareils',
     'nav.apps': 'Apps', 'nav.activity': 'Activité', 'nav.privacy': 'Confidentialité', 'nav.admin': 'Administration',
     'nav.more': 'Plus', 'nav.logout': 'Se déconnecter', 'nav.section.account': 'Compte', 'nav.section.data': 'Données',
     'nav.section.owner': 'Propriétaire', 'nav.menu': 'Menu du compte',
@@ -3459,7 +3492,7 @@ messages({
     'score.excellent': 'Protection excellente', 'score.good': 'Bonne protection', 'score.weak': 'À renforcer', 'score.label': 'sécurité',
   },
   en: {
-    'nav.overview': 'Overview', 'nav.profile': 'Profile', 'nav.security': 'Security', 'nav.devices': 'Devices',
+    'nav.overview': 'Home', 'nav.search': 'Search or jump to…', 'nav.inbox': 'Notifications', 'nav.profile': 'Profile', 'nav.security': 'Security', 'nav.devices': 'Devices',
     'nav.apps': 'Apps', 'nav.activity': 'Activity', 'nav.privacy': 'Privacy', 'nav.admin': 'Admin',
     'nav.more': 'More', 'nav.logout': 'Sign out', 'nav.section.account': 'Account', 'nav.section.data': 'Data',
     'nav.section.owner': 'Owner', 'nav.menu': 'Account menu',
@@ -3469,12 +3502,12 @@ messages({
 });
 
 const ROUTES = [
-  { id: 'apercu', icon: 'layout-dashboard', label: 'nav.overview', section: 'account', tab: true },
-  { id: 'securite', icon: 'shield-check', label: 'nav.security', section: 'account', tab: true },
-  { id: 'appareils', icon: 'monitor-smartphone', label: 'nav.devices', section: 'account', tab: true },
-  { id: 'apps', icon: 'layout-grid', label: 'nav.apps', section: 'account', tab: true },
+  { id: 'apercu', icon: 'house', label: 'nav.overview', section: 'account', tab: true, dock: true },
+  { id: 'securite', icon: 'shield-check', label: 'nav.security', section: 'account', tab: true, dock: true },
+  { id: 'appareils', icon: 'monitor-smartphone', label: 'nav.devices', section: 'account', tab: true, dock: true },
+  { id: 'apps', icon: 'layout-grid', label: 'nav.apps', section: 'account', tab: true, dock: true },
   { id: 'profil', icon: 'user-round', label: 'nav.profile', section: 'account' },
-  { id: 'activite', icon: 'history', label: 'nav.activity', section: 'data' },
+  { id: 'activite', icon: 'history', label: 'nav.activity', section: 'data', dock: true },
   { id: 'confidentialite', icon: 'lock-keyhole', label: 'nav.privacy', section: 'data' },
   { id: 'admin', icon: 'chart-column', label: 'nav.admin', section: 'owner', admin: true },
 ];
@@ -3529,27 +3562,29 @@ function renderShell() {
   const user = account.user;
   const view = VIEWS[state.route];
   const visible = ROUTES.filter((r) => !r.admin || user.admin);
-  const sections = ['account', 'data', 'owner'];
   const app = $('#app');
   app.removeAttribute('aria-busy');
   document.title = \`\${t(ROUTES.find((r) => r.id === state.route).label)} · Compte Cord\`;
   const moreActive = !ROUTES.find((r) => r.id === state.route)?.tab;
+  const unread = state.hub?.unread ?? account.unread ?? 0;
+  const bell = (cls = '') => html\`<button class="btn btn-ghost btn-icon dock-bell \${cls}" data-action="inbox" aria-label="\${t('nav.inbox')}\${unread ? \` (\${unread})\` : ''}" aria-haspopup="dialog">\${icon(unread ? 'bell' : 'bell')}\${unread ? html\`<span class="badge-dot">\${unread > 9 ? '9+' : unread}</span>\` : ''}</button>\`;
+  const others = visible.filter((r) => !r.dock);
   render(app, html\`<div class="shell">
-    <aside class="sidebar" aria-label="\${t('nav.menu')}">
-      <a class="brand" href="#apercu"><img src="/assets/icon-180.png" alt="" width="34" height="34"><span class="name">Compte Cord<small>cordsuite.app</small></span></a>
-      \${sections.map((section) => {
-        const items = visible.filter((r) => r.section === section);
-        return items.length ? html\`<p class="nav-label">\${t(\`nav.section.\${section}\`)}</p><nav class="nav">\${items.map((r) => navLink(r))}</nav>\` : '';
-      })}
-      <div class="me">
-        \${avatar(user, 'sm')}
-        <div class="who"><strong>\${user.name}</strong><span>\${user.email}</span></div>
-        <button class="btn btn-ghost btn-icon btn-sm" data-action="toggle-theme" aria-label="\${t('nav.theme')}">\${icon(effectiveTheme() === 'dark' ? 'sun' : 'moon')}</button>
-        <button class="btn btn-ghost btn-icon btn-sm" data-action="logout" aria-label="\${t('nav.logout')}">\${icon('log-out')}</button>
-      </div>
-    </aside>
+    <header class="dock" aria-label="\${t('nav.menu')}">
+      <a class="brand" href="#apercu"><img src="/assets/icon-180.png" alt="" width="32" height="32"><span class="name">Compte Cord</span></a>
+      <nav class="dock-nav">
+        \${visible.filter((r) => r.dock).map((r) => html\`<a href="#\${r.id}" \${state.route === r.id ? raw('aria-current="page"') : ''}>\${icon(r.icon)}<span>\${t(r.label)}</span>\${r.id === 'securite' && securityScore().value < 55 ? html\`<span class="dot-alert" aria-hidden="true"></span>\` : ''}</a>\`)}
+        <button type="button" class="dock-more" data-action="more" \${others.some((r) => r.id === state.route) ? raw('aria-current="page"') : ''}>\${icon('ellipsis')}<span>\${t('nav.more')}</span></button>
+      </nav>
+      <button class="dock-search" data-action="palette" aria-label="\${t('nav.search')}">\${icon('search')}<span>\${t('nav.search')}</span><kbd>\${/Mac|iPhone|iPad/.test(navigator.platform) ? '⌘' : 'Ctrl'} K</kbd></button>
+      \${bell()}
+      <button class="avatar-btn" data-action="more" aria-label="\${t('nav.menu')}">\${avatar(user, 'sm')}</button>
+    </header>
     <div class="mobile-top">
       <a class="brand" href="#apercu"><img src="/assets/icon-180.png" alt="" width="30" height="30"><span class="name">Compte Cord</span></a>
+      <span class="spacer"></span>
+      <button class="btn btn-ghost btn-icon" data-action="palette" aria-label="\${t('nav.search')}">\${icon('search')}</button>
+      \${bell()}
       <button class="avatar-btn" data-action="more" aria-label="\${t('nav.menu')}">\${avatar(user, 'sm')}</button>
     </div>
     <main class="main" id="main"><div class="main-inner" data-view="\${state.route}">\${view.render(account)}</div></main>
@@ -3600,15 +3635,17 @@ Object.assign(ACTIONS, {
 });
 
 // src/31-overview.js
-/* Aperçu : accueil, score de sécurité, premiers pas, chiffres clés. */
+/* Accueil : la Carte Cord, la suite (état remonté par chaque app), le fil commun. */
 
 messages({
   fr: {
     'hello.morning': 'Bonjour, {name}', 'hello.evening': 'Bonsoir, {name}', 'hello.night': 'Encore debout, {name} ?',
     'hello.since': 'Membre depuis {date}', 'hello.verified': 'Email vérifié', 'hello.unverified': 'Email à confirmer',
     'verify.title': 'Confirme ton adresse email', 'verify.desc': 'Indispensable pour te connecter aux apps de la suite avec ton compte Cord.',
-    'verify.send': 'Envoyer le lien', 'verify.sent': 'Lien envoyé à {email}. Il est valable 15 minutes.',
-    'onboard.title': 'Bien démarrer', 'onboard.desc': '{done} sur {total} — encore quelques gestes pour un compte au top.',
+    'verify.send': 'Envoyer le code', 'verify.sent': 'Code envoyé à {email}. Il est valable 15 minutes.',
+    'verify.code': 'Code reçu par email', 'verify.submit': 'Valider', 'verify.done': 'Adresse confirmée. Ton compte Cord est prêt !',
+    'verify.resend': 'Renvoyer', 'verify.hint': 'Tape les 6 chiffres reçus, ou clique sur le lien de l’email.',
+    'onboard.title': 'Bien démarrer', 'onboard.desc': '{done} sur {total}',
     'onboard.hide': 'Masquer', 'onboard.complete': 'Ton compte est prêt. Beau travail !',
     'onboard.email': 'Confirmer ton adresse email', 'onboard.email.desc': 'Pour utiliser Cord dans les apps.',
     'onboard.key': 'Associer Passcord ou une passkey', 'onboard.key.desc': 'Connexion sans mot de passe, validée par Face ID.',
@@ -3616,16 +3653,26 @@ messages({
     'onboard.avatar': 'Ajouter une photo', 'onboard.avatar.desc': 'Pour te reconnaître d’un coup d’œil dans les apps.',
     'onboard.app': 'Connecter une app', 'onboard.app.desc': 'Drivecord t’attend avec « Continuer avec Cord ».',
     'onboard.go': 'Y aller',
-    'stat.apps': 'Apps connectées', 'stat.sessions': 'Sessions actives', 'stat.keys': 'Clés sans mot de passe', 'stat.last': 'Dernière connexion',
-    'overview.suite': 'Ta suite Cord', 'overview.activity': 'Activité récente', 'overview.allActivity': 'Tout voir',
-    'overview.connected': 'Connectée', 'overview.discover': 'Découvrir',
+    'card.brand': 'Compte Cord', 'card.since': 'Membre depuis', 'card.id': 'Identifiant', 'card.apps': 'Apps reliées',
+    'today.title': 'Aujourd’hui', 'today.next': 'Prochaine étape', 'today.ready': 'Tout est en ordre',
+    'today.readyDesc': 'Ton compte est protégé et relié à ta suite.', 'today.unread': 'non lue(s)', 'today.sessions': 'session(s) ouverte(s)',
+    'suite.title': 'Ta suite', 'suite.desc': 'Chaque app reliée à ton compte Cord te montre où tu en es, et s’ouvre déjà connectée.',
+    'suite.open': 'Ouvrir', 'suite.start': 'Commencer avec Cord', 'suite.connected': 'Reliée', 'suite.notYet': 'Pas encore utilisée',
+    'suite.idle': 'Reliée à ton compte. Ouvre-la pour que son résumé apparaisse ici.',
+    'suite.betaJoin': 'Rejoindre la bêta', 'suite.betaIn': 'Tu es testeur', 'suite.betaDesc': 'Bêta fermée, sur invitation.',
+    'suite.soon': 'Bientôt dans la suite', 'suite.updated': 'Mis à jour {when}',
+    'suite.launcher': 'CordLauncher', 'suite.launcherDesc': 'Installe et met à jour la suite sur Windows.',
+    'feed.title': 'Fil de la suite', 'feed.desc': 'Ce que tes apps t’envoient et ce qui se passe sur ton compte.', 'feed.all': 'Tout voir',
+    'feed.empty': 'Rien pour l’instant', 'feed.emptyDesc': 'Les nouvelles de tes apps et de ton compte arriveront ici.',
   },
   en: {
     'hello.morning': 'Hello, {name}', 'hello.evening': 'Good evening, {name}', 'hello.night': 'Still up, {name}?',
     'hello.since': 'Member since {date}', 'hello.verified': 'Email verified', 'hello.unverified': 'Email to confirm',
     'verify.title': 'Confirm your email address', 'verify.desc': 'Required to sign in to the suite’s apps with your Cord account.',
-    'verify.send': 'Send the link', 'verify.sent': 'Link sent to {email}. It’s valid for 15 minutes.',
-    'onboard.title': 'Get started', 'onboard.desc': '{done} of {total} — a few more steps for a top-notch account.',
+    'verify.send': 'Send the code', 'verify.sent': 'Code sent to {email}. It’s valid for 15 minutes.',
+    'verify.code': 'Code from the email', 'verify.submit': 'Confirm', 'verify.done': 'Address confirmed. Your Cord account is ready!',
+    'verify.resend': 'Resend', 'verify.hint': 'Type the 6 digits you received, or click the link in the email.',
+    'onboard.title': 'Get started', 'onboard.desc': '{done} of {total}',
     'onboard.hide': 'Hide', 'onboard.complete': 'Your account is ready. Nice work!',
     'onboard.email': 'Confirm your email address', 'onboard.email.desc': 'To use Cord in the apps.',
     'onboard.key': 'Pair Passcord or a passkey', 'onboard.key.desc': 'Passwordless sign-in, approved with Face ID.',
@@ -3633,9 +3680,17 @@ messages({
     'onboard.avatar': 'Add a photo', 'onboard.avatar.desc': 'So apps can show who you are at a glance.',
     'onboard.app': 'Connect an app', 'onboard.app.desc': 'Drivecord is waiting with “Continue with Cord”.',
     'onboard.go': 'Go',
-    'stat.apps': 'Connected apps', 'stat.sessions': 'Active sessions', 'stat.keys': 'Passwordless keys', 'stat.last': 'Last sign-in',
-    'overview.suite': 'Your Cord suite', 'overview.activity': 'Recent activity', 'overview.allActivity': 'See all',
-    'overview.connected': 'Connected', 'overview.discover': 'Discover',
+    'card.brand': 'Cord Account', 'card.since': 'Member since', 'card.id': 'Identifier', 'card.apps': 'Linked apps',
+    'today.title': 'Today', 'today.next': 'Next step', 'today.ready': 'All set',
+    'today.readyDesc': 'Your account is protected and linked to your suite.', 'today.unread': 'unread', 'today.sessions': 'open session(s)',
+    'suite.title': 'Your suite', 'suite.desc': 'Every app linked to your Cord account shows where you’re at, and opens already signed in.',
+    'suite.open': 'Open', 'suite.start': 'Start with Cord', 'suite.connected': 'Linked', 'suite.notYet': 'Not used yet',
+    'suite.idle': 'Linked to your account. Open it and its summary will show up here.',
+    'suite.betaJoin': 'Join the beta', 'suite.betaIn': 'You’re a tester', 'suite.betaDesc': 'Closed beta, invite only.',
+    'suite.soon': 'Coming to the suite', 'suite.updated': 'Updated {when}',
+    'suite.launcher': 'CordLauncher', 'suite.launcherDesc': 'Installs and updates the suite on Windows.',
+    'feed.title': 'Suite feed', 'feed.desc': 'What your apps send you and what happens on your account.', 'feed.all': 'See all',
+    'feed.empty': 'Nothing yet', 'feed.emptyDesc': 'News from your apps and your account will land here.',
   },
 });
 
@@ -3651,102 +3706,208 @@ function onboardingSteps(a) {
     { id: 'key', done: a.passkeys.length + a.passcord.length > 0, href: '#appareils' },
     { id: 'mfa', done: a.security.mfa, action: 'totp-setup' },
     { id: 'avatar', done: Boolean(a.user.avatarUrl), href: '#profil' },
-    { id: 'app', done: a.apps.length > 0, href: 'https://drivecord.app', external: true },
+    { id: 'app', done: a.apps.length > 0, href: 'https://drivecord.app/login?via=cord', external: true },
   ];
 }
-const onboardingHidden = () => {
-  try { return localStorage.getItem('cord:onboarding-hidden') === '1'; } catch { return false; }
-};
 
-function verifyBanner(a) {
+/** Identifiant lisible et stable, dérivé de l'id interne (CORD·4F2A·91C3). */
+function cordId(id) {
+  const h = hashString(id).toString(16).toUpperCase().padStart(8, '0').slice(-8);
+  return \`CORD·\${h.slice(0, 4)}·\${h.slice(4)}\`;
+}
+
+function verifyCard(a) {
   if (a.user.emailVerified) return '';
-  return html\`<div class="banner tone-warn" role="status">\${icon('mail')}
-    <div class="body"><p class="title">\${t('verify.title')}</p><p class="desc">\${t('verify.desc')}</p></div>
-    <button class="btn btn-sm btn-glass" data-action="send-verification">\${icon('send')}\${t('verify.send')}</button></div>\`;
+  return html\`<section class="verify-strip glass" role="status">
+    <span class="icon-badge tone-warn">\${icon('mail')}</span>
+    <div class="grow"><p class="title">\${t('verify.title')}</p><p class="desc">\${t('verify.hint')}</p></div>
+    <form id="verify-code" class="verify-form" novalidate>
+      <input class="input input-otp" name="code" inputmode="numeric" autocomplete="one-time-code" maxlength="7" placeholder="••••••" aria-label="\${t('verify.code')}" required>
+      <button class="btn btn-primary" type="submit">\${t('verify.submit')}</button>
+      <button class="btn btn-ghost btn-sm" type="button" data-action="send-verification">\${t('verify.resend')}</button>
+    </form>
+  </section>\`;
+}
+
+function cordCard(a, score, linked) {
+  const since = new Intl.DateTimeFormat(intlLocale(), { month: 'short', year: 'numeric' }).format(new Date(a.user.createdAt));
+  return html\`<section class="cord-card" data-tilt>
+    <span class="cc-holo" aria-hidden="true"></span><span class="cc-shine" aria-hidden="true"></span>
+    <div class="cc-top">
+      <img src="/assets/icon-180.png" alt="" width="30" height="30">
+      <span class="cc-brand">\${t('card.brand')}</span>
+      <a class="cc-level tone-\${score.tone}" href="#securite">\${icon('shield-check')}\${score.label}</a>
+    </div>
+    <div class="cc-id">
+      <div class="avatar-ring avatar-xl">\${avatar(a.user)}</div>
+      <div class="cc-who">
+        <h1 tabindex="-1" data-page-title>\${greeting(a.user.name)}</h1>
+        <p><span class="break">\${a.user.email}</span>\${a.user.emailVerified ? html\`<span class="cc-check" title="\${t('hello.verified')}">\${icon('badge-check')}</span>\` : ''}</p>
+      </div>
+    </div>
+    <dl class="cc-bottom">
+      <div><dt>\${t('card.since')}</dt><dd>\${since}</dd></div>
+      <div><dt>\${t('card.id')}</dt><dd class="mono">\${cordId(a.user.id)}</dd></div>
+      <div><dt>\${t('card.apps')}</dt><dd>\${linked}</dd></div>
+      <span class="cc-chip" aria-hidden="true"></span>
+    </dl>
+  </section>\`;
+}
+
+function todayPanel(a, score, hub) {
+  const steps = onboardingSteps(a);
+  const next = steps.find((s) => !s.done);
+  const done = steps.filter((s) => s.done).length;
+  const unread = hub?.unread ?? a.unread ?? 0;
+  return html\`<section class="today glass">
+    <div class="today-head"><p class="eyebrow">\${t('today.title')} · \${fmtDate(Date.now())}</p></div>
+    <a class="today-score" href="#securite">\${scoreRing(score.value, { size: 84, stroke: 8, caption: t('score.label') })}<span><strong>\${score.label}</strong><small>\${t('onboard.desc', { done, total: steps.length })}</small></span></a>
+    \${next
+      ? html\`<div class="today-next"><p class="eyebrow">\${t('today.next')}</p><p class="title">\${t(\`onboard.\${next.id}\`)}</p><p class="desc">\${t(\`onboard.\${next.id}.desc\`)}</p>
+          \${next.href
+            ? html\`<a class="btn btn-primary btn-sm" href="\${next.href}" \${next.external ? raw('target="_blank" rel="noopener"') : ''}>\${t('onboard.go')}\${icon('arrow-right')}</a>\`
+            : html\`<button class="btn btn-primary btn-sm" data-action="\${next.action}">\${t('onboard.go')}\${icon('arrow-right')}</button>\`}</div>\`
+      : html\`<div class="today-next done"><p class="title">\${icon('circle-check')}\${t('today.ready')}</p><p class="desc">\${t('today.readyDesc')}</p></div>\`}
+    <div class="today-counters">
+      <button type="button" class="counter" data-action="inbox"><strong>\${unread}</strong><span>\${icon('bell')}\${t('today.unread')}</span></button>
+      <a class="counter" href="#appareils"><strong>\${a.sessions.length}</strong><span>\${icon('monitor-smartphone')}\${t('today.sessions')}</span></a>
+    </div>
+  </section>\`;
+}
+
+function appTile(app) {
+  const s = app.appStatus;
+  const beta = app.beta;
+  const soon = app.status === 'soon';
+  const wide = app.connected && s;
+  let body;
+  let actions;
+  if (beta && !app.connected) {
+    body = html\`<p class="tile-headline">\${beta.access ? t('suite.betaIn') : t('suite.betaDesc')}</p>\`;
+    actions = html\`<a class="btn btn-sm \${beta.access ? 'btn-primary' : 'btn-glass'}" href="#apps">\${beta.access ? t('suite.open') : t('suite.betaJoin')}\${icon('arrow-right')}</a>\`;
+  } else if (app.connected && s) {
+    body = html\`<p class="tile-headline">\${s.headline}</p>\${s.detail ? html\`<p class="tile-detail">\${s.detail}</p>\` : ''}
+      \${s.metrics?.length ? html\`<div class="tile-metrics">\${s.metrics.map((m) => html\`<span><strong>\${m.value}</strong>\${m.label}</span>\`)}</div>\` : ''}
+      <p class="tile-updated">\${t('suite.updated', { when: fmtRelative(s.updatedAt) })}</p>\`;
+    actions = app.launch ? html\`<a class="btn btn-sm btn-primary" href="\${s.url ?? app.launch}" target="_blank" rel="noopener">\${t('suite.open')}\${icon('arrow-up-right')}</a>\` : '';
+  } else if (app.connected) {
+    body = html\`<p class="tile-detail">\${t('suite.idle')}</p>\`;
+    actions = app.launch ? html\`<a class="btn btn-sm btn-primary" href="\${app.launch}" target="_blank" rel="noopener">\${t('suite.open')}\${icon('arrow-up-right')}</a>\` : '';
+  } else {
+    body = html\`<p class="tile-detail">\${app.description}</p>\`;
+    actions = app.launch ? html\`<a class="btn btn-sm btn-glass" href="\${app.launch}" target="_blank" rel="noopener">\${t('suite.start')}\${icon('arrow-up-right')}</a>\` : '';
+  }
+  return html\`<article class="tile \${wide ? 'wide' : ''} \${soon ? 'soon' : ''} \${app.connected ? 'is-linked' : ''}" data-accent="\${app.accent.join(',')}">
+    <span class="tile-glow" aria-hidden="true"></span>
+    <header><img src="\${app.logo}" alt="" width="44" height="44" loading="lazy"><div class="grow"><h3>\${app.name}</h3><p>\${app.tagline}</p></div>
+      \${app.connected ? html\`<span class="badge tone-ok"><span class="dot"></span>\${t('suite.connected')}</span>\` : beta ? html\`<span class="badge tone-warn">Bêta</span>\` : ''}</header>
+    <div class="tile-body">\${body}</div>
+    \${actions ? html\`<footer>\${actions}</footer>\` : ''}
+  </article>\`;
+}
+
+function suiteSection(hub) {
+  if (!hub) return html\`<section class="bento">\${[1, 2, 3].map(() => html\`<div class="skeleton tile-sk"></div>\`)}</section>\`;
+  const active = hub.apps.filter((a) => a.status !== 'soon');
+  const soon = hub.apps.filter((a) => a.status === 'soon');
+  // Les apps reliées d'abord, celles avec un résumé en tête.
+  active.sort((x, y) => Number(Boolean(y.connected)) - Number(Boolean(x.connected)) || Number(Boolean(y.appStatus)) - Number(Boolean(x.appStatus)));
+  const launcher = hub.launcher;
+  return html\`<section class="suite">
+    <div class="section-head"><div><h2>\${t('suite.title')}</h2><p>\${t('suite.desc')}</p></div></div>
+    <div class="bento">
+      \${active.map((app) => appTile(app))}
+      \${launcher ? html\`<article class="tile is-linked" data-accent="#6e58f0,#b842ec">
+        <span class="tile-glow" aria-hidden="true"></span>
+        <header><img src="/assets/icon-180.png" alt="" width="44" height="44"><div class="grow"><h3>\${t('suite.launcher')}</h3><p>\${t('suite.launcherDesc')}</p></div><span class="badge tone-ok"><span class="dot"></span>\${t('suite.connected')}</span></header>
+        <div class="tile-body"><p class="tile-headline">\${launcher.headline}</p>\${launcher.detail ? html\`<p class="tile-detail">\${launcher.detail}</p>\` : ''}
+          \${launcher.metrics?.length ? html\`<div class="tile-metrics">\${launcher.metrics.map((m) => html\`<span><strong>\${m.value}</strong>\${m.label}</span>\`)}</div>\` : ''}
+          <p class="tile-updated">\${t('suite.updated', { when: fmtRelative(launcher.updatedAt) })}</p></div>
+      </article>\` : ''}
+    </div>
+    \${soon.length ? html\`<div class="soon-row"><span class="eyebrow">\${t('suite.soon')}</span>\${soon.map((app) => html\`<span class="soon-chip" data-accent="\${app.accent.join(',')}" title="\${app.description}"><img src="\${app.logo}" alt="" width="22" height="22" loading="lazy">\${app.name}</span>\`)}</div>\` : ''}
+  </section>\`;
+}
+
+function feedSection(a) {
+  const notes = (inboxState.items ?? []).slice(0, 8).map((n) => ({ at: n.createdAt, note: n }));
+  const events = a.activity.slice(0, 8).map((e) => ({ at: e.at, event: e }));
+  const items = [...notes, ...events].sort((x, y) => y.at - x.at).slice(0, 8);
+  return html\`<section class="feed glass">
+    <div class="card-head"><div class="grow"><h2 class="card-title">\${t('feed.title')}</h2><p class="card-desc">\${t('feed.desc')}</p></div><a class="link-btn" href="#activite">\${t('feed.all')}\${icon('chevron-right')}</a></div>
+    \${items.length
+      ? html\`<ol class="feed-list">\${items.map((it) => it.note
+          ? html\`<li class="\${it.note.readAt ? '' : 'unread'}"><img class="feed-logo" src="\${it.note.logo ?? '/assets/icon-180.png'}" alt="" width="34" height="34">
+              <div class="grow"><p class="what"><strong>\${it.note.name}</strong> · \${it.note.title}</p>\${it.note.body ? html\`<p class="more">\${it.note.body}</p>\` : ''}</div>
+              <time>\${fmtRelative(it.at)}</time>\${it.note.url ? html\`<a class="btn btn-ghost btn-icon btn-sm" href="\${it.note.url}" target="_blank" rel="noopener" aria-label="\${t('suite.open')}">\${icon('arrow-up-right')}</a>\` : ''}</li>\`
+          : (() => { const [ic, tone] = EVENT_STYLE[it.event.kind] ?? ['activity', 'tone-muted']; return html\`<li><span class="icon-badge sm \${tone}">\${icon(ic)}</span>
+              <div class="grow"><p class="what">\${t(\`ev.\${it.event.kind}\`)}</p>\${it.event.device ? html\`<p class="more">\${it.event.device.label}</p>\` : ''}</div><time>\${fmtRelative(it.at)}</time></li>\`; })())}</ol>\`
+      : emptyState({ iconName: 'orbit', title: t('feed.empty'), desc: t('feed.emptyDesc') })}
+  </section>\`;
 }
 
 VIEWS.apercu = {
   render(a) {
     const score = securityScore(a);
-    const steps = onboardingSteps(a);
-    const done = steps.filter((s) => s.done).length;
-    const showOnboarding = done < steps.length && !onboardingHidden();
-    const connected = new Set(a.apps.map((x) => x.id));
-    const lastLogin = a.activity.find((e) => e.kind === 'login' || e.kind === 'register');
-    return html\`<div class="view">
-      \${verifyBanner(a)}
-      <section class="hello glass">
-        <span class="glow"></span>
-        <div class="avatar-ring avatar-xl">\${avatar(a.user)}</div>
-        <div class="who">
-          <p class="eyebrow">\${fmtDate(Date.now())}</p>
-          <h1 tabindex="-1" data-page-title>\${greeting(a.user.name)}</h1>
-          <div class="meta">
-            <span class="break">\${a.user.email}</span>
-            \${a.user.emailVerified ? html\`<span class="badge tone-ok">\${icon('badge-check')}\${t('hello.verified')}</span>\` : html\`<span class="badge tone-warn">\${t('hello.unverified')}</span>\`}
-          </div>
-          <p class="small subtle since">\${t('hello.since', { date: fmtDate(a.user.createdAt) })}</p>
-        </div>
-        <a class="score" href="#securite">
-          \${scoreRing(score.value, { caption: t('score.label') })}
-          <span class="caption tone-\${score.tone}">\${score.label}</span>
-        </a>
-      </section>
-
-      \${showOnboarding ? html\`<section class="card glass">
-        <div class="onboard-head">
-          <span class="icon-badge grad">\${icon('wand-sparkles')}</span>
-          <div class="grow"><h2 class="card-title">\${t('onboard.title')}</h2><p class="card-desc">\${t('onboard.desc', { done, total: steps.length })}</p>
-            <div class="progress"><span data-width="\${(done / steps.length) * 100}"></span></div></div>
-          <button class="btn btn-ghost btn-sm" data-action="hide-onboarding">\${t('onboard.hide')}</button>
-        </div>
-        <ul class="checklist">
-          \${steps.map((s) => html\`<li class="\${s.done ? 'done' : ''}">
-            <span class="tick">\${icon('check')}</span>
-            <span class="label">\${t(\`onboard.\${s.id}\`)}<small>\${t(\`onboard.\${s.id}.desc\`)}</small></span>
-            \${s.done ? '' : s.href
-              ? html\`<a class="btn btn-sm btn-glass" href="\${s.href}" \${s.external ? raw('target="_blank" rel="noopener"') : ''}>\${t('onboard.go')}\${icon('arrow-right')}</a>\`
-              : html\`<button class="btn btn-sm btn-glass" data-action="\${s.action}">\${t('onboard.go')}\${icon('arrow-right')}</button>\`}
-          </li>\`)}
-        </ul>
-      </section>\` : ''}
-
-      <section class="grid-4">
-        <a class="stat glass" href="#apps"><div class="top"><span class="icon-badge sm">\${icon('layout-grid')}</span>\${icon('arrow-right', 'go')}</div><div class="value">\${a.apps.length}</div><div class="label">\${t('stat.apps')}</div></a>
-        <a class="stat glass" href="#appareils"><div class="top"><span class="icon-badge sm tone-info">\${icon('monitor-smartphone')}</span>\${icon('arrow-right', 'go')}</div><div class="value">\${a.sessions.length}</div><div class="label">\${t('stat.sessions')}</div></a>
-        <a class="stat glass" href="#securite"><div class="top"><span class="icon-badge sm tone-ok">\${icon('fingerprint-pattern')}</span>\${icon('arrow-right', 'go')}</div><div class="value">\${a.passkeys.length + a.passcord.length}</div><div class="label">\${t('stat.keys')}</div></a>
-        <a class="stat glass" href="#activite"><div class="top"><span class="icon-badge sm tone-warn">\${icon('clock')}</span>\${icon('arrow-right', 'go')}</div><div class="value small-value">\${lastLogin ? fmtRelative(lastLogin.at) : '—'}</div><div class="label">\${t('stat.last')}</div></a>
-      </section>
-
-      <section class="grid-2">
-        <div class="card glass">
-          <div class="card-head"><div class="grow"><h2 class="card-title">\${t('overview.suite')}</h2></div><a class="link-btn" href="#apps">\${t('overview.allActivity')}\${icon('chevron-right')}</a></div>
-          <ul class="list card-body">
-            \${state.suite.filter((s) => s.status !== 'soon').concat(a.apps.filter((x) => !state.suite.some((s) => s.slug === x.id)).map((x) => ({ ...x, slug: x.id, status: 'live' }))).slice(0, 4).map((s) => html\`<li class="list-item app-row">
-              \${appLogo(s)}
-              <div class="body"><div class="title">\${s.name}</div><div class="meta"><span>\${s.tagline ?? ''}</span></div></div>
-              \${connected.has(s.slug) ? html\`<span class="badge tone-ok">\${icon('check')}\${t('overview.connected')}</span>\` : s.url ? html\`<a class="btn btn-sm btn-ghost" href="\${s.url}" target="_blank" rel="noopener">\${t('overview.discover')}\${icon('external-link')}</a>\` : statusBadge(s.status)}
-            </li>\`)}
-          </ul>
-        </div>
-        <div class="card glass">
-          <div class="card-head"><div class="grow"><h2 class="card-title">\${t('overview.activity')}</h2></div><a class="link-btn" href="#activite">\${t('overview.allActivity')}\${icon('chevron-right')}</a></div>
-          <div class="card-body">\${timeline(a.activity.slice(0, 5), { grouped: false })}</div>
-        </div>
-      </section>
+    const hub = state.hub;
+    const linked = hub ? hub.apps.filter((x) => x.connected).length : a.apps.length;
+    return html\`<div class="view hub">
+      \${verifyCard(a)}
+      <div class="hub-hero">\${cordCard(a, score, linked)}\${todayPanel(a, score, hub)}</div>
+      \${suiteSection(hub)}
+      \${feedSection(a)}
     </div>\`;
   },
+  mount(root) {
+    if (!inboxState.items && !inboxState.loading) loadInbox().then(() => { if (state.route === 'apercu') renderShell(); });
+    const form = $('#verify-code', root);
+    form?.addEventListener('submit', async (event) => {
+      event.preventDefault();
+      const input = $('[name="code"]', form);
+      try {
+        await busy(event.submitter ?? $('[type="submit"]', form), () => api('/api/email/verify-code', { code: input.value }));
+        celebrate();
+        toast(t('verify.done'));
+        await refresh();
+      } catch (e) {
+        input.setAttribute('aria-invalid', 'true');
+        input.select();
+        toastError(e);
+      }
+    });
+  },
 };
+
+// Carte Cord : légère inclinaison 3D et reflet qui suivent le pointeur.
+document.addEventListener('pointermove', (event) => {
+  const card = event.target.closest?.('[data-tilt]');
+  if (!card || event.pointerType === 'touch' || reducedMotion()) return;
+  const r = card.getBoundingClientRect();
+  const x = (event.clientX - r.left) / r.width;
+  const y = (event.clientY - r.top) / r.height;
+  card.style.setProperty('--rx', \`\${((0.5 - y) * 7).toFixed(2)}deg\`);
+  card.style.setProperty('--ry', \`\${((x - 0.5) * 9).toFixed(2)}deg\`);
+  card.style.setProperty('--px', \`\${(x * 100).toFixed(1)}%\`);
+  card.style.setProperty('--py', \`\${(y * 100).toFixed(1)}%\`);
+}, { passive: true });
+document.addEventListener('pointerout', (event) => {
+  const card = event.target.closest?.('[data-tilt]');
+  if (!card || card.contains(event.relatedTarget)) return;
+  card.style.setProperty('--rx', '0deg');
+  card.style.setProperty('--ry', '0deg');
+});
 
 Object.assign(ACTIONS, {
   async 'send-verification'(button) {
     await busy(button, async () => {
       const result = await api('/api/email/send', {});
-      toast(t('verify.sent', { email: state.account.user.email }), {
+      toast(t('verify.sent', { email: state.account?.user.email ?? '' }), {
         duration: 8000,
         ...(result.devUrl ? { action: { href: result.devUrl, label: t('auth.devLink') } } : {}),
       });
+      if (result.devCode) console.info('[dev] code email :', result.devCode);
     });
+    if (state.route === 'apercu') $('#verify-code [name="code"]')?.focus();
   },
   'hide-onboarding'() {
     try { localStorage.setItem('cord:onboarding-hidden', '1'); } catch { /* stockage indisponible */ }
@@ -5291,7 +5452,8 @@ messages({
     'consent.allow': 'Autoriser', 'consent.deny': 'Annuler', 'consent.redirect': 'Tu seras redirigé vers {host}',
     'consent.continuing': 'Connexion à {app}…', 'consent.invalid': 'Lien de connexion invalide',
     'consent.invalidDesc': 'Cette demande ne vient pas d’une app reconnue par le Compte Cord, ou son adresse de retour n’est pas autorisée. Retourne dans l’app et réessaie.',
-    'consent.verify': 'Confirme ton email pour continuer', 'consent.verifyDesc': '{app} a besoin d’une adresse vérifiée. Clique sur le lien reçu, puis reviens sur cette page.',
+    'consent.verify': 'Confirme ton email pour continuer', 'consent.verifyDesc': '{app} a besoin d’une adresse vérifiée. Tape le code à 6 chiffres envoyé à {email}.',
+    'consent.verifySubmit': 'Continuer vers {app}', 'consent.firstParty': '{app} fait partie de la suite Cord : pas besoin d’autorisation.',
     'consent.verifyCheck': 'J’ai confirmé mon adresse', 'consent.home': 'Aller à mon compte',
   },
   en: {
@@ -5304,7 +5466,8 @@ messages({
     'consent.allow': 'Allow', 'consent.deny': 'Cancel', 'consent.redirect': 'You’ll be redirected to {host}',
     'consent.continuing': 'Signing in to {app}…', 'consent.invalid': 'Invalid sign-in link',
     'consent.invalidDesc': 'This request doesn’t come from an app Cord Account recognizes, or its return address isn’t allowed. Go back to the app and try again.',
-    'consent.verify': 'Confirm your email to continue', 'consent.verifyDesc': '{app} needs a verified address. Click the link you received, then come back to this page.',
+    'consent.verify': 'Confirm your email to continue', 'consent.verifyDesc': '{app} needs a verified address. Type the 6-digit code sent to {email}.',
+    'consent.verifySubmit': 'Continue to {app}', 'consent.firstParty': '{app} is part of the Cord suite: no permission needed.',
     'consent.verifyCheck': 'I confirmed my address', 'consent.home': 'Go to my account',
   },
 });
@@ -5338,15 +5501,32 @@ async function showConsent() {
 
   if (!context.user) {
     frame(html\`\${visual}<div id="consent-auth" class="auth-card"></div>\`);
-    mountAuth($('#consent-auth'), { context: { appName: client.name }, onSuccess: () => showConsent() });
+    const signup = params.prompt === 'create' || params.screen_hint === 'signup';
+    mountAuth($('#consent-auth'), { mode: signup ? 'register' : 'login', email: params.login_hint ?? '', context: { appName: client.name }, onSuccess: () => showConsent() });
     return;
   }
   const user = context.user;
   if (!user.emailVerified) {
-    frame(html\`\${visual}<div><h1>\${t('consent.verify')}</h1><p class="sub">\${t('consent.verifyDesc', { app: client.name })}</p></div>
-      <div class="account-chip">\${avatar(user, 'sm')}<div class="who"><strong>\${user.name}</strong><span>\${user.email}</span></div></div>
-      <div class="stack-sm"><button class="btn btn-glass btn-block" data-action="send-verification">\${icon('send')}\${t('verify.send')}</button>
-      <button class="btn btn-primary btn-block" data-action="consent-reload">\${t('consent.verifyCheck')}</button></div>\`);
+    frame(html\`\${visual}<div><h1>\${t('consent.verify')}</h1><p class="sub">\${t('consent.verifyDesc', { app: client.name, email: user.email })}</p></div>
+      <form id="consent-code" class="stack-sm" novalidate>
+        <input class="input input-otp" name="code" inputmode="numeric" autocomplete="one-time-code" maxlength="7" placeholder="••••••" aria-label="\${t('verify.code')}" required autofocus>
+        <button class="btn btn-primary btn-lg btn-block" type="submit">\${t('consent.verifySubmit', { app: client.name })}\${icon('arrow-right')}</button>
+      </form>
+      <div class="row-wrap"><button class="link-btn" data-action="send-verification">\${t('verify.resend')}</button><span class="spacer"></span><button class="link-btn muted" data-action="consent-reload">\${t('consent.verifyCheck')}</button></div>\`);
+    const codeForm = $('#consent-code');
+    codeForm.addEventListener('submit', async (event) => {
+      event.preventDefault();
+      const input = $('[name="code"]', codeForm);
+      try {
+        await busy(event.submitter ?? $('[type="submit"]', codeForm), () => api('/api/email/verify-code', { code: input.value }));
+        showConsent();
+      } catch (e) {
+        input.setAttribute('aria-invalid', 'true');
+        input.select();
+        toastError(e);
+      }
+    });
+    setTimeout(() => $('[name="code"]', codeForm)?.focus(), 60);
     return;
   }
 
@@ -5354,7 +5534,7 @@ async function showConsent() {
     const result = await (button ? busy(button, () => api('/api/authorize', params)) : api('/api/authorize', params));
     if (result?.redirect) location.assign(result.redirect);
   };
-  if (context.consented && params.prompt !== 'consent') {
+  if ((context.consented || client.firstParty) && params.prompt !== 'consent') {
     frame(html\`\${visual}<div class="consent-loading"><span class="pulse-dot"></span><p class="muted">\${t('consent.continuing', { app: client.name })}</p></div>\`);
     try { await allow(); } catch (e) { toastError(e); }
     return;
@@ -5389,6 +5569,227 @@ Object.assign(ACTIONS, {
   'consent-reload'() {
     showConsent();
   },
+});
+
+// src/42-inbox.js
+/* Notifications : ce que les apps de la suite envoient au compte (cloche du haut). */
+
+messages({
+  fr: {
+    'inbox.title': 'Notifications', 'inbox.desc': 'Envoyées par les apps reliées à ton compte Cord.',
+    'inbox.readAll': 'Tout marquer comme lu', 'inbox.empty': 'Aucune notification', 'inbox.emptyDesc': 'Quand une app de la suite a du nouveau pour toi, ça s’affiche ici.',
+    'inbox.more': 'Plus anciennes', 'inbox.delete': 'Supprimer', 'inbox.open': 'Ouvrir',
+  },
+  en: {
+    'inbox.title': 'Notifications', 'inbox.desc': 'Sent by the apps linked to your Cord account.',
+    'inbox.readAll': 'Mark all as read', 'inbox.empty': 'No notifications', 'inbox.emptyDesc': 'When a suite app has news for you, it shows up here.',
+    'inbox.more': 'Older', 'inbox.delete': 'Delete', 'inbox.open': 'Open',
+  },
+});
+
+const inboxState = { items: null, unread: 0, more: false, loading: false };
+
+async function loadInbox(before) {
+  inboxState.loading = true;
+  try {
+    const page = await api(\`/api/notifications\${before ? \`?before=\${before}\` : ''}\`);
+    inboxState.items = before ? [...(inboxState.items ?? []), ...page.items] : page.items;
+    inboxState.unread = page.unread;
+    inboxState.more = page.more;
+    if (state.hub) state.hub.unread = page.unread;
+  } catch (e) {
+    toastError(e);
+  } finally {
+    inboxState.loading = false;
+  }
+}
+
+function inboxList() {
+  const items = inboxState.items;
+  if (!items) return html\`<div class="stack-sm">\${[1, 2, 3].map(() => html\`<div class="skeleton sk-line"></div>\`)}</div>\`;
+  if (!items.length) return emptyState({ iconName: 'inbox', title: t('inbox.empty'), desc: t('inbox.emptyDesc') });
+  return html\`<ol class="inbox-list">\${items.map((n) => html\`<li class="\${n.readAt ? '' : 'unread'}" data-id="\${n.id}">
+      <img class="feed-logo" src="\${n.logo ?? '/assets/icon-180.png'}" alt="" width="36" height="36">
+      <div class="grow"><p class="what"><strong>\${n.name}</strong><time>\${fmtRelative(n.createdAt)}</time></p><p class="title">\${n.title}</p>\${n.body ? html\`<p class="more">\${n.body}</p>\` : ''}</div>
+      <div class="inbox-actions">
+        \${n.url ? html\`<a class="btn btn-glass btn-icon btn-sm" href="\${n.url}" target="_blank" rel="noopener" data-open="\${n.id}" aria-label="\${t('inbox.open')}">\${icon('arrow-up-right')}</a>\` : ''}
+        <button type="button" class="btn btn-ghost btn-icon btn-sm" data-remove="\${n.id}" aria-label="\${t('inbox.delete')}">\${icon('trash-2')}</button>
+      </div>
+    </li>\`)}</ol>
+    \${inboxState.more ? html\`<button type="button" class="btn btn-ghost btn-sm btn-block" data-older>\${t('inbox.more')}</button>\` : ''}\`;
+}
+
+Object.assign(ACTIONS, {
+  async inbox() {
+    const body = () => html\`<div data-inbox>\${inboxList()}</div>\`;
+    modal({
+      title: t('inbox.title'),
+      desc: t('inbox.desc'),
+      iconName: 'bell',
+      body,
+      actions: html\`<button type="button" class="btn btn-ghost" data-read-all>\${icon('check-check')}\${t('inbox.readAll')}</button>\`,
+      onOpen(ctx) {
+        ctx.dialog.classList.add('inbox-sheet');
+        const redraw = () => ctx.setBody(body);
+        const markRead = async (ids) => {
+          await api('/api/notifications/read', ids ? { ids } : { all: true }).catch(toastError);
+          for (const n of inboxState.items ?? []) if (!ids || ids.includes(n.id)) n.readAt = n.readAt ?? Date.now();
+          inboxState.unread = (inboxState.items ?? []).filter((n) => !n.readAt).length;
+          if (state.hub) state.hub.unread = inboxState.unread;
+        };
+        ctx.dialog.addEventListener('click', async (event) => {
+          const open = event.target.closest('[data-open]');
+          if (open) return void markRead([open.dataset.open]).then(redraw);
+          const remove = event.target.closest('[data-remove]');
+          if (remove) {
+            await api('/api/notifications', { id: remove.dataset.remove }, 'DELETE').catch(toastError);
+            inboxState.items = inboxState.items.filter((n) => n.id !== remove.dataset.remove);
+            return redraw();
+          }
+          if (event.target.closest('[data-older]')) {
+            await loadInbox(inboxState.items.at(-1)?.createdAt);
+            return redraw();
+          }
+          if (event.target.closest('[data-read-all]')) {
+            event.preventDefault();
+            await markRead();
+            redraw();
+          }
+        });
+        (inboxState.items ? Promise.resolve() : loadInbox()).then(redraw);
+      },
+    }).then(() => renderShell());
+  },
+});
+
+// src/43-palette.js
+/* Palette de commandes (Ctrl/⌘ K ou « / ») : aller partout, ouvrir une app, agir. */
+
+messages({
+  fr: {
+    'palette.placeholder': 'Rechercher une page, une app, une action…', 'palette.empty': 'Rien ne correspond à « {q} ».',
+    'palette.go': 'Aller à', 'palette.apps': 'Apps', 'palette.actions': 'Actions', 'palette.pages': 'Pages',
+    'palette.hint': '↑↓ pour choisir · Entrée pour valider · Échap pour fermer',
+    'cmd.passkey': 'Ajouter une passkey', 'cmd.totp': 'Activer la double authentification', 'cmd.password': 'Changer de mot de passe',
+    'cmd.export': 'Exporter mes données', 'cmd.pair': 'Associer Passcord', 'cmd.inbox': 'Ouvrir les notifications',
+    'cmd.theme': 'Basculer thème clair / sombre', 'cmd.lang': 'Switch to English', 'cmd.logout': 'Se déconnecter',
+    'cmd.open': 'Ouvrir {app}', 'cmd.verify': 'Confirmer mon adresse email',
+  },
+  en: {
+    'palette.placeholder': 'Search a page, an app, an action…', 'palette.empty': 'Nothing matches “{q}”.',
+    'palette.go': 'Go to', 'palette.apps': 'Apps', 'palette.actions': 'Actions', 'palette.pages': 'Pages',
+    'palette.hint': '↑↓ to pick · Enter to run · Esc to close',
+    'cmd.passkey': 'Add a passkey', 'cmd.totp': 'Turn on two-factor authentication', 'cmd.password': 'Change password',
+    'cmd.export': 'Export my data', 'cmd.pair': 'Pair Passcord', 'cmd.inbox': 'Open notifications',
+    'cmd.theme': 'Toggle light / dark theme', 'cmd.lang': 'Passer en français', 'cmd.logout': 'Sign out',
+    'cmd.open': 'Open {app}', 'cmd.verify': 'Confirm my email address',
+  },
+});
+
+const fold = (text) => String(text).normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase();
+
+function paletteCommands() {
+  const a = state.account;
+  const user = a.user;
+  const go = (hash) => () => { location.hash = hash; };
+  const run = (name) => () => ACTIONS[name]?.(null);
+  const commands = [];
+  for (const r of ROUTES.filter((x) => !x.admin || user.admin)) {
+    commands.push({ group: 'pages', icon: r.icon, label: t(r.label), hint: t('palette.go'), keys: r.id, run: go(r.id) });
+  }
+  if (!user.emailVerified) commands.push({ group: 'actions', icon: 'mail-check', label: t('cmd.verify'), run: go('apercu') });
+  commands.push(
+    { group: 'actions', icon: 'fingerprint-pattern', label: t('cmd.passkey'), keys: 'passkey face id', run: () => { location.hash = 'securite'; setTimeout(() => ACTIONS['passkey-add']?.($('[data-action="passkey-add"]')), 120); } },
+    ...(a.security.mfa ? [] : [{ group: 'actions', icon: 'shield-check', label: t('cmd.totp'), keys: '2fa totp mfa', run: () => { location.hash = 'securite'; setTimeout(() => ACTIONS['totp-setup']?.($('[data-action="totp-setup"]')), 120); } }]),
+    { group: 'actions', icon: 'smartphone', label: t('cmd.pair'), keys: 'passcord iphone qr', run: go('appareils') },
+    { group: 'actions', icon: 'key-round', label: t('cmd.password'), keys: 'mot de passe password', run: go('securite') },
+    { group: 'actions', icon: 'bell', label: t('cmd.inbox'), keys: 'inbox notifications', run: run('inbox') },
+    { group: 'actions', icon: 'download', label: t('cmd.export'), keys: 'rgpd gdpr export json', run: go('confidentialite') },
+    { group: 'actions', icon: effectiveTheme() === 'dark' ? 'sun' : 'moon', label: t('cmd.theme'), keys: 'dark light', run: run('toggle-theme') },
+    { group: 'actions', icon: 'languages', label: t('cmd.lang'), keys: 'langue language', run: run('toggle-locale') },
+    { group: 'actions', icon: 'log-out', label: t('cmd.logout'), keys: 'logout', run: run('logout') },
+  );
+  for (const app of state.hub?.apps ?? []) {
+    if (!app.launch || app.status === 'soon') continue;
+    commands.push({ group: 'apps', img: app.logo, label: t('cmd.open', { app: app.name }), hint: app.tagline, keys: app.slug, run: () => window.open(app.launch, '_blank', 'noopener') });
+  }
+  return commands;
+}
+
+function openPalette() {
+  if (!state.account || $('dialog.palette')) return;
+  const commands = paletteCommands();
+  let query = '';
+  let index = 0;
+  let shown = commands;
+  const dialog = document.createElement('dialog');
+  dialog.className = 'palette';
+  dialog.setAttribute('aria-label', t('nav.search'));
+  const list = () => {
+    const tokens = fold(query).split(/\\s+/).filter(Boolean);
+    shown = tokens.length ? commands.filter((c) => tokens.every((tok) => fold(\`\${c.label} \${c.keys ?? ''} \${c.hint ?? ''}\`).includes(tok))) : commands;
+    index = Math.min(index, Math.max(0, shown.length - 1));
+    if (!shown.length) return html\`<p class="palette-empty">\${t('palette.empty', { q: query })}</p>\`;
+    let group = '';
+    return html\`\${shown.map((c, i) => {
+      const head = c.group !== group ? html\`<p class="palette-group">\${t(\`palette.\${c.group}\`)}</p>\` : '';
+      group = c.group;
+      return html\`\${head}<button type="button" class="palette-item" role="option" data-index="\${i}" \${i === index ? raw('aria-selected="true"') : ''}>
+        \${c.img ? html\`<img src="\${c.img}" alt="" width="22" height="22">\` : html\`<span class="palette-ic">\${icon(c.icon)}</span>\`}
+        <span class="label">\${c.label}</span>\${c.hint ? html\`<span class="hint">\${c.hint}</span>\` : ''}\${i === index ? html\`<span class="enter">\${icon('corner-down-left')}</span>\` : ''}</button>\`;
+    })}\`;
+  };
+  render(dialog, html\`<div class="palette-inner">
+    <label class="palette-search">\${icon('search')}<input type="text" placeholder="\${t('palette.placeholder')}" autocomplete="off" spellcheck="false" aria-label="\${t('nav.search')}"><kbd>Esc</kbd></label>
+    <div class="palette-list" role="listbox">\${list()}</div>
+    <p class="palette-foot">\${icon('command')}\${t('palette.hint')}</p>
+  </div>\`);
+  const input = $('input', dialog);
+  const listBox = $('.palette-list', dialog);
+  const redraw = () => {
+    render(listBox, list());
+    $('[aria-selected="true"]', listBox)?.scrollIntoView({ block: 'nearest' });
+  };
+  const close = () => { dialog.classList.add('closing'); setTimeout(() => dialog.close(), 140); };
+  const exec = (i) => {
+    const c = shown[i];
+    if (!c) return;
+    close();
+    setTimeout(() => Promise.resolve(c.run()).catch(toastError), 60);
+  };
+  input.addEventListener('input', () => { query = input.value; index = 0; redraw(); });
+  dialog.addEventListener('keydown', (event) => {
+    if (event.key === 'ArrowDown') { event.preventDefault(); index = (index + 1) % Math.max(1, shown.length); redraw(); }
+    else if (event.key === 'ArrowUp') { event.preventDefault(); index = (index - 1 + shown.length) % Math.max(1, shown.length); redraw(); }
+    else if (event.key === 'Enter') { event.preventDefault(); exec(index); }
+  });
+  listBox.addEventListener('click', (event) => {
+    const item = event.target.closest('[data-index]');
+    if (item) exec(Number(item.dataset.index));
+  });
+  listBox.addEventListener('pointermove', (event) => {
+    const item = event.target.closest('[data-index]');
+    if (item && Number(item.dataset.index) !== index) { index = Number(item.dataset.index); redraw(); }
+  });
+  dialog.addEventListener('click', (event) => { if (event.target === dialog) close(); });
+  dialog.addEventListener('cancel', (event) => { event.preventDefault(); close(); });
+  dialog.addEventListener('close', () => dialog.remove());
+  document.body.append(dialog);
+  dialog.showModal();
+  input.focus();
+}
+
+ACTIONS.palette = () => openPalette();
+document.addEventListener('keydown', (event) => {
+  if (!state.account || location.pathname.startsWith('/authorize')) return;
+  const typing = event.target.closest?.('input, textarea, select, [contenteditable="true"]');
+  if ((event.key === 'k' || event.key === 'K') && (event.ctrlKey || event.metaKey)) {
+    event.preventDefault();
+    openPalette();
+  } else if (event.key === '/' && !typing && !$('dialog[open]')) {
+    event.preventDefault();
+    openPalette();
+  }
 });
 
 // src/99-boot.js
@@ -6664,6 +7065,300 @@ details[open] > summary { margin-bottom: 12px; }
 .token-steps .step-n { display: grid; place-items: center; flex: none; width: 28px; height: 28px; border-radius: 50%; background: var(--grad); color: #fff; font-weight: 600; font-size: 13px; }
 .token-steps form .input { min-width: 0; flex: 1; }
 @media (max-width: 720px) { .token-steps li { flex-wrap: wrap; } }
+
+/* 55-hub.css */
+/* ── Coque : barre flottante (remplace la barre latérale) ─────────────── */
+.shell { display: block; }
+.dock {
+  position: sticky;
+  top: 12px;
+  z-index: 30;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: min(1120px, calc(100% - 32px));
+  margin: 12px auto 0;
+  padding: 8px 10px 8px 14px;
+  border-radius: 22px;
+  background: var(--glass), var(--glass-solid);
+  border: 1px solid var(--line-strong);
+  -webkit-backdrop-filter: var(--blur);
+  backdrop-filter: var(--blur);
+  box-shadow: inset 0 1px 0 var(--highlight), var(--shadow);
+}
+.dock .brand { gap: 10px; }
+.dock .brand img { border-radius: 10px; }
+.dock .brand .name { font: 600 15px/1 var(--font-display); letter-spacing: -0.01em; white-space: nowrap; }
+.dock-nav { display: flex; gap: 2px; margin: 0 auto; padding: 4px; border-radius: 16px; background: var(--control); }
+.dock-nav a, .dock-more {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  height: 36px;
+  padding: 0 13px;
+  border: 0;
+  border-radius: 12px;
+  background: none;
+  color: var(--fg-muted);
+  font: 500 14px/1 var(--font-sans);
+  text-decoration: none !important;
+  cursor: pointer;
+  transition: background var(--t) var(--ease), color var(--t) var(--ease), box-shadow var(--t) var(--ease);
+}
+.dock-nav .i { width: 17px; height: 17px; }
+.dock-nav a:hover, .dock-more:hover { color: var(--fg); }
+.dock-nav [aria-current="page"] { color: var(--fg); background: var(--glass-strong); box-shadow: inset 0 1px 0 var(--highlight), 0 6px 18px -8px rgba(0, 0, 0, 0.6); }
+.dock-nav [aria-current="page"] .i { color: var(--accent); }
+.dock-nav .dot-alert { width: 7px; height: 7px; border-radius: 50%; background: var(--warn); box-shadow: 0 0 0 3px var(--warn-soft); }
+.dock-search {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  height: 38px;
+  min-width: 220px;
+  padding: 0 7px 0 12px;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  background: var(--control);
+  color: var(--fg-subtle);
+  font: 400 13.5px/1 var(--font-sans);
+  cursor: pointer;
+  transition: border-color var(--t) var(--ease), background var(--t) var(--ease);
+}
+.dock-search:hover { border-color: var(--line-strong); background: var(--control-hover); }
+.dock-search .i { width: 16px; height: 16px; }
+kbd { display: inline-flex; align-items: center; gap: 3px; margin-left: auto; padding: 3px 7px; border-radius: 7px; background: var(--control-hover); box-shadow: inset 0 -1px 0 var(--line-strong); font: 600 11px/1.2 var(--font-mono); color: var(--fg-muted); }
+.dock-bell { position: relative; }
+.badge-dot { position: absolute; top: 2px; right: 1px; min-width: 17px; height: 17px; padding: 0 4px; border-radius: 99px; background: var(--grad); color: #fff; font: 700 10px/17px var(--font-mono); text-align: center; box-shadow: 0 0 0 2px var(--bg); }
+.avatar-btn { padding: 0; border: 0; background: none; border-radius: 50%; cursor: pointer; }
+@media (min-width: 961px) { .main { padding: 30px clamp(16px, 4vw, 48px) 80px; } }
+.main-inner { width: min(1120px, 100%); }
+.mobile-top .spacer { flex: 1; }
+@media (max-width: 1200px) {
+  .dock-search { min-width: 0; width: 38px; padding: 0; justify-content: center; }
+  .dock-search span, .dock-search kbd { display: none; }
+}
+@media (max-width: 1060px) { .dock-nav a span, .dock-more span { display: none; } .dock-nav a, .dock-more { padding: 0 11px; } }
+@media (max-width: 960px) { .dock { display: none; } .mobile-top .avatar-btn { margin-left: 0; } }
+
+/* ── Accueil ─────────────────────────────────────────────────────────── */
+.hub { gap: 22px; }
+.hub-hero { display: grid; grid-template-columns: minmax(0, 1.4fr) minmax(0, 1fr); gap: 18px; align-items: stretch; }
+
+/* La Carte Cord : une carte de membre holographique. */
+.cord-card {
+  --rx: 0deg;
+  --ry: 0deg;
+  --px: 30%;
+  --py: 20%;
+  position: relative;
+  isolation: isolate;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  gap: 22px;
+  min-height: 300px;
+  padding: 26px 28px;
+  border-radius: 30px;
+  color: #fff;
+  background:
+    radial-gradient(120% 90% at 0% 0%, rgba(110, 88, 240, 0.95) 0%, transparent 55%),
+    radial-gradient(90% 80% at 100% 100%, rgba(210, 75, 239, 0.85) 0%, transparent 60%),
+    linear-gradient(135deg, #150d2e, #2b1454 55%, #3b1257);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.28), inset 0 0 0 1px rgba(255, 255, 255, 0.12), 0 34px 80px -34px rgba(139, 92, 255, 0.75), var(--shadow);
+  transform: perspective(1100px) rotateX(var(--rx)) rotateY(var(--ry));
+  transition: transform 500ms var(--ease);
+}
+.cc-holo {
+  position: absolute;
+  z-index: -1;
+  inset: -45%;
+  background: conic-gradient(from 0deg at var(--px) var(--py), transparent 0deg, rgba(120, 220, 255, 0.2) 60deg, rgba(255, 120, 220, 0.22) 140deg, transparent 220deg, rgba(160, 255, 200, 0.16) 300deg, transparent 360deg);
+  mix-blend-mode: screen;
+  animation: holo-spin 16s linear infinite;
+}
+.cc-shine { position: absolute; z-index: -1; inset: 0; background: radial-gradient(460px circle at var(--px) var(--py), rgba(255, 255, 255, 0.24), transparent 45%); transition: background 200ms linear; }
+@keyframes holo-spin { to { transform: rotate(360deg); } }
+.cc-top { display: flex; align-items: center; gap: 10px; }
+.cc-top img { border-radius: 9px; box-shadow: 0 6px 16px -6px rgba(0, 0, 0, 0.6); }
+.cc-brand { font: 600 12px/1 var(--font-mono); letter-spacing: 0.22em; text-transform: uppercase; opacity: 0.85; }
+.cc-level { margin-left: auto; display: inline-flex; align-items: center; gap: 6px; height: 28px; padding: 0 11px; border-radius: 99px; background: rgba(0, 0, 0, 0.28); border: 1px solid rgba(255, 255, 255, 0.18); font-size: 12.5px; font-weight: 600; color: #fff !important; text-decoration: none !important; -webkit-backdrop-filter: blur(8px); backdrop-filter: blur(8px); }
+.cc-level .i { width: 14px; height: 14px; }
+.cc-level.tone-ok .i { color: #7ff0bf; }
+.cc-level.tone-warn .i { color: #ffd38a; }
+.cc-level.tone-danger .i { color: #ff9cae; }
+.cc-id { display: flex; align-items: center; gap: 18px; }
+.cord-card .avatar-ring { box-shadow: 0 0 0 3px rgba(255, 255, 255, 0.35), 0 16px 34px -14px rgba(0, 0, 0, 0.7); }
+.cc-who { min-width: 0; }
+.cc-who h1 { font-size: clamp(26px, 3vw, 36px); letter-spacing: -0.035em; line-height: 1.05; outline: none; }
+.cc-who p { margin-top: 7px; display: flex; align-items: center; gap: 6px; color: rgba(255, 255, 255, 0.8); font-size: 14.5px; }
+.cc-check .i { width: 16px; height: 16px; color: #8ff0c4; }
+.cc-bottom { position: relative; margin: auto 0 0; display: flex; flex-wrap: wrap; align-items: flex-end; gap: 14px 30px; }
+.cc-bottom dt { font: 600 10.5px/1 var(--font-mono); letter-spacing: 0.16em; text-transform: uppercase; color: rgba(255, 255, 255, 0.6); }
+.cc-bottom dd { margin: 7px 0 0; font: 600 15px/1 var(--font-display); }
+.cc-bottom dd.mono { font-family: var(--font-mono); font-size: 13.5px; letter-spacing: 0.06em; }
+.cc-chip { margin-left: auto; width: 46px; height: 34px; border-radius: 8px; background: linear-gradient(135deg, #f6e3a5, #caa24d 45%, #f3d98c 70%, #b88d3a); box-shadow: inset 0 0 0 1px rgba(0, 0, 0, 0.2), 0 6px 14px -6px rgba(0, 0, 0, 0.5); position: relative; }
+.cc-chip::before { content: ""; position: absolute; inset: 7px 9px; border: 1px solid rgba(0, 0, 0, 0.25); border-radius: 4px; }
+
+/* Panneau « Aujourd'hui » */
+.today { display: flex; flex-direction: column; gap: 16px; padding: 22px; border-radius: var(--r-xl); }
+.today-score { display: flex; align-items: center; gap: 14px; color: inherit; text-decoration: none !important; }
+.today-score .ring .label strong { font-size: 20px; }
+.today-score .ring .label small { display: none; }
+.today-score > span strong { display: block; font-size: 16px; }
+.today-score > span small { color: var(--fg-subtle); font-size: 12.5px; }
+.today-next { display: grid; justify-items: start; gap: 6px; padding: 14px 16px; border-radius: 16px; background: var(--control); border: 1px solid var(--line); }
+.today-next .title { display: flex; align-items: center; gap: 8px; font-weight: 600; }
+.today-next .desc { color: var(--fg-muted); font-size: 13.5px; }
+.today-next .btn { margin-top: 4px; }
+.today-next.done .i { width: 18px; height: 18px; color: var(--ok); }
+.today-counters { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: auto; }
+.counter { display: grid; gap: 5px; padding: 12px 14px; border: 1px solid var(--line); border-radius: 16px; background: var(--control); color: inherit; font: inherit; text-align: left; text-decoration: none !important; cursor: pointer; transition: background var(--t) var(--ease); }
+.counter:hover { background: var(--control-hover); }
+.counter strong { font: 600 24px/1 var(--font-display); }
+.counter span { display: flex; align-items: center; gap: 6px; color: var(--fg-subtle); font-size: 12.5px; }
+.counter .i { width: 14px; height: 14px; }
+
+/* Bandeau « confirme ton email » avec code */
+.verify-strip { display: flex; flex-wrap: wrap; align-items: center; gap: 14px 16px; padding: 16px 18px; border-radius: var(--r-lg); border-color: color-mix(in srgb, var(--warn) 35%, var(--line)); }
+.verify-strip .title { font-weight: 600; }
+.verify-strip .desc { color: var(--fg-muted); font-size: 13.5px; }
+.verify-form { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; }
+.verify-form .input-otp { width: 180px; min-height: 46px; font-size: 20px; }
+
+/* La suite, en grille bento */
+.section-head { display: flex; align-items: flex-end; justify-content: space-between; gap: 16px; margin: 6px 2px 14px; }
+.section-head h2 { font-size: 22px; letter-spacing: -0.02em; }
+.section-head p { margin-top: 4px; color: var(--fg-muted); font-size: 14px; max-width: 62ch; }
+.bento { display: grid; grid-template-columns: repeat(6, minmax(0, 1fr)); gap: 14px; }
+.tile {
+  --a: #6e58f0;
+  --b: #b842ec;
+  grid-column: span 2;
+  position: relative;
+  isolation: isolate;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  min-height: 190px;
+  padding: 18px;
+  border-radius: 24px;
+  background: var(--glass), var(--glass-solid);
+  border: 1px solid var(--line);
+  box-shadow: inset 0 1px 0 var(--highlight), var(--shadow-sm);
+  transition: transform var(--t) var(--ease), border-color var(--t) var(--ease), box-shadow var(--t) var(--ease);
+}
+.tile.wide { grid-column: span 4; }
+.tile:hover { transform: translateY(-3px); border-color: color-mix(in srgb, var(--a) 45%, var(--line)); box-shadow: inset 0 1px 0 var(--highlight), 0 26px 54px -26px color-mix(in srgb, var(--a) 65%, transparent); }
+.tile-glow { position: absolute; z-index: -1; right: -30%; bottom: -60%; width: 75%; aspect-ratio: 1; border-radius: 50%; background: radial-gradient(circle, color-mix(in srgb, var(--b) 50%, transparent), transparent 65%); opacity: 0.3; transition: opacity var(--t) var(--ease); }
+.tile.is-linked .tile-glow { opacity: 0.6; }
+.tile:hover .tile-glow { opacity: 0.9; }
+.tile header { display: flex; align-items: center; gap: 12px; }
+.tile header img { flex: none; border-radius: 13px; box-shadow: 0 10px 24px -12px var(--a); }
+.tile h3 { font-size: 16.5px; letter-spacing: -0.01em; }
+.tile header p { font-size: 12.5px; color: var(--fg-subtle); }
+.tile-body { display: grid; gap: 6px; }
+.tile-headline { font: 600 20px/1.2 var(--font-display); letter-spacing: -0.02em; }
+.tile-detail { font-size: 13.5px; color: var(--fg-muted); }
+.tile-updated { margin-top: 4px; font: 500 11px/1 var(--font-mono); color: var(--fg-faint); }
+.tile-metrics { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 4px; }
+.tile-metrics span { display: grid; gap: 3px; padding: 8px 12px; border-radius: 12px; background: var(--control); font-size: 11.5px; color: var(--fg-subtle); }
+.tile-metrics strong { font: 600 16px/1 var(--font-display); color: var(--fg); }
+.tile footer { margin-top: auto; display: flex; gap: 8px; }
+.skeleton.tile-sk { grid-column: span 2; height: 190px; border-radius: 24px; }
+.soon-row { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; margin-top: 14px; }
+.soon-row .eyebrow { margin: 0 6px 0 2px; }
+.soon-chip { --a: #888; display: inline-flex; align-items: center; gap: 8px; height: 34px; padding: 0 12px 0 6px; border: 1px solid var(--line); border-radius: 99px; background: var(--control); color: var(--fg-muted); font-size: 13px; transition: border-color var(--t) var(--ease); }
+.soon-chip:hover { border-color: color-mix(in srgb, var(--a) 50%, var(--line)); }
+.soon-chip img { border-radius: 7px; filter: saturate(0.65); }
+
+/* Fil de la suite */
+.feed { padding: 22px; border-radius: var(--r-xl); }
+.feed-list { display: grid; gap: 4px; margin-top: 12px; }
+.feed-list li { display: flex; align-items: center; gap: 12px; padding: 10px; border-radius: 14px; transition: background var(--t) var(--ease); }
+.feed-list li:hover { background: var(--control); }
+.feed-list li.unread { background: color-mix(in srgb, var(--accent) 9%, transparent); }
+.feed-logo { flex: none; border-radius: 10px; }
+.feed-list .what { font-size: 14px; }
+.feed-list .more { font-size: 12.5px; color: var(--fg-subtle); }
+.feed-list time { font: 500 11.5px/1 var(--font-mono); color: var(--fg-faint); white-space: nowrap; }
+
+@media (min-width: 961px) and (max-width: 1100px) { .tile, .tile.wide { grid-column: span 3; } }
+@media (max-width: 960px) {
+  .hub-hero { grid-template-columns: minmax(0, 1fr); }
+  .bento { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .tile, .tile.wide, .skeleton.tile-sk { grid-column: span 2; }
+  .cord-card { min-height: 0; padding: 22px; }
+}
+@media (max-width: 560px) {
+  .cc-id { flex-direction: column; align-items: flex-start; gap: 14px; }
+  .verify-form, .verify-form .input-otp { width: 100%; }
+}
+
+/* ── Notifications ───────────────────────────────────────────────────── */
+dialog.modal.inbox-sheet { width: min(470px, calc(100vw - 24px)); }
+@media (min-width: 961px) { dialog.modal.inbox-sheet { margin: 78px max(16px, calc((100vw - 1120px) / 2)) auto auto; } }
+.inbox-list { display: grid; gap: 6px; max-height: min(58vh, 520px); overflow: auto; }
+.inbox-list li { display: flex; gap: 12px; padding: 12px; border: 1px solid var(--line); border-radius: 14px; background: var(--control); }
+.inbox-list li.unread { border-color: color-mix(in srgb, var(--accent) 45%, var(--line)); background: color-mix(in srgb, var(--accent) 8%, var(--control)); }
+.inbox-list .what { display: flex; justify-content: space-between; gap: 8px; font-size: 12.5px; color: var(--fg-subtle); }
+.inbox-list .what time { font: 500 11.5px/1.4 var(--font-mono); }
+.inbox-list .title { font-weight: 600; font-size: 14px; }
+.inbox-list .more { font-size: 13px; color: var(--fg-muted); }
+.inbox-actions { display: flex; flex-direction: column; gap: 4px; }
+
+/* ── Palette de commandes ────────────────────────────────────────────── */
+dialog.palette {
+  width: min(640px, calc(100vw - 24px));
+  max-height: none;
+  margin: 12vh auto auto;
+  padding: 0;
+  border: 1px solid var(--line-strong);
+  border-radius: 22px;
+  background: var(--glass), var(--glass-strong);
+  color: var(--fg);
+  box-shadow: var(--shadow-lg);
+  -webkit-backdrop-filter: var(--blur);
+  backdrop-filter: var(--blur);
+  animation: pal-in 220ms var(--ease);
+}
+dialog.palette::backdrop { background: rgba(5, 4, 10, 0.5); -webkit-backdrop-filter: blur(6px); backdrop-filter: blur(6px); }
+dialog.palette.closing { animation: pal-out 140ms ease forwards; }
+.palette-search { display: flex; align-items: center; gap: 12px; padding: 16px 18px; border-bottom: 1px solid var(--line); }
+.palette-search .i { width: 20px; height: 20px; color: var(--fg-subtle); }
+.palette-search input { flex: 1; min-width: 0; border: 0; background: none; color: var(--fg); font: 400 17px/1.4 var(--font-sans); outline: none; }
+.palette-list { max-height: min(52vh, 420px); overflow: auto; padding: 8px; }
+.palette-group { padding: 10px 10px 6px; font: 600 10.5px/1 var(--font-mono); letter-spacing: 0.16em; text-transform: uppercase; color: var(--fg-faint); }
+.palette-item { display: flex; align-items: center; gap: 12px; width: 100%; min-height: 44px; padding: 0 12px; border: 0; border-radius: 12px; background: none; color: var(--fg); font: 500 14.5px/1.2 var(--font-sans); text-align: left; cursor: pointer; }
+.palette-item[aria-selected="true"] { background: var(--control-hover); box-shadow: inset 0 0 0 1px var(--line-strong); }
+.palette-item img { border-radius: 7px; }
+.palette-ic { display: grid; place-items: center; flex: none; width: 28px; height: 28px; border-radius: 9px; background: var(--control); }
+.palette-ic .i { width: 16px; height: 16px; color: var(--fg-muted); }
+.palette-item[aria-selected="true"] .palette-ic .i { color: var(--accent); }
+.palette-item .label { flex: 1; min-width: 0; }
+.palette-item .hint { font-size: 12.5px; color: var(--fg-subtle); white-space: nowrap; }
+.palette-item .enter .i { width: 15px; height: 15px; color: var(--accent); }
+.palette-empty { padding: 28px; text-align: center; color: var(--fg-subtle); }
+.palette-foot { display: flex; align-items: center; gap: 8px; padding: 10px 16px; border-top: 1px solid var(--line); font-size: 12px; color: var(--fg-faint); }
+.palette-foot .i { width: 13px; height: 13px; }
+@keyframes pal-in { from { opacity: 0; transform: translateY(-8px) scale(0.98); } }
+@keyframes pal-out { to { opacity: 0; transform: translateY(-6px) scale(0.98); } }
+
+@media (prefers-reduced-motion: reduce) {
+  .cc-holo { animation: none; }
+  .cord-card { transform: none; }
+  .tile:hover { transform: none; }
+  dialog.palette { animation: none; }
+}
+.feed-list, .inbox-list { list-style: none; margin: 0; padding: 0; }
+.feed-list .grow, .inbox-list .grow { flex: 1; min-width: 0; }
+.feed-list .more, .feed-list .what { overflow: hidden; text-overflow: ellipsis; }
+.grow { flex: 1; min-width: 0; }
+.view.hub, .hub-hero > * { min-width: 0; }
+.view.hub { grid-template-columns: minmax(0, 1fr); }
+.cc-top { flex-wrap: wrap; row-gap: 8px; }
 
 /* 60-consent.css */
 /* ── Écran de consentement OAuth (/authorize) ─────────────────────────── */

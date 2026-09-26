@@ -72,6 +72,21 @@ export async function cordRequest<T>(path: string, body?: unknown, method = "POS
 }
 
 /** Qui est connecté ? Charge aussi tout le tableau de bord si quelqu'un l'est. */
+/**
+ * Tuile « CordLauncher » du Compte Cord : ce qui est installé sur ce PC. Sans
+ * client OAuth, CordLauncher publie avec la session de l'utilisateur.
+ */
+export async function publishLauncherStatus(apps: { id: string; name: string }[], installed: Record<string, { version: string } | null>, launcherVersion: string) {
+  if (!IS_TAURI || !account.get().user) return;
+  const here = apps.filter(a => installed[a.id]);
+  const status = {
+    headline: here.length ? `${here.length} app${here.length > 1 ? "s" : ""} de la suite sur ce PC` : "Prêt à installer la suite",
+    detail: here.length ? here.map(a => `${a.name} ${installed[a.id]!.version}`).join(" · ").slice(0, 140) : "CordLauncher est installé sur Windows.",
+    metrics: [{ label: "Apps", value: String(here.length) }, { label: "Launcher", value: `v${launcherVersion}` }],
+  };
+  await cordRequest("/api/me/app-status", { app: "cordlauncher", status });
+}
+
 export async function refreshCord() {
   const result = await cordRequest<{ user: CordUser | null; keys: CordKey[] }>("/api/me", undefined, "GET");
   const dashboard = result.user ? await cordRequest<CordDashboard>("/api/account", undefined, "GET") : null;

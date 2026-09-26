@@ -7,7 +7,7 @@
  * Les logos sont servis par le portail sous /assets/logos/<slug>.png.
  */
 export const SUITE = [
-  { slug: 'drivecord', name: 'Drivecord', status: 'live', tagline: 'Stockage sans limite', description: 'Ton cloud chiffré et sans plafond, monté sur des webhooks Discord.', url: 'https://drivecord.app', accent: ['#6D64F2', '#C64BF1'] },
+  { slug: 'drivecord', name: 'Drivecord', status: 'live', tagline: 'Stockage sans limite', description: 'Ton cloud chiffré et sans plafond, monté sur des webhooks Discord.', url: 'https://drivecord.app', launch: 'https://drivecord.app/login?via=cord', accent: ['#6D64F2', '#C64BF1'] },
   { slug: 'tunecord', name: 'Tunecord', status: 'live', tagline: 'Tes podcasts, hébergés', description: 'Héberge et diffuse tes podcasts : flux RSS et stats d’écoute.', url: 'https://tunecord.vercel.app', accent: ['#BD2F98', '#F65D63'] },
   { slug: 'passcord', name: 'Passcord', status: 'beta', tagline: 'Coffre à mots de passe', description: 'Gestionnaire chiffré de bout en bout pour l’iPhone — et ta clé Cord.', url: null, accent: ['#126A84', '#1CC3E0'] },
   { slug: 'notecord', name: 'Notecord', status: 'soon', tagline: 'Notes synchronisées', description: 'Des notes qui s’ouvrent vite et se chiffrent en silence.', url: null, accent: ['#EB981F', '#EF6327'] },
