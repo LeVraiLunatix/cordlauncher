@@ -104,8 +104,12 @@ kbd { display: inline-flex; align-items: center; gap: 3px; margin-left: auto; pa
 .cc-holo {
   position: absolute;
   z-index: -1;
-  inset: -45%;
-  background: conic-gradient(from 0deg at var(--px) var(--py), transparent 0deg, rgba(120, 220, 255, 0.2) 60deg, rgba(255, 120, 220, 0.22) 140deg, transparent 220deg, rgba(160, 255, 200, 0.16) 300deg, transparent 360deg);
+  /* Assez grand pour couvrir la carte à tout angle de rotation (sinon ses bords
+     apparaissent en diagonale dans les coins), et flouté : pas de tourbillon net. */
+  inset: -110%;
+  background: conic-gradient(from 0deg at 50% 50%, transparent 0deg, rgba(120, 220, 255, 0.22) 60deg, rgba(255, 120, 220, 0.24) 140deg, transparent 220deg, rgba(160, 255, 200, 0.18) 300deg, transparent 360deg);
+  filter: blur(46px);
+  opacity: 0.85;
   mix-blend-mode: screen;
   animation: holo-spin 16s linear infinite;
 }
