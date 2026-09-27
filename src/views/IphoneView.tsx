@@ -201,6 +201,12 @@ export function IphoneView({ apps: catalog, onDiscover }: { apps: CatalogApp[]; 
                 ))}
               </div>
             ) : <p className="text-[13px] text-fg-muted">{scanning ? "Recherche…" : "Aucun iPhone branché. Branche-le avec un câble et déverrouille-le pour renouveler tes apps (ensuite, active le Wi-Fi pour t’en passer)."}</p>}
+            {devices.some(d => d.wifi) && (
+              <p className="flex items-start gap-2 text-[12px] leading-relaxed text-fg-subtle">
+                <Wifi className="mt-0.5 size-3.5 shrink-0" />
+                <span>Sans câble, l’iPhone doit être sur le même Wi-Fi que ce PC, avec l’<strong className="font-semibold text-fg-muted">adresse Wi-Fi privée désactivée</strong> pour ce réseau (Réglages › Wi-Fi › ⓘ du réseau › Adresse Wi-Fi privée › Désactivée). Sinon Windows ne le reconnaît pas.</span>
+              </p>
+            )}
           </div>
         </GlassCard>
         <GlassCard className="rounded-[22px] p-4">
