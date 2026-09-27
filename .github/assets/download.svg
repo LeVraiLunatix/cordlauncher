@@ -1,0 +1,27 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 440 84" width="440" height="84" role="img" aria-label="Télécharger CordLauncher pour Windows">
+  <defs>
+    <linearGradient id="g" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#6e58f0"/><stop offset="1" stop-color="#b842ec"/></linearGradient>
+    <linearGradient id="sheen" x1="0" y1="0" x2="1" y2="0"><stop offset="0" stop-color="#fff" stop-opacity="0"/><stop offset="0.5" stop-color="#fff" stop-opacity="0.35"/><stop offset="1" stop-color="#fff" stop-opacity="0"/></linearGradient>
+    <clipPath id="pill"><rect x="4" y="4" width="432" height="72" rx="36"/></clipPath>
+    <filter id="shadow" x="-10%" y="-30%" width="120%" height="180%"><feDropShadow dx="0" dy="8" stdDeviation="8" flood-color="#6e58f0" flood-opacity="0.55"/></filter>
+    <style>
+      .sheen { animation: s 3.4s 0.6s ease-in-out infinite; }
+      @keyframes s { 0% { transform: translateX(-200px); } 50%, 100% { transform: translateX(520px); } }
+      .arrow { animation: a 1.8s ease-in-out infinite; }
+      @keyframes a { 50% { transform: translateY(3px); } }
+      text { font-family: "Segoe UI Variable Display", "Segoe UI", Inter, Arial, sans-serif; }
+      @media (prefers-reduced-motion: reduce) { * { animation: none !important; } }
+    </style>
+  </defs>
+  <g filter="url(#shadow)">
+    <rect x="4" y="4" width="432" height="72" rx="36" fill="url(#g)"/>
+  </g>
+  <g clip-path="url(#pill)"><rect class="sheen" x="0" y="0" width="160" height="84" fill="url(#sheen)"/></g>
+  <rect x="4.5" y="4.5" width="431" height="71" rx="35.5" fill="none" stroke="#fff" stroke-opacity="0.3"/>
+  <circle cx="44" cy="40" r="22" fill="#ffffff" fill-opacity="0.16"/>
+  <g class="arrow" fill="none" stroke="#fff" stroke-width="3" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M44 29v17M36.5 39.5 44 47l7.5-7.5M34 52h20"/>
+  </g>
+  <text x="80" y="37" fill="#ffffff" font-size="21" font-weight="700" letter-spacing="-0.3">Télécharger pour Windows</text>
+  <text x="80" y="58" fill="#ffffff" fill-opacity="0.78" font-size="13.5" font-weight="500">Dernière version · Windows 10 et 11 · 64 bits</text>
+</svg>

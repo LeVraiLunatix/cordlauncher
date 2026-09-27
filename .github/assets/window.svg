@@ -1,0 +1,137 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 720" width="1200" height="720" role="img" aria-label="La fenêtre de CordLauncher : découvrir et installer les apps de la suite">
+  <defs>
+    <radialGradient id="bgA"><stop offset="0" stop-color="#6e58f0" stop-opacity="0.75"/><stop offset="1" stop-color="#6e58f0" stop-opacity="0"/></radialGradient>
+    <radialGradient id="bgB"><stop offset="0" stop-color="#b842ec" stop-opacity="0.6"/><stop offset="1" stop-color="#b842ec" stop-opacity="0"/></radialGradient>
+    <radialGradient id="bgC"><stop offset="0" stop-color="#2143b8" stop-opacity="0.7"/><stop offset="1" stop-color="#2143b8" stop-opacity="0"/></radialGradient>
+    <linearGradient id="brand" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#6e58f0"/><stop offset="1" stop-color="#b842ec"/></linearGradient>
+    <linearGradient id="hero" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#3b2a8f"/><stop offset="0.6" stop-color="#8a3ad8"/><stop offset="1" stop-color="#c040d8"/></linearGradient>
+    <linearGradient id="drive" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#6D64F2"/><stop offset="1" stop-color="#C64BF1"/></linearGradient>
+    <linearGradient id="pass" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#126A84"/><stop offset="1" stop-color="#1CC3E0"/></linearGradient>
+    <linearGradient id="tune" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#BD2F98"/><stop offset="1" stop-color="#F65D63"/></linearGradient>
+    <linearGradient id="note" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#EB981F"/><stop offset="1" stop-color="#EF6327"/></linearGradient>
+    <linearGradient id="link" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#19A684"/><stop offset="1" stop-color="#37CC94"/></linearGradient>
+    <linearGradient id="bento" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#F16C8E"/><stop offset="1" stop-color="#F9A159"/></linearGradient>
+    <clipPath id="win"><rect x="0" y="0" width="1200" height="720" rx="26"/></clipPath>
+    <clipPath id="heroClip"><rect x="224" y="92" width="956" height="236" rx="26"/></clipPath>
+    <style>
+      text { font-family: "Segoe UI Variable Text", "Segoe UI", Inter, Arial, sans-serif; fill: #f6f4fb; }
+      .d { font-family: "Segoe UI Variable Display", "Segoe UI", Inter, Arial, sans-serif; }
+      .muted { fill-opacity: 0.62; } .subtle { fill-opacity: 0.4; }
+      .install { animation: install 6s ease-in-out infinite; }
+      @keyframes install { 0%, 15% { transform: scaleX(0); } 70%, 100% { transform: scaleX(1); } }
+      .blink { animation: blink 6s ease-in-out infinite; }
+      @keyframes blink { 0%, 70% { opacity: 0; } 76%, 100% { opacity: 1; } }
+      .hide { animation: hide 6s ease-in-out infinite; }
+      @keyframes hide { 0%, 70% { opacity: 1; } 76%, 100% { opacity: 0; } }
+      .ring { animation: ring 6s ease-in-out infinite; }
+      @keyframes ring { 0% { stroke-dashoffset: 170; } 60%, 100% { stroke-dashoffset: 40; } }
+      .drift { animation: drift 16s ease-in-out infinite alternate; transform-box: fill-box; transform-origin: center; }
+      @keyframes drift { to { transform: translate(60px, 40px) scale(1.15); } }
+      @media (prefers-reduced-motion: reduce) { * { animation: none !important; } }
+    </style>
+  </defs>
+
+  <g clip-path="url(#win)">
+    <rect width="1200" height="720" fill="#07060c"/>
+    <ellipse class="drift" cx="200" cy="120" rx="360" ry="300" fill="url(#bgA)"/>
+    <ellipse cx="1060" cy="160" rx="360" ry="320" fill="url(#bgB)"/>
+    <ellipse cx="620" cy="760" rx="460" ry="280" fill="url(#bgC)"/>
+
+    <!-- Barre de titre -->
+    <rect x="20" y="20" width="22" height="22" rx="6" fill="url(#brand)"/>
+    <text x="52" y="37" font-size="14" font-weight="600">CordLauncher</text>
+    <rect x="440" y="14" width="320" height="34" rx="17" fill="#fff" fill-opacity="0.07" stroke="#fff" stroke-opacity="0.08"/>
+    <circle cx="462" cy="31" r="6" fill="none" stroke="#fff" stroke-opacity="0.5" stroke-width="1.6"/>
+    <text x="478" y="36" font-size="13" class="subtle">Rechercher dans la suite…</text>
+    <rect x="712" y="21" width="38" height="20" rx="6" fill="#fff" fill-opacity="0.08"/>
+    <text x="719" y="35" font-size="11" class="muted">Ctrl K</text>
+    <g stroke="#fff" stroke-opacity="0.55" stroke-width="1.4" fill="none">
+      <path d="M1082 31h12"/><rect x="1122" y="25" width="12" height="12" rx="2"/><path d="M1162 25l12 12M1174 25l-12 12"/>
+    </g>
+
+    <!-- Navigation -->
+    <rect x="16" y="64" width="192" height="640" rx="26" fill="#fff" fill-opacity="0.055" stroke="#fff" stroke-opacity="0.09"/>
+    <text x="38" y="100" font-size="11" font-weight="700" letter-spacing="1.6" class="subtle">MENU</text>
+    <rect x="30" y="114" width="164" height="40" rx="14" fill="#fff" fill-opacity="0.1"/>
+    <g font-size="14">
+      <text x="72" y="139" font-weight="600">Découvrir</text>
+      <text x="72" y="185" class="muted">Bibliothèque</text>
+      <text x="72" y="231" class="muted">iPhone</text>
+      <text x="72" y="277" class="muted">Compte Cord</text>
+      <text x="72" y="323" class="muted">Réglages</text>
+    </g>
+    <g fill="none" stroke="#fff" stroke-width="1.6" stroke-linecap="round">
+      <circle cx="51" cy="134" r="8"/><path d="M48 137l2-5 5-2-2 5z"/>
+      <g stroke-opacity="0.55"><rect x="43" y="172" width="7" height="7" rx="1.5"/><rect x="53" y="172" width="7" height="7" rx="1.5"/><rect x="43" y="182" width="7" height="7" rx="1.5"/><rect x="53" y="182" width="7" height="7" rx="1.5"/>
+      <rect x="46" y="216" width="11" height="19" rx="2.5"/>
+      <circle cx="51" cy="268" r="4.5"/><path d="M43 283a8 8 0 0 1 16 0"/>
+      <circle cx="51" cy="318" r="3"/><path d="M51 309v3M51 324v3M42 318h3M57 318h3"/></g>
+    </g>
+    <rect x="160" y="221" width="22" height="18" rx="9" fill="#fbc05a"/>
+    <text x="167" y="235" font-size="11" font-weight="700" style="fill:#1b1204">2</text>
+    <rect x="30" y="632" width="164" height="56" rx="16" fill="#fff" fill-opacity="0.07"/>
+    <rect x="42" y="644" width="32" height="32" rx="9" fill="url(#brand)"/>
+    <text x="84" y="658" font-size="12.5" font-weight="700">La suite Cord</text>
+    <text x="84" y="675" font-size="11" class="subtle">cordsuite.app</text>
+
+    <!-- À la une -->
+    <g clip-path="url(#heroClip)">
+      <rect x="224" y="92" width="956" height="236" fill="url(#hero)"/>
+      <circle cx="1080" cy="120" r="160" fill="#fff" fill-opacity="0.08"/>
+      <rect x="930" y="160" width="150" height="150" rx="38" fill="url(#drive)" transform="rotate(-10 1005 235)" stroke="#fff" stroke-opacity="0.25"/>
+      <g transform="rotate(-10 1005 235)" fill="none" stroke="#fff" stroke-width="7" stroke-linecap="round" stroke-linejoin="round"><path d="M975 250l30-40 30 40M1005 212v60"/></g>
+    </g>
+    <rect x="252" y="118" width="96" height="26" rx="13" fill="#fff" fill-opacity="0.16"/>
+    <text x="268" y="136" font-size="12" font-weight="700">✦ À la une</text>
+    <text x="252" y="200" font-size="46" font-weight="700" class="d" letter-spacing="-1.4">Drivecord</text>
+    <text x="252" y="232" font-size="17" class="muted">Stockage de fichiers illimité, chiffré, sans facture.</text>
+    <rect x="252" y="258" width="118" height="42" rx="21" fill="#fff"/>
+    <text x="276" y="284" font-size="14.5" font-weight="700" style="fill:#3b2a8f">Installer</text>
+    <rect x="382" y="258" width="118" height="42" rx="21" fill="#fff" fill-opacity="0.14"/>
+    <text x="406" y="284" font-size="14.5" font-weight="600">Sur iPhone</text>
+
+    <!-- Apps -->
+    <text x="232" y="370" font-size="13" font-weight="700" letter-spacing="0.4">Apps de la suite</text>
+    <g font-size="15">
+      <!-- Tunecord : l'installation se remplit, puis « Ouvrir » -->
+      <rect x="224" y="386" width="466" height="92" rx="22" fill="#fff" fill-opacity="0.055" stroke="#fff" stroke-opacity="0.09"/>
+      <rect x="244" y="406" width="52" height="52" rx="14" fill="url(#tune)"/>
+      <text x="312" y="428" font-weight="700">Tunecord</text>
+      <text x="312" y="450" font-size="13" class="muted">Tes podcasts, hébergés</text>
+      <rect x="560" y="414" width="110" height="36" rx="18" fill="#fff" fill-opacity="0.08"/>
+      <rect class="install" x="560" y="414" width="110" height="36" rx="18" fill="url(#brand)" style="transform-origin:560px 432px"/>
+      <text class="hide" x="585" y="437" font-size="13.5" font-weight="700">Installer</text>
+      <text class="blink" x="588" y="437" font-size="13.5" font-weight="700">✓ Ouvrir</text>
+
+      <rect x="714" y="386" width="466" height="92" rx="22" fill="#fff" fill-opacity="0.055" stroke="#fff" stroke-opacity="0.09"/>
+      <rect x="734" y="406" width="52" height="52" rx="14" fill="url(#pass)"/>
+      <text x="802" y="428" font-weight="700">Passcord</text>
+      <text x="802" y="450" font-size="13" class="muted">Coffre à mots de passe</text>
+      <rect x="1052" y="414" width="108" height="36" rx="18" fill="#1cc3e0" fill-opacity="0.16"/>
+      <text x="1070" y="437" font-size="13.5" font-weight="700" style="fill:#7fe3f3">Bêta iPhone</text>
+
+      <rect x="224" y="494" width="466" height="92" rx="22" fill="#fff" fill-opacity="0.055" stroke="#fff" stroke-opacity="0.09"/>
+      <rect x="244" y="514" width="52" height="52" rx="14" fill="url(#note)"/>
+      <text x="312" y="536" font-weight="700">Notecord</text>
+      <text x="312" y="558" font-size="13" class="muted">Notes synchronisées</text>
+      <text x="606" y="545" font-size="13.5" class="subtle">Bientôt</text>
+
+      <rect x="714" y="494" width="466" height="92" rx="22" fill="#fff" fill-opacity="0.055" stroke="#fff" stroke-opacity="0.09"/>
+      <rect x="734" y="514" width="52" height="52" rx="14" fill="url(#link)"/>
+      <text x="802" y="536" font-weight="700">Linkcord</text>
+      <text x="802" y="558" font-size="13" class="muted">Liens &amp; page perso</text>
+      <text x="1096" y="545" font-size="13.5" class="subtle">Bientôt</text>
+    </g>
+
+    <!-- iPhone : renouvellement -->
+    <rect x="224" y="604" width="956" height="100" rx="24" fill="#fff" fill-opacity="0.055" stroke="#fff" stroke-opacity="0.09"/>
+    <circle cx="282" cy="654" r="27" fill="none" stroke="#fff" stroke-opacity="0.1" stroke-width="6"/>
+    <circle class="ring" cx="282" cy="654" r="27" fill="none" stroke="#5fe3a9" stroke-width="6" stroke-linecap="round" stroke-dasharray="170" transform="rotate(-90 282 654)"/>
+    <text x="268" y="660" font-size="15" font-weight="700" style="fill:#5fe3a9">6 j</text>
+    <text x="330" y="648" font-size="16" font-weight="700">Passcord sur iPhone 13</text>
+    <text x="330" y="672" font-size="13.5" class="muted">Renouvelée toute seule, sans câble · mise à jour Build 15 installée</text>
+    <rect x="1040" y="636" width="120" height="36" rx="18" fill="#5fe3a9" fill-opacity="0.14"/>
+    <text x="1062" y="659" font-size="13.5" font-weight="700" style="fill:#5fe3a9">✓ Wi-Fi actif</text>
+  </g>
+  <rect x="0.5" y="0.5" width="1199" height="719" rx="26" fill="none" stroke="#fff" stroke-opacity="0.12"/>
+</svg>

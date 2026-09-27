@@ -126,7 +126,7 @@ pub fn discover(wanted: &[String]) -> HashMap<String, Ipv4Addr> {
             while let Some(left) = deadline.checked_duration_since(Instant::now()) {
                 match events.recv_timeout(left) {
                     Ok(mdns_sd::ServiceEvent::ServiceResolved(info)) => {
-                        // Nom de l'instance : « 28:2d:7f:a4:30:1e@fe80::…-supportsRP-26 ».
+                        // Nom de l'instance : « aa:bb:cc:dd:ee:ff@fe80::…-supportsRP-26 ».
                         let mac = info.get_fullname().split('@').next().unwrap_or_default().to_lowercase();
                         if let Some(ip) = info.get_addresses_v4().into_iter().next() {
                             found.insert(mac, ip);

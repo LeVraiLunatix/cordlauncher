@@ -1,0 +1,106 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1280 460" width="1280" height="460" role="img" aria-label="CordLauncher — toute la suite Cord, en un clic">
+  <defs>
+    <linearGradient id="brand" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#6e58f0"/>
+      <stop offset="1" stop-color="#b842ec"/>
+    </linearGradient>
+    <linearGradient id="title" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0" stop-color="#ffffff"/>
+      <stop offset="0.55" stop-color="#e2d9ff"/>
+      <stop offset="1" stop-color="#f3c4ff"/>
+    </linearGradient>
+    <radialGradient id="blobA"><stop offset="0" stop-color="#6e58f0" stop-opacity="0.85"/><stop offset="1" stop-color="#6e58f0" stop-opacity="0"/></radialGradient>
+    <radialGradient id="blobB"><stop offset="0" stop-color="#b842ec" stop-opacity="0.75"/><stop offset="1" stop-color="#b842ec" stop-opacity="0"/></radialGradient>
+    <radialGradient id="blobC"><stop offset="0" stop-color="#2143b8" stop-opacity="0.8"/><stop offset="1" stop-color="#2143b8" stop-opacity="0"/></radialGradient>
+    <radialGradient id="glow"><stop offset="0" stop-color="#8b5cff" stop-opacity="0.7"/><stop offset="1" stop-color="#8b5cff" stop-opacity="0"/></radialGradient>
+    <pattern id="grid" width="36" height="36" patternUnits="userSpaceOnUse"><path d="M36 0H0V36" fill="none" stroke="#ffffff" stroke-opacity="0.05"/></pattern>
+    <linearGradient id="fade" x1="0" y1="0" x2="1" y2="0"><stop offset="0" stop-color="#fff" stop-opacity="0.9"/><stop offset="1" stop-color="#fff" stop-opacity="0"/></linearGradient>
+    <mask id="gridMask"><rect width="1280" height="460" fill="url(#fade)"/></mask>
+    <clipPath id="frame"><rect width="1280" height="460" rx="28"/></clipPath>
+    <!-- Icônes des apps : carrés arrondis aux couleurs de chacune -->
+    <linearGradient id="drive" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#6D64F2"/><stop offset="1" stop-color="#C64BF1"/></linearGradient>
+    <linearGradient id="pass" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#126A84"/><stop offset="1" stop-color="#1CC3E0"/></linearGradient>
+    <linearGradient id="tune" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#BD2F98"/><stop offset="1" stop-color="#F65D63"/></linearGradient>
+    <linearGradient id="note" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#EB981F"/><stop offset="1" stop-color="#EF6327"/></linearGradient>
+    <linearGradient id="link" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#19A684"/><stop offset="1" stop-color="#37CC94"/></linearGradient>
+    <linearGradient id="bento" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#F16C8E"/><stop offset="1" stop-color="#F9A159"/></linearGradient>
+    <linearGradient id="go" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#1E8FDC"/><stop offset="1" stop-color="#1E61DC"/></linearGradient>
+    <linearGradient id="quiz" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#F9B322"/><stop offset="1" stop-color="#F16F38"/></linearGradient>
+    <style>
+      .drift-a { animation: da 14s ease-in-out infinite alternate; transform-origin: center; transform-box: fill-box; }
+      .drift-b { animation: db 17s ease-in-out infinite alternate; transform-origin: center; transform-box: fill-box; }
+      .drift-c { animation: dc 20s ease-in-out infinite alternate; transform-origin: center; transform-box: fill-box; }
+      @keyframes da { to { transform: translate(90px, 50px) scale(1.15); } }
+      @keyframes db { to { transform: translate(-80px, 60px) scale(0.9); } }
+      @keyframes dc { to { transform: translate(-60px, -50px) scale(1.2); } }
+      .orbit { animation: spin 40s linear infinite; transform-origin: 1000px 230px; }
+      .orbit .app { animation: counter 40s linear infinite; transform-box: fill-box; transform-origin: center; }
+      .ring2 { animation: spin 70s linear infinite reverse; transform-origin: 1000px 230px; }
+      @keyframes spin { to { transform: rotate(360deg); } }
+      @keyframes counter { to { transform: rotate(-360deg); } }
+      .breathe { animation: breathe 4s ease-in-out infinite; transform-origin: 1000px 230px; }
+      @keyframes breathe { 50% { transform: scale(1.14); opacity: 0.75; } }
+      .float { animation: float 5s ease-in-out infinite; }
+      @keyframes float { 50% { transform: translateY(-6px); } }
+      .rise { animation: rise 1s cubic-bezier(.22,1,.36,1) both; }
+      .rise2 { animation: rise 1s .15s cubic-bezier(.22,1,.36,1) both; }
+      .rise3 { animation: rise 1s .3s cubic-bezier(.22,1,.36,1) both; }
+      @keyframes rise { from { opacity: 0; transform: translateY(14px); } }
+      .sheen { animation: sheen 5s 1s ease-in-out infinite; }
+      @keyframes sheen { 0% { transform: translateX(-260px); } 45%, 100% { transform: translateX(560px); } }
+      text { font-family: "Segoe UI Variable Display", "Segoe UI", Inter, "Helvetica Neue", Arial, sans-serif; }
+      @media (prefers-reduced-motion: reduce) { * { animation: none !important; } }
+    </style>
+  </defs>
+
+  <g clip-path="url(#frame)">
+    <rect width="1280" height="460" fill="#07060c"/>
+    <ellipse class="drift-a" cx="180" cy="40" rx="360" ry="300" fill="url(#blobA)"/>
+    <ellipse class="drift-b" cx="1120" cy="120" rx="340" ry="300" fill="url(#blobB)"/>
+    <ellipse class="drift-c" cx="640" cy="520" rx="420" ry="260" fill="url(#blobC)"/>
+    <rect width="1280" height="460" fill="url(#grid)" mask="url(#gridMask)"/>
+
+    <!-- Texte -->
+    <g transform="translate(88 0)">
+      <g class="rise">
+        <rect x="0" y="116" width="178" height="30" rx="15" fill="#ffffff" fill-opacity="0.08" stroke="#ffffff" stroke-opacity="0.14"/>
+        <circle cx="18" cy="131" r="4.5" fill="#5fe3a9"/>
+        <text x="32" y="136" fill="#f6f4fb" fill-opacity="0.85" font-size="14" font-weight="600" letter-spacing="0.3">Bêta publique · Windows</text>
+      </g>
+      <text class="rise2" x="-4" y="236" fill="url(#title)" font-size="92" font-weight="700" letter-spacing="-3.5">CordLauncher</text>
+      <g class="rise3">
+        <text x="0" y="290" fill="#f6f4fb" fill-opacity="0.72" font-size="25" font-weight="500">Toute la suite Cord, en un clic.</text>
+        <text x="0" y="326" fill="#f6f4fb" fill-opacity="0.5" font-size="18">Sur ton PC et sur ton iPhone. Sans droits administrateur.</text>
+      </g>
+    </g>
+
+    <!-- Orbite -->
+    <circle cx="1000" cy="230" r="150" fill="none" stroke="#ffffff" stroke-opacity="0.08"/>
+    <circle class="ring2" cx="1000" cy="230" r="98" fill="none" stroke="#ffffff" stroke-opacity="0.07" stroke-dasharray="4 8"/>
+    <circle class="breathe" cx="1000" cy="230" r="120" fill="url(#glow)"/>
+    <g class="orbit">
+      <g class="app"><rect x="978" y="58" width="44" height="44" rx="12" fill="url(#drive)"/></g>
+      <g class="app"><rect x="1093" y="99" width="44" height="44" rx="12" fill="url(#pass)"/></g>
+      <g class="app"><rect x="1136" y="208" width="44" height="44" rx="12" fill="url(#tune)"/></g>
+      <g class="app"><rect x="1093" y="317" width="44" height="44" rx="12" fill="url(#note)"/></g>
+      <g class="app"><rect x="978" y="358" width="44" height="44" rx="12" fill="url(#link)"/></g>
+      <g class="app"><rect x="863" y="317" width="44" height="44" rx="12" fill="url(#bento)"/></g>
+      <g class="app"><rect x="820" y="208" width="44" height="44" rx="12" fill="url(#go)"/></g>
+      <g class="app"><rect x="863" y="99" width="44" height="44" rx="12" fill="url(#quiz)"/></g>
+    </g>
+
+    <!-- Logo de la suite -->
+    <g class="float">
+      <rect x="940" y="170" width="120" height="120" rx="32" fill="url(#brand)"/>
+      <rect x="940" y="170" width="120" height="120" rx="32" fill="none" stroke="#ffffff" stroke-opacity="0.25"/>
+      <g stroke="#ffffff" stroke-width="7" stroke-linecap="round">
+        <line x1="975" y1="205" x2="1000" y2="230"/><line x1="1025" y1="205" x2="1000" y2="230"/>
+        <line x1="975" y1="255" x2="1000" y2="230"/><line x1="1025" y1="255" x2="1000" y2="230"/>
+      </g>
+      <g fill="#ffffff"><circle cx="975" cy="205" r="11"/><circle cx="1025" cy="205" r="11"/><circle cx="975" cy="255" r="11"/><circle cx="1025" cy="255" r="11"/></g>
+      <circle cx="1000" cy="230" r="15" fill="#4a1d86"/>
+    </g>
+
+    <rect width="1280" height="460" rx="28" fill="none" stroke="#ffffff" stroke-opacity="0.08"/>
+  </g>
+</svg>
