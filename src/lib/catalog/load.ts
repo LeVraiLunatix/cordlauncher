@@ -61,6 +61,7 @@ export function normalizeCatalog(raw: unknown, baseUrl: string): Catalog {
   }
   const input = raw as Catalog;
   const apps: CatalogApp[] = [];
+  const isValidSha256 = (v: unknown): v is string => typeof v === "string" && /^[0-9a-f]{64}$/i.test(v);
   for (const entry of input.apps as unknown[]) {
     const app = entry as Partial<CatalogApp>;
     if (
@@ -71,6 +72,14 @@ export function normalizeCatalog(raw: unknown, baseUrl: string): Catalog {
       !isGradient(app.iconGradient)
     ) {
       console.warn("[catalogue] entrée ignorée (champs requis manquants) :", entry);
+      continue;
+    }
+    // Un installateur Windows sans empreinte SHA-256 valide ne serait jamais
+    // vérifiable avant exécution : on l'écarte plutôt que de laisser
+    // CordLauncher tenter d'installer un binaire non authentifié (Rust
+    // refuse de toute façon `sha256` absent ou vide, cf. apps.rs).
+    if (app.downloadUrl && !isValidSha256(app.sha256)) {
+      console.warn("[catalogue] entrée ignorée (downloadUrl sans SHA-256 valide, installation impossible) :", entry);
       continue;
     }
     apps.push({
@@ -84,7 +93,15 @@ export function normalizeCatalog(raw: unknown, baseUrl: string): Catalog {
   }
   // Tri stable : dispo → bêta → bientôt, ordre du fichier ensuite.
   apps.sort((x, y) => STATUS_RANK[x.status] - STATUS_RANK[y.status]);
-  const launcher = input.launcher && typeof input.launcher.version === "string" ? input.launcher : undefined;
+  // Même exigence pour la mise à jour de CordLauncher lui-même : sans hash
+  // valide, `launcher_update` (Rust) refusera de toute façon de lancer
+  // l'installateur téléchargé, donc on n'annonce même pas la mise à jour.
+  const launcherHasUsableHash = !input.launcher?.url || isValidSha256(input.launcher.sha256);
+  if (input.launcher?.url && !launcherHasUsableHash) {
+    console.warn("[catalogue] mise à jour du launcher ignorée (url sans SHA-256 valide) :", input.launcher);
+  }
+  const launcher =
+    input.launcher && typeof input.launcher.version === "string" && launcherHasUsableHash ? input.launcher : undefined;
   return { schemaVersion: 1, generatedAt: input.generatedAt, featured: input.featured, launcher, apps };
 }
 

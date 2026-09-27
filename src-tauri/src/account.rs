@@ -6,6 +6,11 @@ use serde_json::Value;
 
 const KEYRING_SERVICE: &str = "CordLauncher Cord Account";
 
+/// Seule adresse acceptée pour le Compte Cord : la commande `cord_request`
+/// est privilégiée (elle porte le jeton du coffre Windows), le frontend ne
+/// doit donc pas pouvoir la rediriger vers un autre serveur.
+const ALLOWED_SERVER: &str = "https://compte.cordsuite.app";
+
 /// Routes du Compte Cord que l'interface a le droit d'appeler.
 fn allowed(method: &str, path: &str) -> bool {
     matches!(
@@ -41,17 +46,16 @@ fn allowed(method: &str, path: &str) -> bool {
     )
 }
 
-/// Adresse du service, validée : origine HTTPS (ou localhost en dev), sans chemin.
+/// Adresse du service : la seule valeur acceptée est le Compte Cord officiel
+/// (`ALLOWED_SERVER`). Le frontend garde un réglage « Serveur » pour l'affichage
+/// et le développement, mais `cord_request`/`cord_export` refusent toute
+/// autre adresse — sinon le jeton du coffre Windows pourrait être envoyé à
+/// un serveur choisi par une page compromise.
 fn server_url(server: &str) -> Result<reqwest::Url, String> {
-    let base = reqwest::Url::parse(server).map_err(|_| "Adresse du service Cord invalide.")?;
-    if !base.username().is_empty() || base.password().is_some() || base.query().is_some() || base.fragment().is_some() || base.path() != "/" {
-        return Err("Utilise l’adresse du serveur sans chemin ni identifiants.".into());
+    if server.trim_end_matches('/') != ALLOWED_SERVER {
+        return Err("Adresse du service Cord refusée : seul https://compte.cordsuite.app est autorisé.".into());
     }
-    let local = matches!(base.host_str(), Some("127.0.0.1" | "localhost" | "[::1]"));
-    if base.scheme() != "https" && !(base.scheme() == "http" && local) {
-        return Err("Le service Cord doit utiliser HTTPS.".into());
-    }
-    Ok(base)
+    reqwest::Url::parse(ALLOWED_SERVER).map_err(|_| "Adresse du service Cord invalide.".to_string())
 }
 
 fn client() -> Result<reqwest::Client, String> {
@@ -82,8 +86,12 @@ pub async fn cord_request(server: String, path: String, method: String, body: Op
     url.set_path(&route);
     url.set_query(query.as_deref());
     let mut request = client()?.request(method.parse::<reqwest::Method>().map_err(|e| e.to_string())?, url);
+    // Jeton effacé de la mémoire dès qu'on n'en a plus besoin (limitation :
+    // `bearer_auth` et le corps HTTP en gardent forcément une copie le temps
+    // de la requête, hors de notre contrôle).
     if let Ok(token) = entry.get_password() {
-        request = request.bearer_auth(token);
+        let token = zeroize::Zeroizing::new(token);
+        request = request.bearer_auth(token.as_str());
     }
     if let Some(body) = body {
         request = request.header("Content-Type", "application/json").body(body.to_string());
@@ -110,7 +118,8 @@ pub async fn cord_request(server: String, path: String, method: String, body: Op
     }
     if matches!(route.as_str(), "/api/register" | "/api/login" | "/api/passcord/poll") {
         if let Some(token) = data.get("token").and_then(Value::as_str) {
-            entry.set_password(token).map_err(|e| { eprintln!("[cord] coffre : {e}"); "Windows n’a pas pu garder ta session. Reconnecte-toi.".to_string() })?;
+            let token = zeroize::Zeroizing::new(token.to_string());
+            entry.set_password(token.as_str()).map_err(|e| { eprintln!("[cord] coffre : {e}"); "Windows n’a pas pu garder ta session. Reconnecte-toi.".to_string() })?;
         }
     }
     if let Some(object) = data.as_object_mut() {
@@ -128,11 +137,11 @@ pub async fn cord_request(server: String, path: String, method: String, body: Op
 pub async fn cord_export(server: String) -> Result<String, String> {
     let mut url = server_url(&server)?;
     let entry = keyring::Entry::new(KEYRING_SERVICE, url.as_str()).map_err(|e| e.to_string())?;
-    let token = entry.get_password().map_err(|_| "Connecte-toi à ton compte Cord.")?;
+    let token = zeroize::Zeroizing::new(entry.get_password().map_err(|_| "Connecte-toi à ton compte Cord.")?);
     url.set_path("/api/account/export");
     let response = client()?
         .get(url)
-        .bearer_auth(token)
+        .bearer_auth(token.as_str())
         .send()
         .await
         .map_err(|e| { eprintln!("[cord] {e}"); "Impossible de joindre ton Compte Cord. Vérifie ta connexion Internet, puis réessaie.".to_string() })?;

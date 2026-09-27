@@ -130,10 +130,12 @@ export async function respondApple(response: "Abort" | "SendToDevices" | "Resend
     if (response === "Abort") patch({ twoFactor: null, verify: "idle" });
   } catch (error) { patch({ error: String(error), twoFactor: null, verify: "idle" }); }
 }
-export async function sideloadIphone(id: string, name: string, source: { ipaUrl?: string; ipaPath?: string }, udid: string, deviceName?: string, extra: { build?: string; asset?: string; quiet?: boolean } = {}): Promise<boolean> {
+export async function sideloadIphone(id: string, name: string, source: { ipaUrl?: string; ipaPath?: string; sha256?: string }, udid: string, deviceName?: string, extra: { build?: string; asset?: string; quiet?: boolean } = {}): Promise<boolean> {
   const ok = await operation(async () => {
     patch({ progress: { id, phase: source.ipaPath ? "preparing" : "downloading", progress: -1 } });
-    await invoke("iphone_sideload", { id, ipaUrl: source.ipaUrl ?? null, ipaPath: source.ipaPath ?? null, udid, name, deviceName: deviceName ?? null, build: extra.build ?? null, asset: extra.asset ?? null });
+    // `sha256` est obligatoire côté Rust dès qu'on télécharge (`ipaUrl`) : un
+    // .ipa choisi localement (`ipaPath`) n'en a pas besoin, il n'est pas téléchargé.
+    await invoke("iphone_sideload", { id, ipaUrl: source.ipaUrl ?? null, ipaPath: source.ipaPath ?? null, sha256: source.sha256 ?? null, udid, name, deviceName: deviceName ?? null, build: extra.build ?? null, asset: extra.asset ?? null });
     // Onglet iPhone : la nouvelle date d'expiration apparaît tout de suite.
     void import("./iphone-apps").then(m => { m.unignoreIphoneApp(id, udid); return m.refreshIphoneApps(); }).catch(() => {});
     if (!extra.quiet) toast({ tone: "ok", title: `${name} installé sur l’iPhone`, description: "Active le mode développeur et autorise le profil dans les réglages iOS si nécessaire." });

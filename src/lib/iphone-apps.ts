@@ -29,7 +29,7 @@ export type IphoneUpdate = {
   label: string;
   notes: string | null;
   size: number | null;
-  source: { kind: "url"; url: string; version: string } | { kind: "beta"; tag: string };
+  source: { kind: "url"; url: string; version: string; sha256?: string } | { kind: "beta"; tag: string };
 };
 
 type Model = {
@@ -154,7 +154,7 @@ type AltStoreSource = { apps: { bundleIdentifier: string; version?: string; down
  * Dernière version iOS publiée d'une app du catalogue : la source AltStore
  * fait foi (elle suit chaque release), sinon la version figée du catalogue.
  */
-export async function latestIos(app: CatalogApp, cache = new Map<string, Promise<AltStoreSource | null>>()): Promise<{ version: string; url: string; size: number | null; notes: string | null } | null> {
+export async function latestIos(app: CatalogApp, cache = new Map<string, Promise<AltStoreSource | null>>()): Promise<{ version: string; url: string; size: number | null; notes: string | null; sha256?: string } | null> {
   const ios = app.ios;
   if (!ios) return null;
   if (ios.altstoreSource) {
@@ -164,9 +164,11 @@ export async function latestIos(app: CatalogApp, cache = new Map<string, Promise
     const source = await cache.get(ios.altstoreSource)!;
     const entry = source?.apps.find(a => a.bundleIdentifier === ios.bundleId) ?? source?.apps[0];
     const latest = entry?.versions?.[0] ?? (entry?.version && entry.downloadURL ? { version: entry.version, downloadURL: entry.downloadURL, size: entry.size, localizedDescription: entry.versionDescription } : null);
-    if (latest) return { version: latest.version, url: latest.downloadURL, size: latest.size ?? null, notes: latest.localizedDescription ?? null };
+    // La source AltStore ne publie pas de SHA-256 : si elle pointe la même
+    // version que le catalogue, son hash reste valide (même fichier).
+    if (latest) return { version: latest.version, url: latest.downloadURL, size: latest.size ?? null, notes: latest.localizedDescription ?? null, sha256: latest.version === ios.version ? ios.sha256 : undefined };
   }
-  if (ios.ipaUrl && ios.version) return { version: ios.version, url: ios.ipaUrl, size: ios.ipaSize ?? null, notes: null };
+  if (ios.ipaUrl && ios.version) return { version: ios.version, url: ios.ipaUrl, size: ios.ipaSize ?? null, notes: null, sha256: ios.sha256 };
   return null;
 }
 
@@ -201,7 +203,7 @@ async function runCheck(catalog: CatalogApp[], user: Parameters<typeof hasBeta>[
       const latest = await latestIos(cat, cache);
       if (latest) {
         if (tracked.some(a => a.version && compareVersions(latest.version, a.version) > 0)) {
-          updates[id] = { id, label: latest.version, notes: latest.notes, size: latest.size, source: { kind: "url", url: latest.url, version: latest.version } };
+          updates[id] = { id, label: latest.version, notes: latest.notes, size: latest.size, source: { kind: "url", url: latest.url, version: latest.version, sha256: latest.sha256 } };
         }
         continue;
       }
@@ -238,7 +240,7 @@ export function unignoreIphoneApp(id: string, udid: string) {
 export async function updateIphoneApp(app: IphoneApp, update: IphoneUpdate, quiet = false): Promise<boolean> {
   let ok: boolean;
   if (update.source.kind === "url") {
-    ok = await sideloadIphone(app.id, app.name, { ipaUrl: update.source.url }, app.udid, deviceName(app), { quiet });
+    ok = await sideloadIphone(app.id, app.name, { ipaUrl: update.source.url, sha256: update.source.sha256 }, app.udid, deviceName(app), { quiet });
   } else {
     // Lien signé valable quelques minutes : demandé juste avant l'installation, même variante qu'avant.
     const { url, name } = await betaDownload(app.id, app.asset ?? undefined);

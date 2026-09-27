@@ -208,6 +208,34 @@ fn downloads_dir() -> Result<PathBuf, String> {
     Ok(dir)
 }
 
+/// Fichier temporaire à nom aléatoire unique, réservé de façon exclusive.
+/// Contrairement à un chemin fixe (`{id}-setup.exe`) réutilisé à chaque
+/// installation, personne ne peut deviner ce chemin à l'avance ni le
+/// remplacer entre la vérification du hash et l'exécution (TOCTOU).
+pub(crate) fn unique_temp_path(dir: &Path, prefix: &str, extension: &str) -> Result<PathBuf, String> {
+    let named = tempfile::Builder::new()
+        .prefix(prefix)
+        .suffix(&format!(".{extension}"))
+        .tempfile_in(dir)
+        .map_err(|e| { eprintln!("[apps] fichier temporaire : {e}"); "Impossible de préparer le téléchargement : vérifie qu’il reste de la place sur le disque.".to_string() })?;
+    // `keep()` retire le nettoyage automatique à la fin du scope : le chemin
+    // (toujours aléatoire et unique) reste géré à la main, comme avant.
+    let (file, path) = named.keep().map_err(|e| { eprintln!("[apps] fichier temporaire : {e}"); "Impossible de préparer le téléchargement.".to_string() })?;
+    drop(file);
+    Ok(path)
+}
+
+/// Empreinte SHA-256 attendue, obligatoire : sans hash valide à vérifier
+/// dans le catalogue, on refuse d'installer ou de mettre à jour plutôt que
+/// d'exécuter un installateur téléchargé sans aucun contrôle d'intégrité.
+pub(crate) fn require_sha256(sha256: &Option<String>) -> Result<String, String> {
+    let value = sha256.as_deref().unwrap_or("").trim();
+    if value.len() != 64 || !value.bytes().all(|b| b.is_ascii_hexdigit()) {
+        return Err("Empreinte SHA-256 manquante ou invalide dans le catalogue : installation refusée par sécurité.".into());
+    }
+    Ok(value.to_ascii_lowercase())
+}
+
 /// Télécharge `url` dans `dest` en calculant le SHA-256 au fil de l'eau.
 /// `on_progress(reçu, total)` est appelé au plus toutes les 100 ms.
 /// Renvoie l'empreinte hexadécimale.
@@ -318,6 +346,7 @@ pub async fn app_install(
     req: InstallRequest,
 ) -> Result<Installed, String> {
     validate_id(&req.id)?;
+    require_sha256(&req.sha256)?;
     if !matches!(req.installer_type.as_str(), "nsis" | "msi" | "exe") {
         return Err("Type d’installateur non pris en charge.".into());
     }
@@ -342,16 +371,15 @@ pub async fn app_install(
 }
 
 async fn install_inner(app: &AppHandle, req: &InstallRequest, cancel: &AtomicBool) -> Result<Installed, String> {
+    let expected = require_sha256(&req.sha256)?;
     let extension = if req.installer_type == "msi" { "msi" } else { "exe" };
-    let file = downloads_dir()?.join(format!("{}-setup.{extension}", req.id));
+    let file = unique_temp_path(&downloads_dir()?, &format!("{}-setup-", req.id), extension)?;
     let digest = download(&req.url, req.size, &file, cancel, |r, t| emit(app, &req.id, "downloading", r, t)).await?;
 
     emit(app, &req.id, "verifying", 0, 0);
-    if let Some(expected) = &req.sha256 {
-        if !digest.eq_ignore_ascii_case(expected.trim()) {
-            let _ = std::fs::remove_file(&file);
-            return Err("Le fichier téléchargé ne correspond pas à l'empreinte attendue (SHA-256) : installation annulée.".into());
-        }
+    if !digest.eq_ignore_ascii_case(&expected) {
+        let _ = std::fs::remove_file(&file);
+        return Err("Le fichier téléchargé ne correspond pas à l'empreinte attendue (SHA-256) : installation annulée.".into());
     }
     if cancel.load(Ordering::Relaxed) {
         let _ = std::fs::remove_file(&file);
@@ -453,15 +481,14 @@ mod tests {
 /// remplacer les fichiers.
 #[tauri::command]
 pub async fn launcher_update(app: AppHandle, url: String, sha256: Option<String>) -> Result<(), String> {
-    let dest = downloads_dir()?.join("CordLauncher-mise-a-jour.exe");
+    let expected = require_sha256(&sha256)?;
+    let dest = unique_temp_path(&downloads_dir()?, "CordLauncher-mise-a-jour-", "exe")?;
     let cancel = AtomicBool::new(false);
     let emitter = app.clone();
     let hash = download(&url, None, &dest, &cancel, move |received, total| emit(&emitter, "cordlauncher", "downloading", received, total)).await?;
-    if let Some(expected) = sha256.filter(|s| !s.is_empty()) {
-        if !hash.eq_ignore_ascii_case(&expected) {
-            let _ = std::fs::remove_file(&dest);
-            return Err("Le fichier téléchargé est incomplet ou modifié : mise à jour annulée.".into());
-        }
+    if !hash.eq_ignore_ascii_case(&expected) {
+        let _ = std::fs::remove_file(&dest);
+        return Err("Le fichier téléchargé est incomplet ou modifié : mise à jour annulée.".into());
     }
     std::process::Command::new(&dest)
         .spawn()

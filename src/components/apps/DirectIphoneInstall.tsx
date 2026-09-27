@@ -39,14 +39,17 @@ export function DirectIphoneInstall({ app }: { app: CatalogApp }) {
   // Passcord (et toute app en bêta fermée) n'a pas d'IPA publique : un testeur
   // installe le dernier build privé via son Compte Cord ; sinon, un .ipa local.
   // Dernière version publiée (source AltStore) plutôt que celle figée dans le catalogue.
-  const [latest, setLatest] = useState<{ version: string; url: string } | null>(null);
+  const [latest, setLatest] = useState<{ version: string; url: string; sha256?: string } | null>(null);
   useEffect(() => { void latestIos(app).then(setLatest).catch(() => {}); }, [app]);
   const publicUrl = latest?.url ?? app.ios?.ipaUrl ?? null;
+  // La version « latest » vient de la source AltStore (pas de hash publié) ;
+  // celle du catalogue porte le sien (`ios.sha256`), vérifié avant l'envoi.
+  const publicSha256 = latest?.url ? latest.sha256 : app.ios?.sha256;
   const publicVersion = latest?.version ?? app.ios?.version ?? null;
   const needsFile = !publicUrl;
   const tester = needsFile && hasBeta(user, app.id);
   const betaBuild = tester && beta?.downloads && beta.release?.assets.length ? beta.release : null;
-  const source = ipaPath ? { ipaPath } : publicUrl ? { ipaUrl: publicUrl } : betaBuild ? "beta" as const : null;
+  const source = ipaPath ? { ipaPath } : publicUrl ? { ipaUrl: publicUrl, sha256: publicSha256 } : betaBuild ? "beta" as const : null;
   const accountReady = canInstall(apple.status);
   const device = devices.find(d => d.udid === selected) ?? null;
   const progress = apple.progress?.id === app.id ? apple.progress : null;

@@ -417,17 +417,22 @@ pub async fn apple_login(
     password: String,
     remember: bool,
 ) -> Result<AppleStatus, String> {
+    // Effacé de la mémoire en sortant de la fonction (limitation : les appels
+    // à `login`/`set_password` ci-dessous en gardent forcément une copie
+    // pendant leur propre durée de vie, hors de notre contrôle — isideload et
+    // keyring attendent un `String`/`&str` ordinaire).
+    let password = zeroize::Zeroizing::new(password);
     let mut sessions = state.sessions.try_lock().map_err(|_| "Une opération Apple est déjà en cours.")?;
     let email = email.trim().to_string();
     if email.is_empty() || password.is_empty() {
         return Err("Entre l'identifiant et le mot de passe du compte Apple.".into());
     }
-    let account = login(&app, email.clone(), password.clone()).await?;
+    let account = login(&app, email.clone(), password.to_string()).await?;
     sessions.insert(profile_key(&email), account);
     state.connected.lock().unwrap().insert(profile_key(&email));
 
     if remember {
-        password_entry(&email)?.set_password(&password).map_err(|e| { log_error(&format!("coffre : {e}")); "Le coffre de Windows est inaccessible : impossible de garder le mot de passe Apple.".to_string() })?;
+        password_entry(&email)?.set_password(password.as_str()).map_err(|e| { log_error(&format!("coffre : {e}")); "Le coffre de Windows est inaccessible : impossible de garder le mot de passe Apple.".to_string() })?;
     } else {
         forget_password(&email);
     }
@@ -591,6 +596,7 @@ pub async fn iphone_sideload(
     id: String,
     ipa_url: Option<String>,
     ipa_path: Option<String>,
+    sha256: Option<String>,
     udid: String,
     name: Option<String>,
     device_name: Option<String>,
@@ -605,9 +611,10 @@ pub async fn iphone_sideload(
     let key = profile_key(&email);
     if !sessions.contains_key(&key) {
         let _ = app.emit(PROGRESS_EVENT, IphoneProgress { id: &id, phase: "account", progress: -1.0 });
-        let password = saved_password(&email)
-            .ok_or_else(|| format!("Reconnecte {email} : son mot de passe n'est pas mémorisé sur ce PC."))?;
-        sessions.insert(key.clone(), login(&app, email.clone(), password).await?);
+        let password = zeroize::Zeroizing::new(
+            saved_password(&email).ok_or_else(|| format!("Reconnecte {email} : son mot de passe n'est pas mémorisé sur ce PC."))?,
+        );
+        sessions.insert(key.clone(), login(&app, email.clone(), password.to_string()).await?);
         state.connected.lock().unwrap().insert(key.clone());
     }
     index.upsert(&email);
@@ -624,15 +631,26 @@ pub async fn iphone_sideload(
             (p, false)
         }
         (None, Some(url)) => {
-            let dest = std::env::temp_dir().join("CordLauncher").join(format!("{id}.ipa"));
-            std::fs::create_dir_all(dest.parent().unwrap()).map_err(|e| e.to_string())?;
+            // Même exigence que pour les installateurs Windows (apps.rs) :
+            // sans empreinte à vérifier, on refuse plutôt que de signer et
+            // d'envoyer sur l'iPhone un IPA téléchargé sans contrôle.
+            let expected = crate::apps::require_sha256(&sha256)?;
+            let dir = std::env::temp_dir().join("CordLauncher");
+            std::fs::create_dir_all(&dir).map_err(|e| e.to_string())?;
+            // Nom aléatoire unique (comme apps.rs) : pas de chemin prévisible
+            // qu'on pourrait remplacer entre la vérification et la signature.
+            let dest = crate::apps::unique_temp_path(&dir, &format!("{id}-"), "ipa")?;
             let never = AtomicBool::new(false);
             let (a, i) = (app.clone(), id.clone());
-            crate::apps::download(&url, None, &dest, &never, move |r, t| {
+            let digest = crate::apps::download(&url, None, &dest, &never, move |r, t| {
                 let progress = if t > 0 { r as f32 / t as f32 } else { -1.0 };
                 let _ = a.emit(PROGRESS_EVENT, IphoneProgress { id: &i, phase: "downloading", progress });
             })
             .await?;
+            if !digest.eq_ignore_ascii_case(&expected) {
+                let _ = std::fs::remove_file(&dest);
+                return Err("Le fichier téléchargé ne correspond pas à l'empreinte attendue (SHA-256) : installation annulée.".into());
+            }
             (dest, true)
         }
         (None, None) => return Err("Aucune app à installer.".into()),

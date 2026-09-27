@@ -48,21 +48,26 @@ export function formatPercent(ratio: number): string {
 }
 
 /**
- * Compare deux versions « x.y.z » (suffixes de pré-version ignorés).
- * > 0 si `a` est plus récente que `b`.
+ * Compare deux versions « x.y.z[-suffixe][+build] ».
+ * > 0 si `a` est plus récente que `b`. Suit la règle semver : à numéros
+ * égaux, une version sans suffixe (« 1.2.0 ») est plus récente que la même
+ * avec un suffixe de pré-version ou de build (« 1.2.0-rc1 », « 1.2.0+42 »).
  */
 export function compareVersions(a: string, b: string): number {
-  const parse = (v: string) =>
-    v
-      .replace(/^v/i, "")
-      .split(/[-+]/)[0]
-      .split(".")
-      .map((n) => Number.parseInt(n, 10) || 0);
+  const parse = (v: string) => {
+    const clean = v.replace(/^v/i, "");
+    const core = clean.split(/[-+]/)[0];
+    return {
+      parts: core.split(".").map((n) => Number.parseInt(n, 10) || 0),
+      hasSuffix: clean.length > core.length,
+    };
+  };
   const pa = parse(a);
   const pb = parse(b);
-  for (let i = 0; i < Math.max(pa.length, pb.length); i++) {
-    const d = (pa[i] ?? 0) - (pb[i] ?? 0);
+  for (let i = 0; i < Math.max(pa.parts.length, pb.parts.length); i++) {
+    const d = (pa.parts[i] ?? 0) - (pb.parts[i] ?? 0);
     if (d !== 0) return d;
   }
+  if (pa.hasSuffix !== pb.hasSuffix) return pa.hasSuffix ? -1 : 1;
   return 0;
 }

@@ -148,6 +148,7 @@ pub fn iphone_apps() -> Vec<IphoneApp> {
 /// Oublie une app (elle reste sur l'iPhone ; on arrête juste de la suivre).
 #[tauri::command]
 pub fn iphone_app_forget(id: String, udid: String) -> Result<(), String> {
+    crate::apps::validate_id(&id)?;
     let mut list = load();
     list.retain(|a| !(a.id == id && a.udid == udid));
     if !list.iter().any(|a| a.id == id) {
@@ -191,6 +192,7 @@ pub async fn iphone_device_bundles(udid: String) -> Result<Vec<DeviceBundle>, St
 /// nouvelles versions sont détectées et une mise à jour la reprend en main.
 #[tauri::command]
 pub fn iphone_app_adopt(id: String, name: String, udid: String, device_name: Option<String>, bundle_id: String, version: Option<String>) -> Result<(), String> {
+    crate::apps::validate_id(&id)?;
     let mut list = load();
     if list.iter().any(|a| a.id == id && a.udid == udid) {
         return Ok(());

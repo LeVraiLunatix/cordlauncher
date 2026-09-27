@@ -51,6 +51,8 @@ export type IosSpec = {
   /** IPA à installer — publique, AltStore la télécharge depuis l'iPhone. */
   ipaUrl?: string;
   ipaSize?: number;
+  /** SHA-256 hexadécimal de l'IPA (`ipaUrl`) — vérifié avant signature/envoi. */
+  sha256?: string;
   /** Source AltStore : ajoutée une fois, AltStore propose ensuite chaque mise à jour. */
   altstoreSource?: string;
   /** Version minimale d'iOS (« 15.0 »). */

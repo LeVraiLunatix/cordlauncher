@@ -27,7 +27,7 @@
       }
     ],
     "security": {
-      "csp": null
+      "csp": "default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data: https://compte.cordsuite.app https://raw.githubusercontent.com; font-src 'self'; connect-src 'self' https://compte.cordsuite.app https://raw.githubusercontent.com; object-src 'none'; base-uri 'self'; frame-ancestors 'none'"
     }
   },
   "bundle": {

@@ -29,6 +29,11 @@ hex = "0.4"
 reqwest = { version = "0.13", default-features = false, features = ["native-tls", "stream", "http2", "system-proxy"] }
 sha2 = "0.11"
 keyring = { version = "3", features = ["windows-native"] }
+# Fichier temporaire à nom aléatoire (empreinte vérifiée avant exécution :
+# pas de chemin fixe qu'un autre processus pourrait remplacer entre-temps).
+tempfile = "3"
+# Mots de passe / jetons effacés de la mémoire une fois utilisés.
+zeroize = "1"
 
 # ── iPhone : compte Apple, signature, installation par câble ────────────────
 isideload = "0.4.0"
