@@ -1,0 +1,50 @@
+/* Passcord : envoi à l'iPhone, nombre à retrouver, carte des notifications. */
+
+.passcord-send { width: 100%; display: grid; gap: 10px; }
+.passcord-send form { display: grid; gap: 10px; }
+
+.passcord-number {
+  position: relative;
+  display: grid;
+  justify-items: center;
+  gap: 6px;
+  padding: 18px 16px 14px;
+  border-radius: var(--r-lg, 20px);
+  background: color-mix(in oklab, var(--accent) 10%, transparent);
+  box-shadow: inset 0 0 0 1px color-mix(in oklab, var(--accent) 28%, transparent);
+  text-align: center;
+  animation: passcord-pop 0.5s var(--ease) both;
+}
+.passcord-number .label { display: inline-flex; align-items: center; gap: 8px; font-weight: 600; color: var(--fg-muted); }
+.passcord-number .label svg { width: 16px; height: 16px; }
+.passcord-number .digits {
+  font: 700 64px/1 var(--font-display);
+  letter-spacing: 0.06em;
+  background: linear-gradient(135deg, var(--violet), var(--accent));
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+  animation: passcord-digits 0.7s var(--ease) both;
+}
+.passcord-number .row-wrap { width: 100%; }
+
+@keyframes passcord-pop {
+  from { opacity: 0; transform: translateY(8px) scale(0.97); }
+  to { opacity: 1; transform: none; }
+}
+@keyframes passcord-digits {
+  0% { opacity: 0; transform: scale(0.6); filter: blur(6px); }
+  60% { opacity: 1; transform: scale(1.06); filter: none; }
+  100% { transform: scale(1); }
+}
+
+.push-row { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }
+.push-hint { display: flex; gap: 12px; align-items: flex-start; color: var(--fg-muted); }
+.push-hint svg { width: 20px; height: 20px; flex: none; margin-top: 2px; color: var(--accent); }
+.push-hint p { margin: 0; }
+
+.passcord-request .btn-lg { margin-top: 6px; }
+
+@media (prefers-reduced-motion: reduce) {
+  .passcord-number, .passcord-number .digits { animation: none; }
+}

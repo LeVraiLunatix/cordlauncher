@@ -24,7 +24,7 @@ const sha256 = (data) => createHash('sha256').update(data).digest();
 const UA_MAC = 'Mozilla/5.0 (Macintosh; Intel Mac OS X 14_5) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.5 Safari/605.1.15';
 const UA_PHONE = 'Mozilla/5.0 (iPhone; CPU iPhone OS 18_0 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/18.0 Mobile/15E148 Safari/604.1';
 
-async function setup(t, { admins = [], betaReleases, githubFetch } = {}) {
+async function setup(t, { admins = [], betaReleases, githubFetch, pushFetch } = {}) {
   const sql = await pgliteSql(undefined);
   await migrate(sql);
   await migrate(sql); // idempotente
@@ -36,6 +36,7 @@ async function setup(t, { admins = [], betaReleases, githubFetch } = {}) {
     admins,
     betaReleases,
     githubFetch,
+    pushFetch,
     sendMail: async (m) => {
       mails.push(m);
     },
@@ -704,4 +705,161 @@ test('apps publish a status card and notifications for users who authorized them
   for (const table of ['app_status', 'notifications']) {
     assert.equal(Number((await ctx.sql(`SELECT COUNT(*) AS n FROM ${table} WHERE user_id = $1`, [user.id]))[0].n), 0, table);
   }
+});
+
+// ── Passcord envoyé à l'iPhone + notifications push ──────────────────────
+test('web push encryption matches the RFC 8291 test vector', async () => {
+  const { createECDH } = await import('node:crypto');
+  const { encryptPayload } = await import('./lib/push.mjs');
+  const ecdh = createECDH('prime256v1');
+  ecdh.setPrivateKey(Buffer.from('yfWPiYE-n46HLnH0KqZOF1fJJU3MYrct3AELtAQ-oRw', 'base64url'));
+  const body = encryptPayload(
+    'When I grow up, I want to be a watermelon',
+    { p256dh: 'BCVxsr7N_eNgVRqvHtD0zTZsEc6-VV-JvLexhqUzORcxaOzi6-AYWXvTBHm4bjyPjs7Vd8pZGH6SRpkNtoIAiw4', auth: 'BTBZMqHH6r4Tts7J_aSIgg' },
+    { salt: Buffer.from('DGv6ra1nlYgDCS1FRnbzlw', 'base64url'), ecdh },
+  );
+  assert.equal(
+    body.toString('base64url'),
+    'DGv6ra1nlYgDCS1FRnbzlwAAEABBBP4z9KsN6nGRTbVYI_c7VJSPQTBtkgcy27mlmlMoZIIgDll6e3vCYLocInmYWAmS6TlzAC8wEqKK6PBru3jl7A_yl95bQpu6cVPTpK4Mqgkf1CXztLVBSt2Ks3oZwbuwXPXLWyouBWLVWGNWQexSgSxsj_Qulcy4a-fN',
+  );
+});
+
+/** Déchiffre un message push comme le ferait le navigateur (aes128gcm). */
+async function decryptPush(body, receiver, authSecret) {
+  const { createDecipheriv, hkdfSync } = await import('node:crypto');
+  const salt = body.subarray(0, 16);
+  const idlen = body.readUInt8(20);
+  const asPublic = body.subarray(21, 21 + idlen);
+  const cipher = body.subarray(21 + idlen);
+  const shared = receiver.computeSecret(asPublic);
+  const keyInfo = Buffer.concat([Buffer.from('WebPush: info\0'), receiver.getPublicKey(), asPublic]);
+  const ikm = Buffer.from(hkdfSync('sha256', shared, authSecret, keyInfo, 32));
+  const cek = Buffer.from(hkdfSync('sha256', ikm, salt, Buffer.from('Content-Encoding: aes128gcm\0'), 16));
+  const nonce = Buffer.from(hkdfSync('sha256', ikm, salt, Buffer.from('Content-Encoding: nonce\0'), 12));
+  const decipher = createDecipheriv('aes-128-gcm', cek, nonce);
+  decipher.setAuthTag(cipher.subarray(-16));
+  const plain = Buffer.concat([decipher.update(cipher.subarray(0, -16)), decipher.final()]);
+  return JSON.parse(plain.subarray(0, plain.lastIndexOf(2)).toString());
+}
+
+test('Passcord requests reach the iPhone: push, inbox, number matching and refusal', async (t) => {
+  const { createECDH, verify: verifySig, createPublicKey } = await import('node:crypto');
+  const pushes = [];
+  const pushFetch = async (url, init) => {
+    pushes.push({ url, init });
+    return new Response(null, { status: url.includes('gone') ? 410 : 201 });
+  };
+  const { request, token, user } = await setup(t, { pushFetch });
+
+  // Abonnement push de la web app (clés du « navigateur »).
+  const receiver = createECDH('prime256v1');
+  receiver.generateKeys();
+  const authSecret = randomBytes(16);
+  const { publicKey: vapid } = (await request('/api/push/key')).data;
+  assert.equal(Buffer.from(vapid, 'base64url').length, 65);
+  const keys = { p256dh: receiver.getPublicKey().toString('base64url'), auth: authSecret.toString('base64url') };
+  assert.equal((await request('/api/push/subscribe', { body: { endpoint: 'https://web.push.apple.com/abc', keys } })).status, 401);
+  assert.equal((await request('/api/push/subscribe', { token, body: { endpoint: 'http://insecure.test/x', keys } })).status, 400);
+  const subscribed = await request('/api/push/subscribe', { token, body: { endpoint: 'https://web.push.apple.com/abc', keys } });
+  assert.equal(subscribed.data.sent, 1);
+  const welcome = pushes.at(-1);
+  assert.equal(welcome.init.headers['Content-Encoding'], 'aes128gcm');
+  // En-tête VAPID signé avec la clé publiée.
+  const [, jwt, k] = welcome.init.headers.Authorization.match(/^vapid t=([^,]+), k=(.+)$/);
+  assert.equal(k, vapid);
+  const [h, c, s] = jwt.split('.');
+  assert.equal(JSON.parse(Buffer.from(c, 'base64url')).aud, 'https://web.push.apple.com');
+  const point = Buffer.from(vapid, 'base64url');
+  const vapidKey = createPublicKey({ format: 'jwk', key: { kty: 'EC', crv: 'P-256', x: point.subarray(1, 33).toString('base64url'), y: point.subarray(33).toString('base64url') } });
+  assert.ok(verifySig('sha256', Buffer.from(`${h}.${c}`), { key: vapidKey, dsaEncoding: 'ieee-p1363' }, Buffer.from(s, 'base64url')));
+  assert.equal((await decryptPush(welcome.init.body, receiver, authSecret)).title, 'Notifications activées');
+
+  // Association Passcord : un jeton de boîte de réception est remis.
+  const pair = (await request('/api/passcord/pair', { token, body: {} })).data;
+  const phone = generateKeyPairSync('ed25519');
+  const claimed = await request('/api/passcord/claim', {
+    token,
+    body: {
+      id: pair.id, challenge: pair.challenge, name: 'iPhone', publicKey: phone.publicKey.export({ format: 'jwk' }),
+      signature: sign(null, Buffer.from(`cord-pair-v1:${issuer}:${pair.id}:${pair.challenge}`), phone.privateKey).toString('base64url'),
+    },
+  });
+  const { keyId, inboxToken } = claimed.data;
+  assert.ok(inboxToken);
+  const inbox = () => request('/api/passcord/inbox', { body: { keyId, token: inboxToken } });
+  assert.equal((await request('/api/passcord/inbox', { body: { keyId, token: 'faux' } })).status, 403);
+  assert.deepEqual((await inbox()).data.requests, []);
+
+  // L'ordinateur envoie la demande à l'iPhone : nombre affiché, notification, boîte de réception.
+  const login = (await request('/api/passcord/login', { body: {} })).data;
+  const poll = { id: login.id, pollToken: login.pollToken };
+  assert.equal((await request('/api/passcord/notify', { body: { ...poll, pollToken: 'x', email: 'luna@example.test' } })).status, 403);
+  const before = pushes.length;
+  const sent = await request('/api/passcord/notify', { body: { ...poll, email: 'LUNA@example.test' } });
+  assert.match(sent.data.code, /^\d{2}$/);
+  assert.equal(pushes.length, before + 1);
+  const message = await decryptPush(pushes.at(-1).init.body, receiver, authSecret);
+  assert.match(message.body, new RegExp(sent.data.code));
+  assert.ok(message.url.startsWith('/?passcord=passcord%3A%2F%2Fcord%2Flogin'));
+  // Adresse inconnue : même réponse, rien n'est envoyé.
+  const other = (await request('/api/passcord/login', { body: {} })).data;
+  const unknown = await request('/api/passcord/notify', { body: { id: other.id, pollToken: other.pollToken, email: 'personne@example.test' } });
+  assert.match(unknown.data.code, /^\d{2}$/);
+  assert.equal(pushes.length, before + 1);
+
+  const [pending] = (await inbox()).data.requests;
+  assert.equal(pending.id, login.id);
+  assert.equal(pending.device, 'Safari · macOS');
+  const link = new URL(pending.url);
+  const choices = link.searchParams.get('choices').split(',');
+  assert.equal(choices.length, 3);
+  assert.ok(choices.includes(sent.data.code));
+  assert.equal(link.searchParams.get('device'), 'Safari · macOS');
+  const approval = {
+    id: login.id, keyId,
+    signature: sign(null, Buffer.from(`cord-login-v1:${issuer}:${login.id}:${link.searchParams.get('challenge')}`), phone.privateKey).toString('base64url'),
+  };
+  // Mauvais nombre : demande annulée, l'ordinateur l'apprend.
+  const wrong = choices.find((n) => n !== sent.data.code);
+  const refused = await request('/api/passcord/approve', { body: { ...approval, code: wrong } });
+  assert.equal(refused.status, 403);
+  assert.equal(refused.data.reason, 'wrong_code');
+  const deniedPoll = await request('/api/passcord/poll', { body: poll });
+  assert.equal(deniedPoll.status, 410);
+  assert.equal(deniedPoll.data.reason, 'denied');
+
+  // Nouvelle demande : bon nombre, la session s'ouvre.
+  const second = (await request('/api/passcord/login', { body: {} })).data;
+  const sent2 = await request('/api/passcord/notify', { body: { id: second.id, pollToken: second.pollToken, email: 'luna@example.test' } });
+  const req2 = (await inbox()).data.requests.find((r) => r.id === second.id);
+  const link2 = new URL(req2.url);
+  const ok = await request('/api/passcord/approve', {
+    body: { id: second.id, keyId, code: sent2.data.code, signature: sign(null, Buffer.from(`cord-login-v1:${issuer}:${second.id}:${link2.searchParams.get('challenge')}`), phone.privateKey).toString('base64url') },
+  });
+  assert.equal(ok.status, 200);
+  assert.equal((await request('/api/passcord/poll', { body: { id: second.id, pollToken: second.pollToken } })).data.user.id, user.id);
+
+  // Refus depuis l'iPhone (bouton « Ce n'est pas moi »).
+  const third = (await request('/api/passcord/login', { body: {} })).data;
+  await request('/api/passcord/notify', { body: { id: third.id, pollToken: third.pollToken, email: 'luna@example.test' } });
+  assert.equal((await request('/api/passcord/deny', { body: { id: third.id, keyId, token: inboxToken } })).status, 200);
+  assert.equal((await request('/api/passcord/poll', { body: { id: third.id, pollToken: third.pollToken } })).data.reason, 'denied');
+
+  // Clé associée avant la boîte de réception : jeton obtenu contre une signature récente.
+  const ts = Date.now();
+  const fresh = await request('/api/passcord/inbox/token', { body: { keyId, ts, signature: sign(null, Buffer.from(`cord-inbox-v1:${issuer}:${keyId}:${ts}`), phone.privateKey).toString('base64url') } });
+  assert.equal(fresh.status, 200);
+  const old = ts - 600_000;
+  assert.equal((await request('/api/passcord/inbox/token', { body: { keyId, ts: old, signature: sign(null, Buffer.from(`cord-inbox-v1:${issuer}:${keyId}:${old}`), phone.privateKey).toString('base64url') } })).status, 403);
+  assert.equal((await request('/api/passcord/inbox', { body: { keyId, token: inboxToken } })).status, 403);
+  assert.equal((await request('/api/passcord/inbox', { body: { keyId, token: fresh.data.token } })).status, 200);
+
+  // Abonnement mort (410) : oublié.
+  await request('/api/push/subscribe', { token, body: { endpoint: 'https://push.example/gone', keys } });
+  const fourth = (await request('/api/passcord/login', { body: {} })).data;
+  await request('/api/passcord/notify', { body: { id: fourth.id, pollToken: fourth.pollToken, email: 'luna@example.test' } });
+  const before2 = pushes.length;
+  const fifth = (await request('/api/passcord/login', { body: {} })).data;
+  await request('/api/passcord/notify', { body: { id: fifth.id, pollToken: fifth.pollToken, email: 'luna@example.test' } });
+  assert.equal(pushes.length - before2, 1);
 });

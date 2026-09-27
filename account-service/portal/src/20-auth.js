@@ -28,7 +28,7 @@ messages({
     'auth.reset.new': 'Nouveau mot de passe', 'auth.reset.confirm': 'Confirme-le', 'auth.reset.mismatch': 'Les deux mots de passe ne correspondent pas.',
     'auth.reset.submit': 'Changer le mot de passe', 'auth.reset.invalid': 'Ce lien a expiré ou a déjà servi. Demande-en un nouveau.',
     'auth.reset.mfa': 'Code de double authentification', 'auth.reset.mfaHint': 'Ton compte est protégé par la 2FA : code à 6 chiffres ou code de secours.',
-    'auth.passcord.title': 'Connexion avec Passcord', 'auth.passcord.scan': 'Scanne ce code avec l’appareil photo de ton iPhone, puis valide avec Face ID dans Passcord.',
+    'auth.passcord.title': 'Connexion avec Passcord', 'auth.passcord.scan': 'Reçois la demande sur ton iPhone (ou scanne le code avec l’appareil photo), puis valide avec Face ID dans Passcord.',
     'auth.passcord.mobile': 'Ouvre la demande dans Passcord sur cet iPhone, puis reviens ici.',
     'auth.passcord.open': 'Ouvrir dans Passcord', 'auth.passcord.copy': 'Copier le lien', 'auth.passcord.waiting': 'En attente de ton iPhone…',
     'auth.passcord.expired': 'La demande a expiré.', 'auth.passcord.unpaired': 'Passcord doit d’abord être associé à ton compte depuis la page Appareils.',
@@ -62,7 +62,7 @@ messages({
     'auth.reset.new': 'New password', 'auth.reset.confirm': 'Confirm it', 'auth.reset.mismatch': 'The two passwords don’t match.',
     'auth.reset.submit': 'Change password', 'auth.reset.invalid': 'This link has expired or was already used. Request a new one.',
     'auth.reset.mfa': 'Two-factor code', 'auth.reset.mfaHint': 'Your account uses 2FA: 6-digit code or recovery code.',
-    'auth.passcord.title': 'Sign in with Passcord', 'auth.passcord.scan': 'Scan this code with your iPhone camera, then approve with Face ID in Passcord.',
+    'auth.passcord.title': 'Sign in with Passcord', 'auth.passcord.scan': 'Get the request on your iPhone (or scan the code with the camera), then approve with Face ID in Passcord.',
     'auth.passcord.mobile': 'Open the request in Passcord on this iPhone, then come back here.',
     'auth.passcord.open': 'Open in Passcord', 'auth.passcord.copy': 'Copy link', 'auth.passcord.waiting': 'Waiting for your iPhone…',
     'auth.passcord.expired': 'The request expired.', 'auth.passcord.unpaired': 'Passcord must first be paired with your account from the Devices page.',
@@ -247,7 +247,14 @@ function mountAuth(host, { mode = 'login', email = '', resetToken, context, onSu
     let active = true;
     local.stop.push(() => { active = false; });
     const mobile = isMobile();
-    render(box, html`${mobile ? html`<div class="auth-illu"><div class="icon-badge grad">${icon('smartphone')}</div></div>` : html`<div class="qr-frame">${qrSvg(request.url)}<span class="qr-scan"></span></div>`}
+    local.passcord = { request, code: null };
+    // Ordinateur : la demande part d'abord vers l'iPhone (Passcord + notification),
+    // le QR code reste là pour qui préfère scanner.
+    render(box, html`${mobile
+        ? html`<div class="auth-illu"><div class="icon-badge grad">${icon('smartphone')}</div></div>`
+        : html`<div class="passcord-send" data-passcord-send></div>
+          <div class="divider-text">${t('auth.passcord.orScan')}</div>
+          <div class="qr-frame">${qrSvg(request.url)}<span class="qr-scan"></span></div>`}
       <div class="status"><span class="pulse-dot"></span><span>${t('auth.passcord.waiting')}</span><span class="countdown" data-countdown></span></div>
       <div class="row-wrap">
         <a class="btn ${mobile ? 'btn-primary' : 'btn-glass'} btn-sm" href="${request.url}">${icon('external-link')}${t('auth.passcord.open')}</a>
@@ -260,6 +267,10 @@ function mountAuth(host, { mode = 'login', email = '', resetToken, context, onSu
         <button type="button" class="btn btn-primary" data-do="passcord">${icon('refresh-cw')}${t('common.retry')}</button>`);
     };
     local.stop.push(startCountdown($('[data-countdown]', box), request.expiresAt, expired));
+    if (!mobile) {
+      drawSend();
+      if (/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(local.email)) sendToPhone().catch(() => {});
+    }
     const poll = async () => {
       if (!active) return;
       try {
@@ -271,12 +282,45 @@ function mountAuth(host, { mode = 'login', email = '', resetToken, context, onSu
           return done(result, { method: 'passcord' });
         }
       } catch (e) {
+        if (e.reason === 'denied') {
+          active = false;
+          render(box, html`<div class="auth-illu"><div class="icon-badge tone-danger">${icon('circle-x')}</div></div><p class="muted">${t('auth.passcord.denied')}</p>
+            <button type="button" class="btn btn-primary" data-do="passcord">${icon('refresh-cw')}${t('common.retry')}</button>`);
+          return;
+        }
         if (e.status === 410) return expired();
         if (!active) return;
       }
       setTimeout(poll, 2000);
     };
     setTimeout(poll, 2000);
+  }
+
+  /** Bloc « Envoyer à mon iPhone » : email, puis le nombre à retrouver dans Passcord. */
+  function drawSend() {
+    const slot = $('[data-passcord-send]', host);
+    if (!slot || !local.passcord) return;
+    const { code } = local.passcord;
+    render(slot, code
+      ? html`<div class="passcord-number" aria-live="polite">
+          <span class="label">${icon('smartphone')}${t('auth.passcord.number')}</span>
+          <strong class="digits">${code}</strong>
+          <p class="small subtle">${t('auth.passcord.numberHint', { email: local.email })}</p>
+          <div class="row-wrap"><button type="button" class="link-btn" data-do="passcord-resend">${icon('send')}${t('auth.passcord.resend')}</button><span class="spacer"></span><button type="button" class="link-btn muted" data-do="passcord-change">${t('auth.passcord.change')}</button></div>
+        </div>`
+      : html`<form data-form="passcord-send" novalidate>
+          ${emailField(!local.email)}
+          <button class="btn btn-primary btn-block" type="submit">${icon('send')}${t('auth.passcord.send')}</button>
+          <p class="field-hint">${t('auth.passcord.sendDesc')}</p>
+        </form>`);
+  }
+  async function sendToPhone() {
+    const p = local.passcord;
+    if (!p) return;
+    const result = await api('/api/passcord/notify', { id: p.request.id, pollToken: p.request.pollToken, email: local.email });
+    if (local.passcord !== p) return;
+    p.code = result.code;
+    drawSend();
   }
 
   // ── Soumissions ─────────────────────────────────────────────────────
@@ -292,6 +336,10 @@ function mountAuth(host, { mode = 'login', email = '', resetToken, context, onSu
         if (e.reason === 'mfa_required') return go('mfa');
         throw e;
       }
+    },
+    async 'passcord-send'(form) {
+      local.email = form.email.value.trim();
+      await sendToPhone();
     },
     async register(form) {
       local.email = form.email.value.trim();
@@ -371,7 +419,14 @@ function mountAuth(host, { mode = 'login', email = '', resetToken, context, onSu
     const doer = event.target.closest('[data-do]');
     if (!doer) return;
     const what = doer.dataset.do;
-    if (what === 'passcord') return go('passcord');
+    if (what === 'passcord') {
+      // L'email déjà tapé sert à envoyer la demande directement à l'iPhone.
+      const email = $('#a-email', host)?.value;
+      if (email) local.email = email.trim();
+      return go('passcord');
+    }
+    if (what === 'passcord-resend') return busy(doer, () => sendToPhone().catch(toastError));
+    if (what === 'passcord-change') { local.passcord.code = null; return drawSend(); }
     if (what === 'toggle-recovery') { local.recovery = !local.recovery; local.interacted = true; return draw(); }
     if (what === 'copy-passcord') return copyText(doer.dataset.url);
     if (what === 'passkey') await busy(doer, () => passkeyLogin().catch(toastError));
@@ -382,3 +437,18 @@ function mountAuth(host, { mode = 'login', email = '', resetToken, context, onSu
   draw();
   return { go, destroy: cleanup };
 }
+
+messages({
+  fr: {
+    'auth.passcord.send': 'Envoyer à mon iPhone', 'auth.passcord.sendDesc': 'La demande arrive dans Passcord, et en notification si tu les as activées.',
+    'auth.passcord.number': 'Dans Passcord, choisis', 'auth.passcord.numberHint': 'Demande envoyée à l’iPhone de {email}. Ouvre Passcord : elle t’attend. Rien reçu ? Scanne le QR code.',
+    'auth.passcord.resend': 'Renvoyer', 'auth.passcord.change': 'Autre adresse', 'auth.passcord.orScan': 'ou scanne avec l’appareil photo',
+    'auth.passcord.denied': 'Connexion refusée depuis ton iPhone.',
+  },
+  en: {
+    'auth.passcord.send': 'Send to my iPhone', 'auth.passcord.sendDesc': 'The request shows up in Passcord, and as a notification if you turned them on.',
+    'auth.passcord.number': 'In Passcord, pick', 'auth.passcord.numberHint': 'Request sent to {email}’s iPhone. Open Passcord: it’s waiting. Nothing? Scan the QR code.',
+    'auth.passcord.resend': 'Send again', 'auth.passcord.change': 'Other address', 'auth.passcord.orScan': 'or scan with the camera',
+    'auth.passcord.denied': 'Sign-in declined from your iPhone.',
+  },
+});

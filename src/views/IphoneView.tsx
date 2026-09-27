@@ -73,9 +73,8 @@ export function IphoneView({ apps: catalog, onDiscover }: { apps: CatalogApp[]; 
 
   useEffect(() => {
     void refreshIphoneApps().catch(() => {});
-    void scanIphones().catch(() => {});
     void refreshApple().catch(() => {});
-    void refreshIphoneApps().then(() => checkIphoneUpdates(catalog, user)).catch(() => {});
+    void refreshIphoneApps().then(() => scanIphones(catalog)).then(() => checkIphoneUpdates(catalog, user)).catch(() => {});
     // Le compte à rebours avance tout seul.
     const t = setInterval(() => tick(n => n + 1), 60_000);
     return () => clearInterval(t);
@@ -91,6 +90,15 @@ export function IphoneView({ apps: catalog, onDiscover }: { apps: CatalogApp[]; 
   async function renew(a: IphoneApp) {
     await renewIphoneApp(a);
     void scanIphones().catch(() => {});
+  }
+  async function searchUpdates() {
+    await refreshIphoneApps().catch(() => {});
+    await scanIphones(catalog).catch(() => {});
+    const result = await checkIphoneUpdates(catalog, user).catch(() => null);
+    if (!result) return;
+    for (const e of result.errors) toast({ tone: "info", title: "Vérification incomplète", description: e });
+    if (result.found) toast({ tone: "ok", title: result.found > 1 ? `${result.found} mises à jour disponibles` : "Une mise à jour disponible", description: "Installe-la depuis la carte de l’app, ou laisse le mode automatique s’en charger." });
+    else if (!result.errors.length) toast({ tone: "ok", title: "Tout est à jour", description: "Tes apps iPhone ont la dernière version." });
   }
   async function updateAll() {
     setRenewingAll(true);
@@ -125,7 +133,7 @@ export function IphoneView({ apps: catalog, onDiscover }: { apps: CatalogApp[]; 
         </div>
         <div className="flex flex-wrap gap-2">
           <GlassButton variant="ghost" icon={<RefreshCw className={cn("size-4", (scanning || checking) && "animate-spin")} />} disabled={scanning || checking}
-            onClick={() => { void refreshIphoneApps().then(() => checkIphoneUpdates(catalog, user)); void scanIphones(); }}>Rechercher les mises à jour</GlassButton>
+            onClick={() => void searchUpdates()}>Rechercher les mises à jour</GlassButton>
           {updatable.length > 0 && (
             <GlassButton variant="primary" icon={<ArrowDownCircle className="size-4" />} disabled={apple.busy} onClick={() => void updateAll()}>
               Tout mettre à jour ({updatable.length})
@@ -243,9 +251,10 @@ export function IphoneView({ apps: catalog, onDiscover }: { apps: CatalogApp[]; 
                       </div>
                       <p className="mt-1 flex flex-wrap items-center gap-x-3 gap-y-1 text-[12.5px] text-fg-muted">
                         <span className="flex items-center gap-1"><Smartphone className="size-3.5" />{a.deviceName ?? "iPhone"}{connected ? " · branché" : ""}</span>
-                        <span className="flex items-center gap-1"><UserRound className="size-3.5" />{a.appleEmail}</span>
+                        {a.appleEmail && <span className="flex items-center gap-1"><UserRound className="size-3.5" />{a.appleEmail}</span>}
                         {a.expiresAt && <span className="flex items-center gap-1"><Clock className="size-3.5" />{h === "expired" ? "Expirée le" : "Expire le"} {dateTime(a.expiresAt)}</span>}
                       </p>
+                      {!a.ipa && !a.appleEmail && <p className="mt-1.5 text-[12.5px] text-fg-subtle">Installée sans CordLauncher : date d’expiration inconnue. Une mise à jour d’ici la reprend en main.</p>}
                       {missing && <p className="mt-1.5 flex items-center gap-1.5 text-[12.5px] text-warn"><AlertTriangle className="size-3.5" />Plus présente sur cet iPhone : renouveler la réinstalle.</p>}
                     </div>
                     <CountdownRing app={a} />

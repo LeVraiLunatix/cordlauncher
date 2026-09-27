@@ -76,17 +76,41 @@ export async function refreshIphoneApps() {
   store.set(s => ({ ...s, apps }));
 }
 
-/** Détecte les iPhone branchés et vérifie quelles apps y sont encore. */
-export async function scanIphones() {
+type DeviceBundle = { bundleId: string; version: string | null; build: string | null };
+/** L'identifiant signé garde celui du catalogue en préfixe (`com.x.app` → `com.x.app.TEAMID`). */
+// Apps que l'utilisateur a choisi de ne plus suivre : jamais réadoptées.
+const IGNORED_KEY = "cordlauncher:iphone-ignored";
+const ignored = (): string[] => { try { return JSON.parse(localStorage.getItem(IGNORED_KEY) ?? "[]"); } catch { return []; } };
+const sameBundle = (onDevice: string, catalogId: string) => onDevice === catalogId || onDevice.startsWith(`${catalogId}.`);
+
+/**
+ * Détecte les iPhone branchés et vérifie quelles apps y sont encore. Avec le
+ * catalogue, suit aussi les apps de la suite installées sans CordLauncher
+ * (AltStore, Sideloadly, ancienne version) pour leur proposer les mises à jour.
+ */
+export async function scanIphones(catalog?: CatalogApp[]) {
   if (!IS_TAURI || store.get().scanning) return;
   store.set(s => ({ ...s, scanning: true }));
   try {
     const devices = await invoke<IphoneDevice[]>("iphone_list");
     const present: Record<string, string[] | null> = {};
+    let adopted = 0;
     for (const d of devices.filter(d => d.trusted)) {
-      present[d.udid] = await invoke<string[]>("iphone_device_bundles", { udid: d.udid }).catch(() => null);
+      const bundles = await invoke<DeviceBundle[]>("iphone_device_bundles", { udid: d.udid }).catch(() => null);
+      present[d.udid] = bundles?.map(b => b.bundleId) ?? null;
+      if (!bundles || !catalog) continue;
+      const tracked = (store.get().apps ?? []).filter(a => a.udid === d.udid);
+      for (const app of catalog) {
+        const bid = app.ios?.bundleId;
+        if (!bid || tracked.some(a => a.id === app.id) || ignored().includes(`${app.id}:${d.udid}`)) continue;
+        const found = bundles.find(b => sameBundle(b.bundleId, bid));
+        if (!found) continue;
+        await invoke("iphone_app_adopt", { id: app.id, name: app.name, udid: d.udid, deviceName: d.name, bundleId: found.bundleId, version: found.version });
+        adopted++;
+      }
     }
     store.set(s => ({ ...s, devices, present }));
+    if (adopted) await refreshIphoneApps();
   } finally {
     store.set(s => ({ ...s, scanning: false }));
   }
@@ -95,6 +119,7 @@ export async function scanIphones() {
 /** Arrête de suivre une app (elle reste sur l'iPhone). */
 export async function forgetIphoneApp(app: IphoneApp) {
   await invoke("iphone_app_forget", { id: app.id, udid: app.udid });
+  try { localStorage.setItem(IGNORED_KEY, JSON.stringify([...new Set([...ignored(), `${app.id}:${app.udid}`])])); } catch { /* stockage indisponible */ }
   store.set(s => ({ ...s, apps: (s.apps ?? []).filter(a => !(a.id === app.id && a.udid === app.udid)) }));
 }
 
@@ -143,9 +168,12 @@ export async function latestIos(app: CatalogApp, cache = new Map<string, Promise
   return null;
 }
 
-/** Cherche une nouvelle version pour chaque app suivie. */
-export async function checkIphoneUpdates(catalog: CatalogApp[], user?: Parameters<typeof hasBeta>[0]) {
-  if (!IS_TAURI || store.get().checking) return;
+const buildNumber = (tag: string | null) => (tag ? Number(tag.replace(/D+/g, "")) || 0 : 0);
+
+/** Cherche une nouvelle version pour chaque app suivie ; renvoie le nombre trouvé et ce qui n'a pas pu être vérifié. */
+export async function checkIphoneUpdates(catalog: CatalogApp[], user?: Parameters<typeof hasBeta>[0]): Promise<{ found: number; errors: string[] } | null> {
+  if (!IS_TAURI || store.get().checking) return null;
+  const errors: string[] = [];
   store.set(s => ({ ...s, checking: true }));
   try {
     const apps = store.get().apps ?? [];
@@ -164,21 +192,29 @@ export async function checkIphoneUpdates(catalog: CatalogApp[], user?: Parameter
       }
       // Bêta fermée (Passcord) : le dernier build privé via le Compte Cord.
       if (hasBeta(user, id)) {
-        const info = await betaInfo(id).catch(() => null);
+        const info = await betaInfo(id).catch((e: unknown) => { errors.push(`${cat.name} : ${e instanceof Error ? e.message : String(e)}`); return null; });
+        if (info && !info.downloads) errors.push(`${cat.name} : les builds bêta ne sont pas encore publiés (jeton GitHub manquant dans Admin › Bêta).`);
         const release = info?.downloads ? info.release : null;
-        if (release && tracked.some(a => a.build !== release.tag)) {
+        // Build inconnu (installée sans CordLauncher) : on propose le dernier.
+        if (release && tracked.some(a => !a.build || buildNumber(release.tag) > buildNumber(a.build))) {
           const asset = release.assets.find(x => x.name === tracked[0].asset) ?? release.assets[0];
           updates[id] = { id, label: release.build, notes: null, size: asset?.size ?? null, source: { kind: "beta", tag: release.tag } };
         }
       }
     }
     store.set(s => ({ ...s, updates, lastCheck: Date.now() }));
+    return { found: Object.keys(updates).length, errors };
   } finally {
     store.set(s => ({ ...s, checking: false }));
   }
 }
 
 /** Installe la nouvelle version d'une app sur son iPhone. */
+/** Réinstallée depuis CordLauncher : de nouveau suivie. */
+export function unignoreIphoneApp(id: string, udid: string) {
+  try { localStorage.setItem(IGNORED_KEY, JSON.stringify(ignored().filter(k => k !== `${id}:${udid}`))); } catch { /* stockage indisponible */ }
+}
+
 export async function updateIphoneApp(app: IphoneApp, update: IphoneUpdate, quiet = false): Promise<boolean> {
   let ok: boolean;
   if (update.source.kind === "url") {
@@ -218,6 +254,7 @@ export async function runIphoneAuto(catalog: CatalogApp[], user?: Parameters<typ
   autoBusy = true;
   try {
     await refreshIphoneApps();
+    await scanIphones(catalog).catch(() => {});
     const apps = store.get().apps ?? [];
     if (!apps.length) return;
     if (opts.check !== false) await checkIphoneUpdates(catalog, user);
@@ -227,7 +264,6 @@ export async function runIphoneAuto(catalog: CatalogApp[], user?: Parameters<typ
     const autoUpdate = (a: IphoneApp) => { const u = updates[a.id]; return u && !autoInstalled.has(`${a.id}:${a.udid}:${u.label}`) ? u : null; };
     const pending = apps.filter(a => autoUpdate(a) || health(a) !== "ok");
     if (!pending.length) return;
-    await scanIphones();
     const trusted = new Set(store.get().devices.filter(d => d.trusted).map(d => d.udid));
     await refreshApple().catch(() => {});
     const apple = appleSnapshot();

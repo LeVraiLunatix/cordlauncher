@@ -84,6 +84,7 @@ pub fn run() {
             iphone_apps::iphone_apps,
             iphone_apps::iphone_app_forget,
             iphone_apps::iphone_device_bundles,
+            iphone_apps::iphone_app_adopt,
         ])
         .setup(|app| {
             let handle = app.handle().clone();

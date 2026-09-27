@@ -158,16 +158,58 @@ pub fn iphone_app_forget(id: String, udid: String) -> Result<(), String> {
     save(&list)
 }
 
-/// Identifiants des apps réellement présentes sur l'iPhone (pour repérer celles qu'on a supprimées).
+/// App présente sur l'iPhone (installation_proxy).
+#[derive(Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct DeviceBundle {
+    pub bundle_id: String,
+    pub version: Option<String>,
+    pub build: Option<String>,
+}
+
+/// Apps réellement présentes sur l'iPhone : repère celles qu'on a supprimées
+/// et celles de la suite installées sans CordLauncher (AltStore, Sideloadly…).
 #[tauri::command]
-pub async fn iphone_device_bundles(udid: String) -> Result<Vec<String>, String> {
+pub async fn iphone_device_bundles(udid: String) -> Result<Vec<DeviceBundle>, String> {
     crate::sideload::on_own_thread(move || async move {
         let mut mux = UsbmuxdConnection::default().await.map_err(|e| e.to_string())?;
         let device = mux.get_device(&udid).await.map_err(|_| "L'iPhone n'est pas branché.".to_string())?;
         let provider = device.to_provider(UsbmuxdAddr::default(), "CordLauncher");
         let mut proxy = InstallationProxyClient::connect(&provider).await.map_err(|e| e.to_string())?;
         let apps = proxy.get_apps(Some("User"), None).await.map_err(|e| e.to_string())?;
-        Ok(apps.into_keys().collect())
+        Ok(apps
+            .into_iter()
+            .map(|(bundle_id, info)| {
+                let get = |key: &str| info.as_dictionary().and_then(|d| d.get(key)).and_then(|v| v.as_string()).map(str::to_string);
+                DeviceBundle { version: get("CFBundleShortVersionString"), build: get("CFBundleVersion"), bundle_id }
+            })
+            .collect())
     })
     .await
+}
+
+/// Suit une app de la suite trouvée sur l'iPhone mais installée sans
+/// CordLauncher : pas d'IPA gardée ni de date d'expiration connue, mais les
+/// nouvelles versions sont détectées et une mise à jour la reprend en main.
+#[tauri::command]
+pub fn iphone_app_adopt(id: String, name: String, udid: String, device_name: Option<String>, bundle_id: String, version: Option<String>) -> Result<(), String> {
+    let mut list = load();
+    if list.iter().any(|a| a.id == id && a.udid == udid) {
+        return Ok(());
+    }
+    list.push(IphoneApp {
+        id,
+        name,
+        bundle_id: Some(bundle_id),
+        version,
+        udid,
+        device_name,
+        apple_email: String::new(),
+        installed_at: now_ms(),
+        expires_at: None,
+        ipa: None,
+        build: None,
+        asset: None,
+    });
+    save(&list)
 }

@@ -1,4 +1,4 @@
-import { Bell, ChartColumn, ExternalLink, History, House, KeyRound, LayoutGrid, LockKeyhole, LogOut, MonitorSmartphone, RefreshCw, Server, ShieldCheck, Smartphone, UserRound, type LucideIcon } from "lucide-react";
+import { Bell, ChartColumn, ExternalLink, History, House, KeyRound, LayoutGrid, LockKeyhole, LogOut, MonitorSmartphone, RefreshCw, Send, Server, ShieldCheck, Smartphone, UserRound, type LucideIcon } from "lucide-react";
 import { AnimatePresence, motion } from "motion/react";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { QrCode } from "../components/apps/QrCode";
@@ -207,7 +207,7 @@ function SignedOut() {
     toast({ tone: "ok", title: mode === "register" ? "Bienvenue dans la suite Cord !" : "Connecté à ton compte Cord" });
   });
 
-  const heading = { login: ["Bon retour", "Connecte-toi à ton compte Cord : une identité pour toute la suite."], register: ["Crée ton compte Cord", "Une identité pour toutes les apps de la suite. Gratuit, sans pub, sans pistage."], forgot: ["Mot de passe oublié", "Indique ton adresse : on t’envoie un lien pour en choisir un nouveau."], passcord: ["Connexion avec Passcord", "Scanne ce code avec l’appareil photo de ton iPhone, puis valide avec Face ID dans Passcord."] }[mode];
+  const heading = { login: ["Bon retour", "Connecte-toi à ton compte Cord : une identité pour toute la suite."], register: ["Crée ton compte Cord", "Une identité pour toutes les apps de la suite. Gratuit, sans pub, sans pistage."], forgot: ["Mot de passe oublié", "Indique ton adresse : on t’envoie un lien pour en choisir un nouveau."], passcord: ["Connexion avec Passcord", "Reçois la demande sur ton iPhone (ou scanne le code avec l’appareil photo), puis valide avec Face ID dans Passcord."] }[mode];
 
   return (
     <>
@@ -223,7 +223,7 @@ function SignedOut() {
               <h2 className="font-display text-2xl font-semibold tracking-[-0.02em]">{heading[0]}</h2>
               <p className="mt-1.5 mb-5 text-[13.5px] text-fg-muted">{heading[1]}</p>
               {mode === "passcord"
-                ? <PasscordLogin onDone={() => void refreshCord()} onCancel={() => setMode("login")} />
+                ? <PasscordLogin email={email} onEmail={setEmail} onDone={() => void refreshCord()} onCancel={() => setMode("login")} />
                 : (
                   <form className="grid gap-4" onSubmit={e => { e.preventDefault(); void submit(new FormData(e.currentTarget)); }}>
                     {mode === "register" && <Field label="Ton prénom ou pseudo"><input className="cord-input" name="name" required maxLength={60} autoComplete="nickname" /></Field>}
@@ -243,7 +243,12 @@ function SignedOut() {
                 )}
               <div className="mt-5 flex flex-wrap items-center gap-x-4 gap-y-2 text-[13px]">
                 {mode === "login" && <>
-                  <GlassButton variant="glass" icon={<Smartphone className="size-4" />} disabled={!IS_TAURI} onClick={() => { setError(null); setMode("passcord"); }}>Passcord</GlassButton>
+                  <GlassButton variant="glass" icon={<Smartphone className="size-4" />} disabled={!IS_TAURI} onClick={() => {
+                    // L'adresse déjà tapée sert à envoyer la demande directement à l'iPhone.
+                    const typed = document.querySelector<HTMLInputElement>('input[name="email"]')?.value.trim();
+                    if (typed) setEmail(typed);
+                    setError(null); setMode("passcord");
+                  }}>Passcord</GlassButton>
                   <button type="button" className="text-fg-muted hover:text-fg" onClick={() => { setError(null); setMode("forgot"); }}>Mot de passe oublié ?</button>
                   <span className="flex-1" />
                   <button type="button" className="font-medium text-[var(--tint-a)] hover:underline" onClick={() => { setError(null); setMode("register"); }}>Créer un compte</button>
@@ -259,16 +264,38 @@ function SignedOut() {
   );
 }
 
-function PasscordLogin({ onDone, onCancel }: { onDone: () => void; onCancel: () => void }) {
+const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
+function PasscordLogin({ email, onEmail, onDone, onCancel }: { email: string; onEmail: (email: string) => void; onDone: () => void; onCancel: () => void }) {
   const [challenge, setChallenge] = useState<CordChallenge | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [left, setLeft] = useState(0);
+  const [code, setCode] = useState<string | null>(null);
+  const [sending, setSending] = useState(false);
+  const [address, setAddress] = useState(email);
+
+  // « Envoyer à mon iPhone » : la demande arrive dans Passcord (et en
+  // notification), avec un nombre à retrouver sur l'iPhone.
+  const send = async (c: CordChallenge, to: string) => {
+    setSending(true);
+    try {
+      const r = await cordRequest<{ code: string }>("/api/passcord/notify", { id: c.id, pollToken: c.pollToken, email: to });
+      onEmail(to);
+      setCode(r.code);
+    } catch (e) {
+      toast({ tone: "error", title: "Envoi impossible", description: (e as Error).message });
+    } finally {
+      setSending(false);
+    }
+  };
+
   useEffect(() => {
     let active = true;
     let timer: ReturnType<typeof setTimeout> | undefined;
     void cordRequest<CordChallenge>("/api/passcord/login").then(c => {
       if (!active) return;
       setChallenge(c);
+      if (EMAIL_RE.test(email)) void send(c, email);
       const poll = async () => {
         if (!active) return;
         if (Date.now() >= c.expiresAt) { setError("La demande Passcord a expiré. Tu peux recommencer."); return; }
@@ -292,9 +319,34 @@ function PasscordLogin({ onDone, onCancel }: { onDone: () => void; onCancel: () 
   }, [challenge]);
   return (
     <div className="grid justify-items-center gap-4 text-center">
+      <AnimatePresence mode="wait" initial={false}>
+        {code ? (
+          <motion.div key="code" initial={{ opacity: 0, scale: 0.94 }} animate={{ opacity: 1, scale: 1, transition: springSoft }} exit={{ opacity: 0 }}
+            className="grid w-full justify-items-center gap-1.5 rounded-[20px] bg-[color-mix(in_oklab,var(--tint-a)_12%,transparent)] px-4 pt-4 pb-3 ring-1 ring-[color-mix(in_oklab,var(--tint-a)_30%,transparent)] ring-inset" aria-live="polite">
+            <span className="inline-flex items-center gap-2 text-[13px] font-semibold text-fg-muted"><Smartphone className="size-4" />Dans Passcord, choisis</span>
+            <motion.strong initial={{ scale: 0.6, filter: "blur(6px)" }} animate={{ scale: 1, filter: "blur(0px)", transition: { type: "spring", bounce: 0.45, duration: 0.7 } }}
+              className="text-tint font-display text-[60px] leading-none font-bold tracking-[0.06em]">{code}</motion.strong>
+            <p className="max-w-[40ch] text-[12.5px] text-fg-muted">Demande envoyée à l’iPhone de {address}. Ouvre Passcord : elle t’attend. Rien reçu ? Scanne le QR code.</p>
+            <div className="mt-1 flex gap-4 text-[12.5px]">
+              <button type="button" className="font-medium text-[var(--tint-a)] hover:underline disabled:opacity-50" disabled={sending || !challenge} onClick={() => challenge && void send(challenge, address)}>Renvoyer</button>
+              <button type="button" className="text-fg-muted hover:text-fg" onClick={() => setCode(null)}>Autre adresse</button>
+            </div>
+          </motion.div>
+        ) : (
+          <motion.form key="send" initial={{ opacity: 0, y: 6 }} animate={{ opacity: 1, y: 0, transition: springSoft }} exit={{ opacity: 0 }} className="grid w-full gap-2 text-left"
+            onSubmit={e => { e.preventDefault(); if (challenge && EMAIL_RE.test(address.trim())) void send(challenge, address.trim()); }}>
+            <div className="flex gap-2">
+              <input className="cord-input flex-1" type="email" required maxLength={254} autoComplete="username" placeholder="Adresse de ton compte Cord" aria-label="Adresse de ton compte Cord" value={address} onChange={e => setAddress(e.target.value)} />
+              <GlassButton type="submit" variant="primary" icon={<Send className="size-4" />} disabled={!challenge || sending || !EMAIL_RE.test(address.trim())}>Envoyer à mon iPhone</GlassButton>
+            </div>
+            <p className="text-[12px] text-fg-subtle">La demande arrive dans Passcord, et en notification si tu les as activées dans ton Compte Cord.</p>
+          </motion.form>
+        )}
+      </AnimatePresence>
+      <p className="flex w-full items-center gap-3 text-[11.5px] tracking-[0.08em] text-fg-subtle uppercase before:h-px before:flex-1 before:bg-[var(--line)] after:h-px after:flex-1 after:bg-[var(--line)]">ou scanne avec l’appareil photo</p>
       {challenge
-        ? <div className="w-52 rounded-[22px] bg-white p-3.5 shadow-[0_24px_60px_-24px_var(--tint-a)]"><QrCode value={challenge.url} colors={["#6E58F0", "#B842EC"]} logo={cordAsset("/assets/icon-180.png") ?? undefined} className="aspect-square w-full" /></div>
-        : !error && <Skeleton className="size-52 rounded-[22px]" />}
+        ? <div className="w-44 rounded-[20px] bg-white p-3 shadow-[0_24px_60px_-24px_var(--tint-a)]"><QrCode value={challenge.url} colors={["#6E58F0", "#B842EC"]} logo={cordAsset("/assets/icon-180.png") ?? undefined} className="aspect-square w-full" /></div>
+        : !error && <Skeleton className="size-44 rounded-[20px]" />}
       {challenge && !error && <p className="inline-flex items-center gap-2.5 text-[13.5px] text-fg-muted"><span className="size-2 animate-pulse-dot rounded-full bg-[var(--tint-a)] text-[var(--tint-a)]" />En attente de ton iPhone… <span className="font-mono text-fg-subtle">{Math.floor(left / 60000)}:{String(Math.floor((left % 60000) / 1000)).padStart(2, "0")}</span></p>}
       {error && <p role="alert" className="rounded-[12px] bg-danger/12 px-3.5 py-2.5 text-sm text-danger">{error}</p>}
       <GlassButton variant="ghost" onClick={onCancel}>← Retour</GlassButton>

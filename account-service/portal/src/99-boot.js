@@ -28,6 +28,13 @@ async function boot() {
   }
 
   const params = new URLSearchParams(location.search);
+  // Notification « Demande de connexion » : ouvrir Passcord d'un geste.
+  const passcordLink = params.get('passcord');
+  if (passcordLink && /^passcord:\/\/cord\/login\?/.test(passcordLink)) {
+    history.replaceState(null, '', '/');
+    await suiteReady;
+    return showPasscordRequest(passcordLink);
+  }
   const verify = params.get('verify');
   const reset = params.get('reset');
   const emailChange = params.get('email-change');

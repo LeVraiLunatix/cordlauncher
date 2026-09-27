@@ -1,0 +1,14 @@
+{
+  "name": "Compte Cord",
+  "short_name": "Compte Cord",
+  "description": "Un compte. Toute la suite Cord.",
+  "id": "/",
+  "start_url": "/",
+  "scope": "/",
+  "display": "standalone",
+  "background_color": "#08070f",
+  "theme_color": "#08070f",
+  "icons": [
+    { "src": "/assets/icon-180.png", "sizes": "180x180", "type": "image/png", "purpose": "any" }
+  ]
+}

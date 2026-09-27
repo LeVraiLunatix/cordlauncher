@@ -65,6 +65,7 @@ const out =
   "export const PORTAL_HTML = `" + esc(html) + "`;\n\n" +
   "export const PORTAL_JS = `" + esc(js) + "`;\n\n" +
   "export const PORTAL_CSS = `" + esc(css) + "`;\n\n" +
-  `export const PORTAL_ASSETS = ${JSON.stringify(assets)};\n`;
+  `export const PORTAL_ASSETS = ${JSON.stringify(assets)};\n\n` +
+  "export const PORTAL_SW = `" + esc(read("sw.js")) + "`;\n";
 fs.writeFileSync(path.join(root, "lib/portal.mjs"), out);
 console.log(`lib/portal.mjs écrit (${(out.length / 1024).toFixed(0)} Ko, version ${version}) : JS ${(js.length / 1024).toFixed(0)} Ko, CSS ${(css.length / 1024).toFixed(0)} Ko, ${Object.keys(assets).length} fichiers.`);

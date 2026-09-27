@@ -135,7 +135,7 @@ export async function sideloadIphone(id: string, name: string, source: { ipaUrl?
     patch({ progress: { id, phase: source.ipaPath ? "preparing" : "downloading", progress: -1 } });
     await invoke("iphone_sideload", { id, ipaUrl: source.ipaUrl ?? null, ipaPath: source.ipaPath ?? null, udid, name, deviceName: deviceName ?? null, build: extra.build ?? null, asset: extra.asset ?? null });
     // Onglet iPhone : la nouvelle date d'expiration apparaît tout de suite.
-    void import("./iphone-apps").then(m => m.refreshIphoneApps()).catch(() => {});
+    void import("./iphone-apps").then(m => { m.unignoreIphoneApp(id, udid); return m.refreshIphoneApps(); }).catch(() => {});
     if (!extra.quiet) toast({ tone: "ok", title: `${name} installé sur l’iPhone`, description: "Active le mode développeur et autorise le profil dans les réglages iOS si nécessaire." });
   });
   void refreshApple().catch(() => {});

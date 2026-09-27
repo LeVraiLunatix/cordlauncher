@@ -10,7 +10,7 @@ messages({
     'dev.passcord.revoked': 'iPhone révoqué.', 'dev.passcord.renamed': 'iPhone renommé.', 'dev.passcord.name': 'Nom de l’iPhone',
     'pair.title': 'Associer Passcord', 'pair.scan': 'Sur ton iPhone, scanne ce code avec l’appareil photo : Passcord s’ouvre. Connecte-toi avec ton compte Cord et valide avec Face ID.',
     'pair.mobile': 'Sur cet iPhone, ouvre la demande dans Passcord, connecte-toi à ton compte Cord et valide avec Face ID.',
-    'pair.manual': 'Pas d’appareil photo ? Dans Passcord, ouvre Réglages › Compte Cord et colle ce lien.',
+    'pair.manual': 'Pas d’appareil photo ? Dans Passcord, ouvre l’onglet Cord et colle ce lien.',
     'pair.waiting': 'En attente de ton iPhone…', 'pair.done': 'iPhone associé ! Tes prochaines connexions pourront se valider avec Face ID.',
     'pair.expired': 'La demande a expiré (3 minutes).', 'pair.server': 'Dans Passcord, le serveur doit être {server}.',
     'dev.sessions': 'Sessions actives', 'dev.sessions.desc': 'Les navigateurs et apps connectés à ton compte Cord. Ferme ceux que tu ne reconnais pas.',
@@ -30,7 +30,7 @@ messages({
     'dev.passcord.revoked': 'iPhone revoked.', 'dev.passcord.renamed': 'iPhone renamed.', 'dev.passcord.name': 'iPhone name',
     'pair.title': 'Pair Passcord', 'pair.scan': 'On your iPhone, scan this code with the camera: Passcord opens. Sign in with your Cord account and approve with Face ID.',
     'pair.mobile': 'On this iPhone, open the request in Passcord, sign in to your Cord account and approve with Face ID.',
-    'pair.manual': 'No camera? In Passcord, open Settings › Cord Account and paste this link.',
+    'pair.manual': 'No camera? In Passcord, open the Cord tab and paste this link.',
     'pair.waiting': 'Waiting for your iPhone…', 'pair.done': 'iPhone paired! Your next sign-ins can be approved with Face ID.',
     'pair.expired': 'The request expired (3 minutes).', 'pair.server': 'In Passcord, the server must be {server}.',
     'dev.sessions': 'Active sessions', 'dev.sessions.desc': 'Browsers and apps signed in to your Cord account. Sign out any you don’t recognize.',
@@ -68,6 +68,8 @@ VIEWS.appareils = {
         <div class="card-foot"><button class="btn btn-primary" data-action="passcord-pair">${icon('qr-code')}${t('dev.passcord.pair')}</button></div>
       </section>
 
+      ${pushCardShell()}
+
       <section class="card glass">
         <div class="card-head">
           <span class="icon-badge tone-info">${icon('monitor-smartphone')}</span>
@@ -94,6 +96,9 @@ VIEWS.appareils = {
         </div>
       </section>
     </div>`;
+  },
+  mount(root) {
+    mountPushCard(root);
   },
 };
 

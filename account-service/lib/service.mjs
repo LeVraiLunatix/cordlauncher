@@ -9,6 +9,7 @@ import { verifyRegistration, verifyAssertion } from './webauthn.mjs';
 import { renderMail } from './mail.mjs';
 import { SUITE, describeClient } from './catalog.mjs';
 import { BETA_PRODUCTS, generateBetaCode, githubReleases, normalizeBetaCode } from './beta.mjs';
+import { generateVapidKeys, sendPush } from './push.mjs';
 
 /**
  * Cœur du service Compte Cord — sans dépendance à un moteur de base précis.
@@ -46,7 +47,7 @@ const maskEmail = (email) => {
   return `${local.slice(0, 1)}${'•'.repeat(Math.max(2, Math.min(6, local.length - 1)))}@${domain}`;
 };
 
-export const SCHEMA_VERSION = 6;
+export const SCHEMA_VERSION = 7;
 
 export const SCHEMA = `
   CREATE TABLE IF NOT EXISTS users (id TEXT PRIMARY KEY, email TEXT UNIQUE NOT NULL, name TEXT NOT NULL, salt TEXT NOT NULL, password_hash TEXT NOT NULL, created_at BIGINT NOT NULL, email_verified_at BIGINT);
@@ -96,6 +97,10 @@ const MIGRATIONS = [
   'CREATE TABLE IF NOT EXISTS app_status (user_id TEXT NOT NULL REFERENCES users(id), app TEXT NOT NULL, data TEXT NOT NULL, updated_at BIGINT NOT NULL, PRIMARY KEY (user_id, app))',
   'CREATE TABLE IF NOT EXISTS notifications (id TEXT PRIMARY KEY, user_id TEXT NOT NULL REFERENCES users(id), app TEXT NOT NULL, title TEXT NOT NULL, body TEXT, url TEXT, created_at BIGINT NOT NULL, read_at BIGINT)',
   'CREATE INDEX IF NOT EXISTS notifications_user_idx ON notifications (user_id, created_at)',
+  // v7 : notifications push (web app) et boîte de réception de Passcord.
+  'CREATE TABLE IF NOT EXISTS push_subscriptions (id TEXT PRIMARY KEY, user_id TEXT NOT NULL REFERENCES users(id), endpoint TEXT NOT NULL, p256dh TEXT NOT NULL, auth TEXT NOT NULL, device TEXT, created_at BIGINT NOT NULL)',
+  'CREATE INDEX IF NOT EXISTS push_subscriptions_user_idx ON push_subscriptions (user_id)',
+  'ALTER TABLE passcord_keys ADD COLUMN IF NOT EXISTS inbox_hash TEXT',
 ];
 
 /** Applique le schéma. À appeler une fois au démarrage (idempotent). */
@@ -131,6 +136,8 @@ export function createService({
   betaReleases = {},
   /** `fetch` utilisé pour GitHub (remplaçable dans les tests). */
   githubFetch = fetch,
+  /** `fetch` utilisé pour les notifications push (remplaçable dans les tests). */
+  pushFetch = fetch,
   portal = PORTAL,
 }) {
   const origin = new URL(issuer);
@@ -674,8 +681,72 @@ export function createService({
     };
   }
 
+  // ── Notifications push (web app installée) ──────────────────────────────
+  // Clés VAPID générées au premier besoin et gardées chiffrées avec le coffre.
+  let vapidCache = null;
+  async function vapidKeys() {
+    if (vapidCache) return vapidCache;
+    const read = async () => {
+      const row = await one("SELECT value FROM service_settings WHERE key = 'vapid'", []);
+      return row ? JSON.parse(vault.open(row.value)) : null;
+    };
+    let keys = await read();
+    if (!keys) {
+      await sql("INSERT INTO service_settings (key, value, updated_at) VALUES ('vapid', $1, $2) ON CONFLICT (key) DO NOTHING", [vault.seal(JSON.stringify(generateVapidKeys())), now()]);
+      keys = await read();
+    }
+    vapidCache = keys;
+    return keys;
+  }
+  /** Envoie une notification à tous les appareils abonnés du compte (sans jamais faire échouer l'appel). */
+  async function pushTo(userId, message) {
+    try {
+      const subs = await sql('SELECT * FROM push_subscriptions WHERE user_id = $1', [userId]);
+      if (!subs.length) return 0;
+      const keys = await vapidKeys();
+      const results = await Promise.all(subs.map((sub) => sendPush({ endpoint: sub.endpoint, p256dh: sub.p256dh, auth: sub.auth }, message, { keys, subject: 'mailto:contact@cordsuite.app', fetchImpl: pushFetch })));
+      const gone = subs.filter((_, i) => results[i] === 'gone').map((sub) => sub.id);
+      for (const id of gone) await sql('DELETE FROM push_subscriptions WHERE id = $1', [id]);
+      return results.filter((r) => r === 'sent').length;
+    } catch {
+      return 0;
+    }
+  }
+
+  // ── Passcord : demandes envoyées à l'iPhone ────────────────────────────
+  const loginLink = (c, payload) =>
+    `passcord://cord/login?server=${encodeURIComponent(issuer)}&id=${c.id}&challenge=${c.challenge}` +
+    (payload?.choices?.length ? `&choices=${payload.choices.join(',')}` : '') +
+    (payload?.device ? `&device=${encodeURIComponent(payload.device)}` : '');
+  const challengePayload = (c) => {
+    try {
+      return c.payload ? JSON.parse(c.payload) : null;
+    } catch {
+      return null;
+    }
+  };
+  /** Clé Passcord authentifiée par son jeton de boîte de réception (sans Face ID). */
+  async function inboxKey(data) {
+    const k = await one('SELECT * FROM passcord_keys WHERE id = $1', [field(data, 'keyId', 64)]);
+    if (!k?.inbox_hash || !safeEqual(k.inbox_hash, hash(field(data, 'token', 128)))) throw error(403, 'Clé Passcord inconnue ou révoquée.', 'inbox_denied');
+    return k;
+  }
+  function verifyPasscordSignature(k, message, signature) {
+    try {
+      return Boolean(k) && verify(null, Buffer.from(message), createPublicKey({ key: JSON.parse(k.public_key), format: 'jwk' }), Buffer.from(String(signature ?? ''), 'base64url'));
+    } catch {
+      return false;
+    }
+  }
+
   // ── Portail : fichiers servis depuis le module généré ───────────────────
   function serveAsset(res, path, url) {
+    if (path === '/sw.js' && portal.PORTAL_SW) {
+      res.setHeader('Cache-Control', 'no-cache');
+      res.writeHead(200, { 'Content-Type': 'text/javascript; charset=utf-8' });
+      res.end(portal.PORTAL_SW);
+      return true;
+    }
     if (path === '/portal.js' || path === '/portal.css') {
       const js = path === '/portal.js';
       const versioned = url.searchParams.get('v') === portal.PORTAL_VERSION;
@@ -929,6 +1000,7 @@ export function createService({
           mail: Boolean(deliver),
         });
       }
+      if (method === 'GET' && path === '/api/push/key') return json({ publicKey: (await vapidKeys()).publicKey });
       if (!['POST', 'PATCH', 'DELETE'].includes(method)) throw error(404, 'Introuvable.');
 
       const ip = clientIp(req);
@@ -1143,7 +1215,7 @@ export function createService({
       }
       if (path === '/api/me' && method === 'DELETE') {
         const { user } = await session(req);
-        for (const table of ['sessions', 'challenges', 'codes', 'passcord_keys', 'passkeys', 'oauth_consents', 'recovery_codes', 'account_events', 'beta_access', 'app_status', 'notifications']) {
+        for (const table of ['sessions', 'challenges', 'codes', 'passcord_keys', 'passkeys', 'oauth_consents', 'recovery_codes', 'account_events', 'beta_access', 'app_status', 'notifications', 'push_subscriptions']) {
           await sql(`DELETE FROM ${table} WHERE user_id = $1`, [user.id]);
         }
         await sql('DELETE FROM users WHERE id = $1', [user.id]);
@@ -1390,6 +1462,7 @@ export function createService({
         const link = data.url == null ? null : appUrl(data.url, client);
         const id = randomUUID();
         await sql('INSERT INTO notifications (id, user_id, app, title, body, url, created_at) VALUES ($1, $2, $3, $4, $5, $6, $7)', [id, sub, clientId, title, body, link, now()]);
+        await pushTo(sub, { title, body: body ?? '', url: link ?? '/#/inbox', tag: `app-${id}` });
         // On garde les 100 plus récentes par compte.
         await sql('DELETE FROM notifications WHERE user_id = $1 AND id NOT IN (SELECT id FROM notifications WHERE user_id = $1 ORDER BY created_at DESC LIMIT 100)', [sub]);
         return json({ ok: true, id }, 201);
@@ -1519,6 +1592,37 @@ export function createService({
         return json({ ok: true });
       }
 
+      // ── Notifications push ─────────────────────────────────────────────
+      if (path === '/api/push/subscribe' && method === 'POST') {
+        const { user } = await session(req);
+        const endpoint = field(data, 'endpoint', 1000);
+        const keys = data.keys ?? {};
+        let parsed;
+        try {
+          parsed = new URL(endpoint);
+        } catch {
+          throw error(400, 'Abonnement invalide.');
+        }
+        if (parsed.protocol !== 'https:' || typeof keys.p256dh !== 'string' || typeof keys.auth !== 'string'
+          || Buffer.from(keys.p256dh, 'base64url').length !== 65 || Buffer.from(keys.auth, 'base64url').length !== 16)
+          throw error(400, 'Abonnement invalide.');
+        const id = hash(`push:${endpoint}`);
+        await sql(
+          `INSERT INTO push_subscriptions (id, user_id, endpoint, p256dh, auth, device, created_at) VALUES ($1, $2, $3, $4, $5, $6, $7)
+           ON CONFLICT (id) DO UPDATE SET user_id = $2, p256dh = $4, auth = $5, device = $6`,
+          [id, user.id, endpoint, keys.p256dh, keys.auth, describeDevice(userAgent(req)).label, now()],
+        );
+        // Dix appareils au plus : les plus anciens sont oubliés.
+        await sql('DELETE FROM push_subscriptions WHERE user_id = $1 AND id NOT IN (SELECT id FROM push_subscriptions WHERE user_id = $1 ORDER BY created_at DESC LIMIT 10)', [user.id]);
+        const sent = await pushTo(user.id, { title: 'Notifications activées', body: 'Les demandes Passcord et les nouvelles de la suite arriveront ici.', url: '/', tag: 'push-welcome' });
+        return json({ ok: true, sent });
+      }
+      if (path === '/api/push/unsubscribe' && method === 'POST') {
+        const { user } = await session(req);
+        await sql('DELETE FROM push_subscriptions WHERE id = $1 AND user_id = $2', [hash(`push:${field(data, 'endpoint', 1000)}`), user.id]);
+        return json({ ok: true });
+      }
+
       // ── Passcord ───────────────────────────────────────────────────────
       if (path === '/api/passcord/pair' && method === 'POST') {
         const { user } = await session(req);
@@ -1562,16 +1666,18 @@ export function createService({
         if (!valid) throw error(403, 'Signature invalide.');
         const keyId = randomUUID();
         const name = field(data, 'name', 60);
-        await sql('INSERT INTO passcord_keys (id, user_id, name, public_key, created_at) VALUES ($1, $2, $3, $4, $5)', [
+        const inboxToken = secret();
+        await sql('INSERT INTO passcord_keys (id, user_id, name, public_key, created_at, inbox_hash) VALUES ($1, $2, $3, $4, $5, $6)', [
           keyId,
           user.id,
           name,
           JSON.stringify(normalized),
           now(),
+          hash(inboxToken),
         ]);
         await sql('DELETE FROM challenges WHERE id = $1', [c.id]);
         await record(user.id, 'passcord_paired', req, name);
-        return json({ keyId, user: publicUser(user) });
+        return json({ keyId, inboxToken, user: publicUser(user) });
       }
       if (path === '/api/passcord/pair/status' && method === 'POST') {
         // Le portail attend l'iPhone : la demande a-t-elle été consommée ?
@@ -1595,8 +1701,8 @@ export function createService({
         const pollToken = secret();
         const challengeText = secret();
         await sql(
-          'INSERT INTO challenges (id, kind, poll_hash, challenge, expires) VALUES ($1, $2, $3, $4, $5)',
-          [id, 'login', hash(pollToken), challengeText, now() + CHALLENGE_TTL],
+          'INSERT INTO challenges (id, kind, poll_hash, challenge, expires, payload) VALUES ($1, $2, $3, $4, $5, $6)',
+          [id, 'login', hash(pollToken), challengeText, now() + CHALLENGE_TTL, JSON.stringify({ device: describeDevice(userAgent(req)).label, at: now() })],
         );
         return json({
           id,
@@ -1605,6 +1711,66 @@ export function createService({
           expiresAt: now() + CHALLENGE_TTL,
           url: `passcord://cord/login?server=${encodeURIComponent(issuer)}&id=${id}&challenge=${challengeText}`,
         });
+      }
+      if (path === '/api/passcord/notify' && method === 'POST') {
+        // « Envoyer à mon iPhone » : la demande part dans Passcord (et en
+        // notification sur les appareils abonnés), avec un nombre à retrouver.
+        const c = await challenge(field(data, 'id'), 'login');
+        if (!safeEqual(c.poll_hash, hash(field(data, 'pollToken')))) throw error(403, 'Demande refusée.');
+        const email = field(data, 'email', 254).toLowerCase();
+        if (await overLimit(`passcord-notify:${email}`, 6, 600_000)) throw error(429, 'Trop de demandes envoyées à cet iPhone. Réessaie dans quelques minutes, ou scanne le QR code.');
+        const payload = challengePayload(c) ?? {};
+        if (!payload.code) {
+          const code = randomInt(10, 100);
+          const choices = new Set([code]);
+          while (choices.size < 3) choices.add(randomInt(10, 100));
+          const shuffled = [...choices];
+          for (let i = shuffled.length - 1; i > 0; i--) {
+            const j = randomInt(0, i + 1);
+            [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
+          }
+          payload.code = String(code);
+          payload.choices = shuffled.map(String);
+        }
+        const u = await one('SELECT * FROM users WHERE email = $1', [email]);
+        const paired = u ? await one('SELECT COUNT(*) AS n FROM passcord_keys WHERE user_id = $1', [u.id]) : null;
+        if (u && Number(paired?.n ?? 0) > 0 && !c.approved) {
+          await sql('UPDATE challenges SET user_id = $1, payload = $2 WHERE id = $3 AND approved = 0', [u.id, JSON.stringify(payload), c.id]);
+          await pushTo(u.id, {
+            title: 'Demande de connexion Cord',
+            body: `${payload.device ?? 'Un appareil'} veut se connecter. Choisis ${payload.code} dans Passcord.`,
+            url: `/?passcord=${encodeURIComponent(loginLink(c, payload))}`,
+            tag: `passcord-${c.id}`,
+          });
+        }
+        // Même réponse que le compte existe ou non (pas d'énumération).
+        return json({ code: payload.code });
+      }
+      if (path === '/api/passcord/inbox' && method === 'POST') {
+        // Passcord ouvert : les demandes qui attendent cet iPhone, sans scanner.
+        const k = await inboxKey(data);
+        const rows = await sql("SELECT * FROM challenges WHERE kind = 'login' AND user_id = $1 AND approved = 0 AND expires > $2 ORDER BY expires DESC LIMIT 5", [k.user_id, now()]);
+        return json({
+          requests: rows.map((c) => {
+            const p = challengePayload(c);
+            return { id: c.id, url: loginLink(c, p), device: p?.device ?? null, createdAt: p?.at ?? null, expiresAt: Number(c.expires) };
+          }),
+        });
+      }
+      if (path === '/api/passcord/inbox/token' && method === 'POST') {
+        // Clé associée avant la boîte de réception : un jeton contre une signature.
+        const k = await one('SELECT * FROM passcord_keys WHERE id = $1', [field(data, 'keyId', 64)]);
+        const ts = Number(data.ts);
+        if (!k || !Number.isFinite(ts) || Math.abs(now() - ts) > 300_000 || !verifyPasscordSignature(k, `cord-inbox-v1:${issuer}:${k.id}:${ts}`, data.signature))
+          throw error(403, 'Signature invalide ou appareil révoqué.');
+        const token = secret();
+        await sql('UPDATE passcord_keys SET inbox_hash = $1 WHERE id = $2', [hash(token), k.id]);
+        return json({ token });
+      }
+      if (path === '/api/passcord/deny' && method === 'POST') {
+        const k = await inboxKey(data);
+        await sql("UPDATE challenges SET approved = -1 WHERE id = $1 AND kind = 'login' AND user_id = $2 AND approved = 0", [field(data, 'id'), k.user_id]);
+        return json({ ok: true });
       }
       if (path === '/api/passcord/approve' && method === 'POST') {
         const c = await challenge(field(data, 'id'), 'login');
@@ -1623,7 +1789,14 @@ export function createService({
           /* signature malformée : refusée */
         }
         if (!valid) throw error(403, 'Signature invalide ou appareil révoqué.');
-        const approved = await one('UPDATE challenges SET approved = 1, user_id = $1 WHERE id = $2 AND approved = 0 RETURNING id', [k.user_id, c.id]);
+        if (c.user_id && c.user_id !== k.user_id) throw error(403, 'Cette demande est destinée à un autre compte.');
+        // Demande envoyée à l'iPhone : le nombre choisi doit être celui affiché.
+        const p = challengePayload(c);
+        if (p?.code && data.code != null && String(data.code) !== p.code) {
+          await sql('UPDATE challenges SET approved = -1 WHERE id = $1 AND approved = 0', [c.id]);
+          throw error(403, 'Ce n’est pas le bon nombre : la demande est annulée par sécurité.', 'wrong_code');
+        }
+        const approved = await one('UPDATE challenges SET approved = 1, user_id = $1 WHERE id = $2 AND approved = 0 AND (user_id IS NULL OR user_id = $1) RETURNING id', [k.user_id, c.id]);
         if (!approved) throw error(409, 'Demande déjà validée.');
         await sql('UPDATE passcord_keys SET last_used_at = $1 WHERE id = $2', [now(), k.id]);
         return json({ ok: true });
@@ -1631,6 +1804,10 @@ export function createService({
       if (path === '/api/passcord/poll' && method === 'POST') {
         const c = await challenge(field(data, 'id'), 'login');
         if (!safeEqual(c.poll_hash, hash(field(data, 'pollToken')))) throw error(403, 'Demande refusée.');
+        if (Number(c.approved) < 0) {
+          await sql('DELETE FROM challenges WHERE id = $1', [c.id]);
+          throw error(410, 'Demande refusée sur l’iPhone.', 'denied');
+        }
         if (!c.approved) return json({ pending: true });
         const consumed = await one('DELETE FROM challenges WHERE id = $1 RETURNING id', [c.id]);
         if (!consumed) throw error(410, 'Demande expirée ou déjà utilisée.');
