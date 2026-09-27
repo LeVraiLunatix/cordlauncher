@@ -9,6 +9,7 @@ import type { CatalogApp } from "../../lib/catalog/types";
 import { cn } from "../../lib/cn";
 import { formatBytes } from "../../lib/format";
 import { closeIphoneInstall } from "../../lib/iphone";
+import { latestIos } from "../../lib/iphone-apps";
 import { easeGlass, springBouncy, springSnappy, springSoft } from "../../lib/motion";
 import { IS_TAURI, pickIpaFile } from "../../lib/platform";
 import { GlassButton } from "../glass";
@@ -37,7 +38,11 @@ export function DirectIphoneInstall({ app }: { app: CatalogApp }) {
 
   // Passcord (et toute app en bêta fermée) n'a pas d'IPA publique : un testeur
   // installe le dernier build privé via son Compte Cord ; sinon, un .ipa local.
-  const publicUrl = app.ios?.ipaUrl ?? null;
+  // Dernière version publiée (source AltStore) plutôt que celle figée dans le catalogue.
+  const [latest, setLatest] = useState<{ version: string; url: string } | null>(null);
+  useEffect(() => { void latestIos(app).then(setLatest).catch(() => {}); }, [app]);
+  const publicUrl = latest?.url ?? app.ios?.ipaUrl ?? null;
+  const publicVersion = latest?.version ?? app.ios?.version ?? null;
   const needsFile = !publicUrl;
   const tester = needsFile && hasBeta(user, app.id);
   const betaBuild = tester && beta?.downloads && beta.release?.assets.length ? beta.release : null;
@@ -85,7 +90,7 @@ export function DirectIphoneInstall({ app }: { app: CatalogApp }) {
     try {
       // Lien signé valable quelques minutes : demandé juste avant l'installation.
       const { url } = await betaDownload(app.id, variant);
-      await sideloadIphone(app.id, app.name, { ipaUrl: url }, selected, device?.name ?? undefined);
+      await sideloadIphone(app.id, app.name, { ipaUrl: url }, selected, device?.name ?? undefined, { build: betaBuild?.tag, asset: variant });
     } catch (e) {
       setError((e as Error).message);
     }
@@ -110,9 +115,9 @@ export function DirectIphoneInstall({ app }: { app: CatalogApp }) {
       </Step>
 
       <Step n={2} title="Version" done={!!source} icon={Sparkles}
-        aside={betaBuild && !ipaPath ? <span className="font-mono text-[11.5px] text-fg-subtle">{betaBuild.build}</span> : publicUrl && app.ios?.version ? <span className="font-mono text-[11.5px] text-fg-subtle">v{app.ios.version}</span> : undefined}>
+        aside={betaBuild && !ipaPath ? <span className="font-mono text-[11.5px] text-fg-subtle">{betaBuild.build}</span> : publicUrl && publicVersion ? <span className="font-mono text-[11.5px] text-fg-subtle">v{publicVersion}</span> : undefined}>
         {publicUrl && !ipaPath ? (
-          <Choice on icon={<CloudDownload className="size-4" />} title={`${app.name}${app.ios?.version ? ` ${app.ios.version}` : ""}`} desc="Dernière version publiée, téléchargée automatiquement" meta={app.ios?.ipaSize ? formatBytes(app.ios.ipaSize) : undefined} />
+          <Choice on icon={<CloudDownload className="size-4" />} title={`${app.name}${publicVersion ? ` ${publicVersion}` : ""}`} desc="Dernière version publiée, téléchargée automatiquement" meta={app.ios?.ipaSize ? formatBytes(app.ios.ipaSize) : undefined} />
         ) : betaBuild && !ipaPath ? (
           <div role="radiogroup" aria-label="Version à installer" className="grid gap-2">
             {betaBuild.assets.map(asset => (

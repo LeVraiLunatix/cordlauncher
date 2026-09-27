@@ -45,6 +45,8 @@ const empty: AppleStatus = { active: null, profiles: [] };
 const store = createStore<AppleModel>({ status: empty, busy: false, twoFactor: null, verify: "idle", progress: null, error: null });
 const patch = (values: Partial<AppleModel>) => store.set(s => ({ ...s, ...values }));
 export const useApple = () => useStore(store, s => s);
+/** État Apple hors React (mode automatique de l'onglet iPhone). */
+export const appleSnapshot = () => store.get();
 
 /** Compte qui signe les apps. */
 export const activeProfile = (status: AppleStatus) => status.profiles.find(p => p.active) ?? null;
@@ -78,14 +80,16 @@ export async function initApple() {
 
 export async function refreshApple() { if (IS_TAURI) patch({ status: await invoke<AppleStatus>("apple_status") }); }
 
-async function operation(fn: () => Promise<void>) {
-  if (store.get().busy) return;
+/** Lance une opération Apple ; renvoie `true` si elle a abouti. */
+async function operation(fn: () => Promise<void>): Promise<boolean> {
+  if (store.get().busy) return false;
   patch({ busy: true, error: null });
   try {
     await initApple();
     await fn();
+    return true;
   }
-  catch (error) { patch({ error: String(error) }); }
+  catch (error) { patch({ error: String(error) }); return false; }
   finally {
     // Une réussite en cours d'animation se ferme d'elle-même (cf. apple://signed-in).
     patch(store.get().verify === "success" ? { busy: false, progress: null } : { busy: false, twoFactor: null, verify: "idle", progress: null });
@@ -126,13 +130,14 @@ export async function respondApple(response: "Abort" | "SendToDevices" | "Resend
     if (response === "Abort") patch({ twoFactor: null, verify: "idle" });
   } catch (error) { patch({ error: String(error), twoFactor: null, verify: "idle" }); }
 }
-export async function sideloadIphone(id: string, name: string, source: { ipaUrl?: string; ipaPath?: string }, udid: string, deviceName?: string) {
-  await operation(async () => {
+export async function sideloadIphone(id: string, name: string, source: { ipaUrl?: string; ipaPath?: string }, udid: string, deviceName?: string, extra: { build?: string; asset?: string; quiet?: boolean } = {}): Promise<boolean> {
+  const ok = await operation(async () => {
     patch({ progress: { id, phase: source.ipaPath ? "preparing" : "downloading", progress: -1 } });
-    await invoke("iphone_sideload", { id, ipaUrl: source.ipaUrl ?? null, ipaPath: source.ipaPath ?? null, udid, name, deviceName: deviceName ?? null });
+    await invoke("iphone_sideload", { id, ipaUrl: source.ipaUrl ?? null, ipaPath: source.ipaPath ?? null, udid, name, deviceName: deviceName ?? null, build: extra.build ?? null, asset: extra.asset ?? null });
     // Onglet iPhone : la nouvelle date d'expiration apparaît tout de suite.
     void import("./iphone-apps").then(m => m.refreshIphoneApps()).catch(() => {});
-    toast({ tone: "ok", title: `${name} installé sur l’iPhone`, description: "Active le mode développeur et autorise le profil dans les réglages iOS si nécessaire." });
+    if (!extra.quiet) toast({ tone: "ok", title: `${name} installé sur l’iPhone`, description: "Active le mode développeur et autorise le profil dans les réglages iOS si nécessaire." });
   });
   void refreshApple().catch(() => {});
+  return ok;
 }

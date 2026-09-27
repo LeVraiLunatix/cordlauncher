@@ -52,6 +52,8 @@ const initialServer = localStorage.getItem("cordlauncher:account-server") ?? imp
 type AccountState = { server: string; user: CordUser | null; keys: CordKey[]; dashboard: CordDashboard | null; suite: SuiteApp[]; hub: CordHub | null; inbox: CordNotification[] | null };
 const account = createStore<AccountState>({ server: initialServer, user: null, keys: [], dashboard: null, suite: [], hub: null, inbox: null });
 export const useCordAccount = () => useStore(account, s => s);
+/** État du compte hors React. */
+export const cordSnapshot = () => account.get();
 
 export function setCordServer(server: string) {
   const url = new URL(server.trim());

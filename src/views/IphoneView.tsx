@@ -1,14 +1,16 @@
-import { AlertTriangle, Cable, Check, Clock, Compass, KeyRound, RefreshCw, RotateCw, Smartphone, Trash2, UserRound, Wifi } from "lucide-react";
+import { AlertTriangle, ArrowDownCircle, Cable, Check, ChevronDown, Clock, Compass, KeyRound, Loader2, RefreshCw, RotateCw, Sparkles, Smartphone, Trash2, UserRound, Wifi } from "lucide-react";
 import { AnimatePresence, motion } from "motion/react";
 import { useEffect, useMemo, useState } from "react";
 import { AppIcon } from "../components/apps/AppIcon";
 import { AppleAccount } from "../components/apps/AppleAccount";
 import { InstallProgress } from "../components/apps/DirectIphoneInstall";
-import { GlassButton, GlassCard, GlassModal, Skeleton } from "../components/glass";
+import { GlassButton, GlassCard, GlassModal, GlassToggle, Skeleton } from "../components/glass";
+import { useCordAccount } from "../lib/account";
 import { activeProfile, refreshApple, useApple } from "../lib/apple";
 import type { CatalogApp } from "../lib/catalog/types";
 import { cn } from "../lib/cn";
-import { daysLeft, forgetIphoneApp, health, refreshIphoneApps, renewIphoneApp, scanIphones, useIphoneApps, validity, type Health, type IphoneApp } from "../lib/iphone-apps";
+import { checkIphoneUpdates, daysLeft, forgetIphoneApp, health, refreshIphoneApps, renewIphoneApp, scanIphones, setIphoneAuto, updateIphoneApp, useIphoneApps, validity, type Health, type IphoneApp } from "../lib/iphone-apps";
+import { formatBytes } from "../lib/format";
 import { itemVariants, springBouncy, springSoft, viewVariants } from "../lib/motion";
 import { IS_TAURI } from "../lib/platform";
 import { toast } from "../lib/toast";
@@ -60,7 +62,9 @@ function CountdownRing({ app }: { app: IphoneApp }) {
  * ou toutes) avec l'IPA gardée au moment de l'installation.
  */
 export function IphoneView({ apps: catalog, onDiscover }: { apps: CatalogApp[]; onDiscover: () => void }) {
-  const { apps, devices, present, scanning } = useIphoneApps();
+  const { apps, devices, present, scanning, updates, checking, lastCheck, auto, autoRunning } = useIphoneApps();
+  const { user } = useCordAccount();
+  const [notesOpen, setNotesOpen] = useState<string | null>(null);
   const apple = useApple();
   const [accountOpen, setAccountOpen] = useState(false);
   const [confirm, setConfirm] = useState<string | null>(null);
@@ -71,6 +75,7 @@ export function IphoneView({ apps: catalog, onDiscover }: { apps: CatalogApp[]; 
     void refreshIphoneApps().catch(() => {});
     void scanIphones().catch(() => {});
     void refreshApple().catch(() => {});
+    void refreshIphoneApps().then(() => checkIphoneUpdates(catalog, user)).catch(() => {});
     // Le compte à rebours avance tout seul.
     const t = setInterval(() => tick(n => n + 1), 60_000);
     return () => clearInterval(t);
@@ -80,11 +85,23 @@ export function IphoneView({ apps: catalog, onDiscover }: { apps: CatalogApp[]; 
   const trusted = useMemo(() => new Set(devices.filter(d => d.trusted).map(d => d.udid)), [devices]);
   const list = apps ?? [];
   const toRenew = list.filter(a => health(a) !== "ok");
+  const updatable = list.filter(a => updates[a.id] && trusted.has(a.udid) && !apple.busy);
   const renewable = (a: IphoneApp) => !!a.ipa && trusted.has(a.udid) && !apple.busy;
 
   async function renew(a: IphoneApp) {
     await renewIphoneApp(a);
     void scanIphones().catch(() => {});
+  }
+  async function updateAll() {
+    setRenewingAll(true);
+    try {
+      let n = 0;
+      for (const a of updatable) if (await updateIphoneApp(a, updates[a.id], true)) n++;
+      if (n) toast({ tone: "ok", title: n > 1 ? `${n} apps mises à jour` : "App mise à jour", description: "La nouvelle version est installée sur ton iPhone." });
+    } finally {
+      setRenewingAll(false);
+      void scanIphones().catch(() => {});
+    }
   }
   async function renewAll() {
     setRenewingAll(true);
@@ -107,14 +124,40 @@ export function IphoneView({ apps: catalog, onDiscover }: { apps: CatalogApp[]; 
           <p className="mt-1.5 max-w-[60ch] text-[14px] text-fg-muted">Le temps qu’il reste à chaque app avant que sa signature expire, et le renouvellement en un clic.</p>
         </div>
         <div className="flex flex-wrap gap-2">
-          <GlassButton variant="ghost" icon={<RefreshCw className={cn("size-4", scanning && "animate-spin")} />} disabled={scanning} onClick={() => { void refreshIphoneApps(); void scanIphones(); }}>Actualiser</GlassButton>
+          <GlassButton variant="ghost" icon={<RefreshCw className={cn("size-4", (scanning || checking) && "animate-spin")} />} disabled={scanning || checking}
+            onClick={() => { void refreshIphoneApps().then(() => checkIphoneUpdates(catalog, user)); void scanIphones(); }}>Rechercher les mises à jour</GlassButton>
+          {updatable.length > 0 && (
+            <GlassButton variant="primary" icon={<ArrowDownCircle className="size-4" />} disabled={apple.busy} onClick={() => void updateAll()}>
+              Tout mettre à jour ({updatable.length})
+            </GlassButton>
+          )}
           {list.some(renewable) && (
-            <GlassButton variant="primary" icon={<RotateCw className={cn("size-4", renewingAll && "animate-spin")} />} disabled={apple.busy} onClick={() => void renewAll()}>
+            <GlassButton variant={updatable.length ? "glass" : "primary"} icon={<RotateCw className={cn("size-4", renewingAll && "animate-spin")} />} disabled={apple.busy} onClick={() => void renewAll()}>
               Tout renouveler{toRenew.length ? ` (${toRenew.length} urgente${toRenew.length > 1 ? "s" : ""})` : ""}
             </GlassButton>
           )}
         </div>
       </motion.header>
+
+      <motion.div variants={itemVariants}>
+        <GlassCard className="rounded-[22px] p-4">
+          <div className="relative z-[3] flex flex-wrap items-center gap-4">
+            <span className={cn("grid size-10 shrink-0 place-items-center rounded-[13px]", auto ? "tint-fill text-white" : "bg-[var(--control)] text-fg-muted")}>
+              {autoRunning ? <Loader2 className="size-[18px] animate-spin" /> : <Sparkles className="size-[18px]" />}
+            </span>
+            <div className="min-w-[220px] flex-1">
+              <p className="text-[14px] font-semibold">Automatique</p>
+              <p className="text-[12.5px] text-fg-muted">
+                {autoRunning ?? (auto
+                  ? "Dès que ton iPhone est branché, CordLauncher installe les nouvelles versions et renouvelle les apps à 2 jours de l’expiration."
+                  : "Désactivé : CordLauncher te prévient des nouvelles versions et des expirations, tu lances toi-même.")}
+                {lastCheck && !autoRunning ? ` · Vérifié ${Date.now() - lastCheck < 60_000 ? "à l’instant" : new Intl.RelativeTimeFormat("fr-FR", { numeric: "auto" }).format(Math.round((lastCheck - Date.now()) / 60000), "minute")}` : ""}
+              </p>
+            </div>
+            <GlassToggle label="Mises à jour et renouvellements automatiques" checked={auto} onChange={setIphoneAuto} />
+          </div>
+        </GlassCard>
+      </motion.div>
 
       {/* iPhone branchés + compte Apple */}
       <motion.div variants={itemVariants} className="grid gap-3 md:grid-cols-[minmax(0,1.3fr)_minmax(0,1fr)]">
@@ -178,6 +221,7 @@ export function IphoneView({ apps: catalog, onDiscover }: { apps: CatalogApp[]; 
               const connected = trusted.has(a.udid);
               const progress = apple.progress?.id === a.id ? apple.progress : null;
               const key = `${a.id}:${a.udid}`;
+              const upd = updates[a.id];
               return (
                 <motion.li key={key} layout variants={itemVariants} initial="hidden" animate="show" exit={{ opacity: 0, x: -24 }}
                   className={cn("relative overflow-hidden rounded-[24px] bg-[var(--glass-fill)] p-4 ring-1 ring-inset", h === "ok" ? "ring-[var(--glass-stroke)]" : h === "soon" ? "ring-warn/40" : "ring-danger/40")}>
@@ -190,6 +234,12 @@ export function IphoneView({ apps: catalog, onDiscover }: { apps: CatalogApp[]; 
                         <span className={cn("inline-flex h-6 items-center gap-1 rounded-full px-2.5 text-[10.5px] font-semibold tracking-[0.06em] uppercase", h === "ok" ? "bg-ok/14 text-ok" : h === "soon" ? "bg-warn/14 text-warn" : "bg-danger/14 text-danger")}>
                           {tone.label}
                         </span>
+                        {upd && (
+                          <motion.span initial={{ scale: 0.6, opacity: 0 }} animate={{ scale: 1, opacity: 1, transition: springBouncy }}
+                            className="tint-fill inline-flex h-6 items-center gap-1 rounded-full px-2.5 text-[10.5px] font-semibold tracking-[0.04em] text-white uppercase">
+                            <ArrowDownCircle className="size-3" />Mise à jour · {upd.label}
+                          </motion.span>
+                        )}
                       </div>
                       <p className="mt-1 flex flex-wrap items-center gap-x-3 gap-y-1 text-[12.5px] text-fg-muted">
                         <span className="flex items-center gap-1"><Smartphone className="size-3.5" />{a.deviceName ?? "iPhone"}{connected ? " · branché" : ""}</span>
@@ -200,7 +250,12 @@ export function IphoneView({ apps: catalog, onDiscover }: { apps: CatalogApp[]; 
                     </div>
                     <CountdownRing app={a} />
                     <div className="flex shrink-0 flex-col gap-1.5">
-                      <GlassButton size="sm" variant={h === "ok" ? "glass" : "primary"} icon={<RotateCw className="size-3.5" />} disabled={!renewable(a)}
+                      {upd && (
+                        <GlassButton size="sm" variant="primary" icon={<ArrowDownCircle className="size-3.5" />} disabled={!connected || apple.busy}
+                          title={!connected ? "Branche cet iPhone pour mettre à jour" : undefined}
+                          onClick={() => void updateIphoneApp(a, upd)}>Mettre à jour</GlassButton>
+                      )}
+                      <GlassButton size="sm" variant={h === "ok" || upd ? "glass" : "primary"} icon={<RotateCw className="size-3.5" />} disabled={!renewable(a)}
                         title={!a.ipa ? "IPA non gardée : réinstalle depuis la fiche" : !connected ? "Branche cet iPhone pour renouveler" : undefined}
                         onClick={() => void renew(a)}>Renouveler</GlassButton>
                       <AnimatePresence mode="popLayout" initial={false}>
@@ -216,6 +271,22 @@ export function IphoneView({ apps: catalog, onDiscover }: { apps: CatalogApp[]; 
                       </AnimatePresence>
                     </div>
                   </div>
+                  {upd && (upd.notes || upd.size) && (
+                    <div className="mt-3 rounded-[16px] bg-[var(--control)] px-3.5 py-2.5 ring-1 ring-[var(--line)] ring-inset">
+                      <button type="button" onClick={() => setNotesOpen(o => (o === key ? null : key))} className="flex w-full items-center gap-2 text-left text-[12.5px] font-semibold">
+                        <Sparkles className="size-3.5 text-[var(--tint-a)]" />Nouveautés de {upd.label}
+                        {upd.size ? <span className="font-mono font-normal text-fg-subtle">· {formatBytes(upd.size)}</span> : null}
+                        {upd.notes && <ChevronDown className={cn("ml-auto size-3.5 transition-transform", notesOpen === key && "rotate-180")} />}
+                      </button>
+                      <AnimatePresence initial={false}>
+                        {upd.notes && notesOpen === key && (
+                          <motion.p className="overflow-hidden text-[12.5px] leading-relaxed whitespace-pre-line text-fg-muted" initial={{ height: 0, opacity: 0 }} animate={{ height: "auto", opacity: 1, transition: springSoft }} exit={{ height: 0, opacity: 0 }}>
+                            <span className="block pt-2">{upd.notes.slice(0, 900)}{upd.notes.length > 900 ? "…" : ""}</span>
+                          </motion.p>
+                        )}
+                      </AnimatePresence>
+                    </div>
+                  )}
                   <AnimatePresence>
                     {progress && (
                       <motion.div className="mt-4" initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: "auto", transition: springSoft }} exit={{ opacity: 0, height: 0 }}>

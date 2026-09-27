@@ -2,7 +2,7 @@ import { ArrowUpRight, Compass, LayoutGrid, Settings2, Smartphone, UserRound, ty
 import { AnimatePresence, motion } from "motion/react";
 import type { CatalogApp } from "../../lib/catalog/types";
 import { cn } from "../../lib/cn";
-import { useRenewCount } from "../../lib/iphone-apps";
+import { useIphoneBadge } from "../../lib/iphone-apps";
 import { launchApp, useInstalledMap, useActiveJobCount, useJob, useUpdateCount } from "../../lib/installer";
 import { springSoft } from "../../lib/motion";
 import { openExternal } from "../../lib/platform";
@@ -37,7 +37,7 @@ export function Sidebar({ route, onRoute, apps }: SidebarProps) {
   const updates = useUpdateCount(apps);
   const activeJobs = useActiveJobCount();
   const installed = useInstalledMap();
-  const renew = useRenewCount();
+  const renew = useIphoneBadge();
 
   return (
     <GlassCard
@@ -106,7 +106,7 @@ export function Sidebar({ route, onRoute, apps }: SidebarProps) {
                     animate={{ scale: 1 }}
                     exit={{ scale: 0 }}
                     transition={{ type: "spring", stiffness: 500, damping: 18 }}
-                    title={`${renew} app(s) à renouveler bientôt`}
+                    title={`${renew} app(s) à mettre à jour ou à renouveler`}
                   >
                     {renew}
                   </motion.span>

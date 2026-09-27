@@ -510,6 +510,8 @@ pub async fn iphone_sideload(
     udid: String,
     name: Option<String>,
     device_name: Option<String>,
+    build: Option<String>,
+    asset: Option<String>,
 ) -> Result<(), String> {
     crate::apps::validate_id(&id)?;
     // Compte actif : sa session ouverte, sinon reconnexion avec le mot de passe mémorisé.
@@ -568,7 +570,7 @@ pub async fn iphone_sideload(
     // Onglet iPhone : on note l'installation (et on garde l'IPA pour renouveler)
     // avant de supprimer le téléchargement temporaire.
     let result = result.map(|signed| {
-        crate::iphone_apps::record(&id, name.as_deref().unwrap_or(&id), &udid, device_name, &email, &ipa, signed);
+        crate::iphone_apps::record(&id, name.as_deref().unwrap_or(&id), &udid, device_name, &email, &ipa, signed, build, asset);
     });
     if remove_after {
         let _ = std::fs::remove_file(&ipa);

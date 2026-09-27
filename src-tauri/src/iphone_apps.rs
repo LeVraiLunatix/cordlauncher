@@ -32,6 +32,11 @@ pub struct IphoneApp {
     pub expires_at: Option<u64>,
     /// Copie locale de l'IPA, pour renouveler.
     pub ipa: Option<String>,
+    /// Bêta : build installé (tag de la release, ex. `build-10`) et variante (`Passcord.ipa`).
+    #[serde(default)]
+    pub build: Option<String>,
+    #[serde(default)]
+    pub asset: Option<String>,
 }
 
 /// Ce qu'on lit dans l'app signée, avant qu'isideload ne la supprime.
@@ -106,7 +111,8 @@ fn cache_ipa(id: &str, source: &Path) -> Option<String> {
 }
 
 /// Note une installation réussie (remplace la précédente pour la même app sur le même iPhone).
-pub fn record(id: &str, name: &str, udid: &str, device_name: Option<String>, apple_email: &str, ipa: &Path, signed: SignedInfo) {
+#[allow(clippy::too_many_arguments)]
+pub fn record(id: &str, name: &str, udid: &str, device_name: Option<String>, apple_email: &str, ipa: &Path, signed: SignedInfo, build: Option<String>, asset: Option<String>) {
     let mut list = load();
     let previous = list.iter().position(|a| a.id == id && a.udid == udid);
     let entry = IphoneApp {
@@ -121,6 +127,9 @@ pub fn record(id: &str, name: &str, udid: &str, device_name: Option<String>, app
         // Sans profil lisible : 7 jours, la durée d'un compte Apple gratuit.
         expires_at: signed.expires_at.or(Some(now_ms() + 7 * 24 * 3600 * 1000)),
         ipa: cache_ipa(id, ipa),
+        // Un renouvellement (même IPA) garde le build et la variante d'origine.
+        build: build.or_else(|| previous.and_then(|i| list[i].build.clone())),
+        asset: asset.or_else(|| previous.and_then(|i| list[i].asset.clone())),
     };
     match previous {
         Some(i) => list[i] = entry,

@@ -4,9 +4,9 @@ import { AppDetail } from "./components/apps/AppDetail";
 import { InstallSheet } from "./components/apps/InstallSheet";
 import { AppleVerification } from "./components/apps/AppleAccount";
 import { BetaKeySheet } from "./components/apps/BetaKeySheet";
-import { publishLauncherStatus, refreshCord } from "./lib/account";
+import { cordSnapshot, publishLauncherStatus, refreshCord } from "./lib/account";
 import { NAVIGATE_EVENT } from "./lib/beta";
-import { refreshIphoneApps } from "./lib/iphone-apps";
+import { refreshIphoneApps, runIphoneAuto } from "./lib/iphone-apps";
 import { IphoneView } from "./views/IphoneView";
 import { IphoneInstallSheet } from "./components/apps/IphoneInstallSheet";
 import { AnimatedGradientBackground } from "./components/glass";
@@ -38,6 +38,13 @@ async function boot() {
   // Le Compte Cord montre ce que ce PC a installé (tuile CordLauncher du hub).
   await cord;
   if (catalog) void publishLauncherStatus(catalog.apps, installedSnapshot(), LAUNCHER_VERSION).catch(() => {});
+  // iPhone : nouvelles versions et renouvellements automatiques (si activés),
+  // au lancement puis toutes les 10 minutes (dès que l'iPhone est branché).
+  if (catalog) {
+    const tick = () => void runIphoneAuto(catalog.apps, cordSnapshot().user).catch(() => {});
+    tick();
+    setInterval(tick, 10 * 60_000);
+  }
 }
 
 export default function App() {
