@@ -14,7 +14,8 @@
     "tauri": "tauri",
     "app:dev": "tauri dev",
     "app:build": "tauri build",
-    "setup:build": "node scripts/build-setup.cjs"
+    "setup:build": "node scripts/build-setup.cjs",
+    "setup:publish": "node scripts/publish-setup.cjs"
   },
   "dependencies": {
     "@tauri-apps/api": "~2.11.1",
