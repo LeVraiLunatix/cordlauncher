@@ -1,6 +1,6 @@
 import { Bell, ChartColumn, ExternalLink, History, House, KeyRound, LayoutGrid, LockKeyhole, LogOut, MonitorSmartphone, RefreshCw, Send, ShieldCheck, Smartphone, UserRound, type LucideIcon } from "lucide-react";
 import { AnimatePresence, motion } from "motion/react";
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import { QrCode } from "../components/apps/QrCode";
 import { GlassButton, GlassCard, Skeleton } from "../components/glass";
 import { clearCord, cordAsset, CordError, cordRequest, refreshCord, useCordAccount, type CordChallenge } from "../lib/account";
@@ -175,8 +175,12 @@ const EMAIL_KEY = "cordlauncher:email";
 const rememberedEmail = () => { try { return localStorage.getItem(EMAIL_KEY) ?? ""; } catch { return ""; } };
 const rememberEmail = (email: string) => { try { if (email) localStorage.setItem(EMAIL_KEY, email); } catch { /* stockage indisponible */ } };
 
-function SignedOut() {
-  const [mode, setMode] = useState<Mode>("login");
+/**
+ * Connexion / création du Compte Cord. `bare` : sans en-tête ni carte, pour
+ * l'intégrer ailleurs (accueil du premier lancement).
+ */
+export function SignedOut({ bare = false, initialMode = "login" }: { bare?: boolean; initialMode?: Mode } = {}) {
+  const [mode, setMode] = useState<Mode>(initialMode);
   const [email, setEmail] = useState(rememberedEmail);
   const [needsOtp, setNeedsOtp] = useState(false);
   const [busy, setBusy] = useState(false);
@@ -214,15 +218,24 @@ function SignedOut() {
 
   const heading = { login: ["Bon retour", "Connecte-toi à ton compte Cord : une identité pour toute la suite."], register: ["Crée ton compte Cord", "Une identité pour toutes les apps de la suite. Gratuit, sans pub, sans pistage."], forgot: ["Mot de passe oublié", "Indique ton adresse : on t’envoie un lien pour en choisir un nouveau."], passcord: ["Connexion avec Passcord", "Reçois la demande sur ton iPhone (ou scanne le code avec l’appareil photo), puis valide avec Face ID dans Passcord."] }[mode];
 
-  return (
+  // Fonction (pas un composant) : sinon le formulaire serait recréé à chaque frappe.
+  const frame = (children: ReactNode) => bare
+    ? <div className="relative z-[3] w-full">{children}</div>
+    : (
+      <>
+        <motion.header variants={itemVariants}>
+          <p className="text-[11.5px] font-semibold tracking-[0.14em] text-fg-subtle uppercase">Un compte, toute la suite</p>
+          <h1 className="mt-1.5 font-display text-[32px] leading-tight font-semibold tracking-[-0.03em]">Ton espace Cord.</h1>
+          <p className="mt-2 text-sm text-fg-muted">Ton identité commune pour Drivecord, Tunecord, Passcord… Et avec Passcord, ton iPhone devient ta clé.</p>
+        </motion.header>
+        <GlassCard variants={itemVariants} className="rounded-[26px] p-7">
+          <div className="relative z-[3] mx-auto max-w-[460px]">{children}</div>
+        </GlassCard>
+      </>
+    );
+
+  return frame(
     <>
-      <motion.header variants={itemVariants}>
-        <p className="text-[11.5px] font-semibold tracking-[0.14em] text-fg-subtle uppercase">Un compte, toute la suite</p>
-        <h1 className="mt-1.5 font-display text-[32px] leading-tight font-semibold tracking-[-0.03em]">Ton espace Cord.</h1>
-        <p className="mt-2 text-sm text-fg-muted">Ton identité commune pour Drivecord, Tunecord, Passcord… Et avec Passcord, ton iPhone devient ta clé.</p>
-      </motion.header>
-      <GlassCard variants={itemVariants} className="rounded-[26px] p-7">
-        <div className="relative z-[3] mx-auto max-w-[460px]">
           <AnimatePresence mode="wait">
             <motion.div key={mode} initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0, transition: springSoft }} exit={{ opacity: 0, y: -6, transition: { duration: 0.15 } }}>
               <h2 className="font-display text-2xl font-semibold tracking-[-0.02em]">{heading[0]}</h2>
@@ -262,9 +275,6 @@ function SignedOut() {
               </div>
             </motion.div>
           </AnimatePresence>
-
-        </div>
-      </GlassCard>
     </>
   );
 }

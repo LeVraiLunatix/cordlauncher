@@ -8,6 +8,7 @@ import { cordSnapshot, publishLauncherStatus, refreshCord } from "./lib/account"
 import { NAVIGATE_EVENT } from "./lib/beta";
 import { refreshIphoneApps, runIphoneAuto } from "./lib/iphone-apps";
 import { runAppUpdates } from "./lib/updates";
+import { Welcome, welcomeDone } from "./components/shell/Welcome";
 import { IphoneView } from "./views/IphoneView";
 import { IphoneInstallSheet } from "./components/apps/IphoneInstallSheet";
 import { AnimatedGradientBackground } from "./components/glass";
@@ -53,8 +54,11 @@ async function boot() {
 
 export default function App() {
   const reduceMotion = useSettings((s) => s.reduceMotion);
-  const [phase, setPhase] = useState<"splash" | "ready">(SKIP_INTRO ? "ready" : "splash");
-  const endSplash = useCallback(() => setPhase("ready"), []);
+  // Premier lancement : l'accueil (compte, dossier, iPhone) avant l'app.
+  const afterSplash = () => (welcomeDone() ? "ready" : "welcome");
+  const [phase, setPhase] = useState<Phase>(SKIP_INTRO ? afterSplash() : "splash");
+  const endSplash = useCallback(() => setPhase(afterSplash()), []);
+  const endWelcome = useCallback(() => setPhase("ready"), []);
 
   useEffect(() => {
     void boot();
@@ -64,14 +68,16 @@ export default function App() {
     <MotionConfig reducedMotion={reduceMotion ? "always" : "user"}>
       <AmbientProvider>
         <LayoutGroup>
-          <Stage phase={phase} onSplashDone={endSplash} />
+          <Stage phase={phase} onSplashDone={endSplash} onWelcomeDone={endWelcome} />
         </LayoutGroup>
       </AmbientProvider>
     </MotionConfig>
   );
 }
 
-function Stage({ phase, onSplashDone }: { phase: "splash" | "ready"; onSplashDone: () => void }) {
+type Phase = "splash" | "welcome" | "ready";
+
+function Stage({ phase, onSplashDone, onWelcomeDone }: { phase: Phase; onSplashDone: () => void; onWelcomeDone: () => void }) {
   const { tint } = useAmbient();
   // La teinte de l'ambiance descend dans tout l'arbre : barre latérale,
   // titres, pastille de navigation se colorent avec l'app sélectionnée.
@@ -86,6 +92,9 @@ function Stage({ phase, onSplashDone }: { phase: "splash" | "ready"; onSplashDon
       <AnimatedGradientBackground />
       <AnimatePresence>
         {phase === "splash" && <SplashIntro key="splash" onDone={onSplashDone} />}
+      </AnimatePresence>
+      <AnimatePresence mode="wait">
+        {phase === "welcome" && <Welcome key="welcome" onDone={onWelcomeDone} />}
       </AnimatePresence>
       {phase === "ready" && <Shell />}
       <Toaster />

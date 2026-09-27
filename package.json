@@ -13,13 +13,14 @@
     "typecheck": "tsc --noEmit",
     "tauri": "tauri",
     "app:dev": "tauri dev",
-    "app:build": "tauri build"
+    "app:build": "tauri build",
+    "setup:build": "node scripts/build-setup.cjs"
   },
   "dependencies": {
-    "@tauri-apps/api": "^2.11.1",
+    "@tauri-apps/api": "~2.11.1",
     "@tauri-apps/plugin-autostart": "^2.5.1",
     "@tauri-apps/plugin-dialog": "^2.7.3",
-    "@tauri-apps/plugin-notification": "^2.5.0",
+    "@tauri-apps/plugin-notification": "~2.4.0",
     "@tauri-apps/plugin-opener": "^2.5.5",
     "lucide-react": "^1.47.0",
     "motion": "^13.4.0",

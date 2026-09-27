@@ -1,0 +1,100 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<title>Installer CordLauncher</title>
+<link rel="stylesheet" href="style.css">
+<script src="app.js" defer></script>
+</head>
+<body>
+<div class="backdrop" aria-hidden="true">
+  <span class="blob a"></span><span class="blob b"></span><span class="blob c"></span><span class="blob d"></span>
+  <span class="grid"></span><span class="grain"></span>
+</div>
+
+<header class="titlebar" data-tauri-drag-region>
+  <div class="brand" data-tauri-drag-region><img src="logos/cordsuite.png" alt=""><span>CordLauncher</span></div>
+  <div class="controls">
+    <button type="button" class="ctl" data-action="minimize" aria-label="Réduire"><svg viewBox="0 0 12 12"><path d="M2 6h8"/></svg></button>
+    <button type="button" class="ctl close" data-action="close" aria-label="Fermer"><svg viewBox="0 0 12 12"><path d="M3 3l6 6M9 3l-6 6"/></svg></button>
+  </div>
+</header>
+
+<main>
+  <!-- Accueil -->
+  <section class="screen" data-screen="welcome">
+    <div class="hero">
+      <div class="orbit" aria-hidden="true">
+        <div class="ring r1"></div><div class="ring r2"></div>
+        <div class="spin">
+          <img src="logos/drivecord.png" alt=""><img src="logos/passcord.png" alt=""><img src="logos/tunecord.png" alt="">
+          <img src="logos/notecord.png" alt=""><img src="logos/linkcord.png" alt=""><img src="logos/bentocord.png" alt="">
+        </div>
+        <div class="glow"></div>
+        <img class="mark" src="logos/cordsuite.png" alt="">
+      </div>
+      <div class="copy">
+        <p class="eyebrow" data-version>Bêta publique</p>
+        <h1>CordLauncher</h1>
+        <p class="lead">Toutes les apps de la suite Cord, installées et tenues à jour pour toi, sur ton PC et ton iPhone.</p>
+        <div class="actions">
+          <button type="button" class="btn primary" data-action="install"><span data-install-label>Installer</span><svg viewBox="0 0 16 16"><path d="M3 8h9M8.5 4.5L12 8l-3.5 3.5"/></svg></button>
+          <button type="button" class="btn ghost" data-action="options" aria-expanded="false">Options</button>
+        </div>
+        <p class="fineprint" data-note>Sans droits administrateur · environ 15 secondes</p>
+      </div>
+    </div>
+
+    <div class="options" data-options hidden>
+      <label class="field">
+        <span class="label">Dossier d’installation</span>
+        <span class="path"><span data-dir></span><button type="button" class="btn small" data-action="browse">Changer…</button></span>
+      </label>
+      <label class="switch"><input type="checkbox" data-shortcut checked><span class="track"><span class="knob"></span></span><span>Raccourci sur le Bureau</span></label>
+      <label class="switch"><input type="checkbox" data-launch checked><span class="track"><span class="knob"></span></span><span>Ouvrir CordLauncher à la fin</span></label>
+    </div>
+  </section>
+
+  <!-- Progression -->
+  <section class="screen" data-screen="progress" hidden>
+    <div class="meter">
+      <svg viewBox="0 0 200 200" aria-hidden="true">
+        <defs><linearGradient id="g" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#6e58f0"/><stop offset="1" stop-color="#b842ec"/></linearGradient></defs>
+        <circle class="track" cx="100" cy="100" r="86"/>
+        <circle class="value" cx="100" cy="100" r="86" data-ring/>
+      </svg>
+      <img class="meter-mark" src="logos/cordsuite.png" alt="">
+      <span class="percent" data-percent>0 %</span>
+    </div>
+    <h2 data-stage>Préparation</h2>
+    <p class="muted">CordLauncher s’installe dans ton profil Windows.</p>
+    <div class="dots" aria-hidden="true"><span></span><span></span><span></span></div>
+  </section>
+
+  <!-- Terminé -->
+  <section class="screen" data-screen="done" hidden>
+    <div class="success" aria-hidden="true">
+      <span class="burst"></span>
+      <svg viewBox="0 0 88 88"><circle cx="44" cy="44" r="38"/><path d="M28 45l11 11 22-24"/></svg>
+    </div>
+    <h2>C’est installé !</h2>
+    <p class="muted">CordLauncher va t’accueillir : ton compte Cord, le dossier de tes apps, ton iPhone. Trois petites étapes.</p>
+    <div class="actions center">
+      <button type="button" class="btn primary" data-action="launch">Ouvrir CordLauncher<svg viewBox="0 0 16 16"><path d="M3 8h9M8.5 4.5L12 8l-3.5 3.5"/></svg></button>
+      <button type="button" class="btn ghost" data-action="close">Fermer</button>
+    </div>
+  </section>
+
+  <!-- Erreur -->
+  <section class="screen" data-screen="error" hidden>
+    <div class="error-mark" aria-hidden="true"><svg viewBox="0 0 48 48"><circle cx="24" cy="24" r="20"/><path d="M24 14v12M24 32v.5"/></svg></div>
+    <h2>L’installation n’a pas abouti</h2>
+    <p class="muted" data-error></p>
+    <div class="actions center">
+      <button type="button" class="btn primary" data-action="retry">Réessayer</button>
+      <button type="button" class="btn ghost" data-action="close">Fermer</button>
+    </div>
+  </section>
+</main>
+</body>
+</html>

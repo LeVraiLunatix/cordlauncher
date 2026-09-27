@@ -190,6 +190,9 @@ export function SettingsView() {
               {checking ? "Recherche…" : "Rechercher une mise à jour"}
             </GlassButton>
           )}
+          <GlassButton variant="ghost" onClick={() => { try { localStorage.removeItem("cordlauncher:welcome-done"); } catch { /* rien */ } window.location.reload(); }}>
+            Revoir l’accueil
+          </GlassButton>
           <GlassButton
             variant="ghost"
             trailingIcon={<ArrowUpRight className="size-4" />}
