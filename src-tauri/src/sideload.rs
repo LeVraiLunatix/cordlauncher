@@ -99,7 +99,7 @@ fn launcher_dir() -> Option<PathBuf> {
 }
 
 fn password_entry(email: &str) -> Result<keyring::Entry, String> {
-    keyring::Entry::new(KEYRING_SERVICE, &profile_key(email)).map_err(|e| format!("Coffre Windows inaccessible : {e}"))
+    keyring::Entry::new(KEYRING_SERVICE, &profile_key(email)).map_err(|e| { log_error(&format!("coffre : {e}")); "Le coffre de Windows est inaccessible : impossible de garder le mot de passe Apple.".to_string() })
 }
 
 fn saved_password(email: &str) -> Option<String> {
@@ -145,7 +145,7 @@ fn save_profiles(index: &ProfileIndex) -> Result<(), String> {
     let dir = launcher_dir().ok_or("Dossier de CordLauncher introuvable.")?;
     std::fs::create_dir_all(&dir).map_err(|e| e.to_string())?;
     let json = serde_json::to_vec_pretty(index).map_err(|e| e.to_string())?;
-    std::fs::write(dir.join("apple-profiles.json"), json).map_err(|e| format!("Profils Apple non enregistrés : {e}"))
+    std::fs::write(dir.join("apple-profiles.json"), json).map_err(|e| { log_error(&format!("profils : {e}")); "Impossible d’enregistrer tes comptes Apple sur ce PC.".to_string() })
 }
 
 /// Erreur isideload lisible : les rapports `rootcause` sont des arbres
@@ -164,9 +164,51 @@ fn short_error(e: impl std::fmt::Display + std::fmt::Debug) -> String {
         if text.is_empty() || location || messages.iter().any(|m| m == text) { continue; }
         messages.push(text.to_string());
     }
-    if messages.is_empty() { return full.trim().to_string(); }
+    if messages.is_empty() { return humanize(full.trim()); }
     messages.truncate(6);
-    messages.join(" → ")
+    humanize(&messages.join(" → "))
+}
+
+/// Traduit les erreurs techniques (isideload, idevice, réseau, Apple) en une
+/// phrase qui dit quoi faire. Le détail complet reste dans le journal.
+pub(crate) fn humanize(chain: &str) -> String {
+    let lower = chain.to_lowercase();
+    let has = |needles: &[&str]| needles.iter().any(|n| lower.contains(n));
+    let message = if has(&["429", "too many requests"]) {
+        "Apple limite les tentatives depuis ce PC. Patiente quelques minutes avant de réessayer."
+    } else if has(&["-22406", "correct password"]) {
+        "Mot de passe Apple incorrect. Vérifie-le et réessaie."
+    } else if has(&["additional authentication", "2fa", "two-factor", "trusted device", "sms"]) {
+        "La vérification en deux étapes d’Apple n’a pas abouti. Réessaie et saisis le nouveau code."
+    } else if has(&["anisette"]) {
+        "Impossible de préparer la connexion à Apple. Vérifie ta connexion Internet, puis réessaie."
+    } else if has(&["pairing file", "pair record", "invalidhostid", "passwordprotected", "not paired", "pairingdialog"]) {
+        "L’iPhone ne fait pas encore confiance à ce PC : déverrouille-le et touche « Se fier »."
+    } else if has(&["developer mode", "developermode"]) {
+        "Active le mode développeur sur l’iPhone (Réglages › Confidentialité et sécurité › Mode développeur), puis réessaie."
+    } else if has(&["maximum number of app", "app id limit", "maximum app id"]) {
+        "Limite d’Apple atteinte : un compte gratuit peut créer 10 identifiants d’app par semaine. Réessaie dans quelques jours, ou utilise un autre compte Apple."
+    } else if has(&["certificate"]) && has(&["max", "limit", "too many"]) {
+        "Ton compte Apple a déjà trop de certificats actifs. Réinitialise l’appareil Apple dans CordLauncher ou attends leur expiration."
+    } else if has(&["device lockdown", "socket io", "early eof", "connection refused", "connection reset", "no such device", "device not found", "broken pipe"]) {
+        "Impossible de joindre l’iPhone. Déverrouille-le et vérifie le câble, ou qu’il est sur le même Wi-Fi que ce PC."
+    } else if has(&["extract application archive", "open application archive", "invalid zip", "info.plist"]) {
+        "Le fichier de l’app semble abîmé. Retélécharge-le et réessaie."
+    } else if has(&["install app on device", "installation_proxy", "applicationverificationfailed"]) {
+        "L’iPhone a refusé l’installation. Déverrouille-le, vérifie qu’il reste de la place, puis réessaie."
+    } else if has(&["error sending request", "dns error", "failed to lookup", "timed out", "connect error", "tls handshake"]) {
+        "Apple est injoignable pour le moment. Vérifie ta connexion Internet, puis réessaie."
+    } else if has(&["log in to apple id", "login again", "srp"]) {
+        "Connexion au compte Apple impossible. Vérifie l’adresse et le mot de passe, puis réessaie."
+    } else if has(&["developer request", "list developer", "provisioning profile", "app token", "url bag", "grandslam"]) {
+        "Apple n’a pas répondu comme prévu. Réessaie dans un instant."
+    } else if chain.is_ascii() {
+        // Anglais technique inconnu : on ne l'affiche pas tel quel.
+        "Quelque chose s’est mal passé avec l’iPhone. Réessaie ; si ça recommence, le détail est dans le journal de CordLauncher."
+    } else {
+        return chain.to_string();
+    };
+    message.to_string()
 }
 
 fn log_error(detail: &str) {
@@ -296,14 +338,13 @@ async fn login(app: &AppHandle, email: String, password: String) -> Result<Apple
         let _ = app.emit(SIGNED_IN_EVENT, &email);
     }
     if let Err(message) = &result {
-        if message.contains("429") || message.contains("Too Many Requests") {
+        if message.contains("429") || message.contains("Too Many Requests") || message.starts_with("Apple limite les tentatives") {
             // isideload 0.4 a déjà relancé 10 fois chaque requête : les serveurs d'Apple
             // refusent en rafale depuis le 2026-09-10, on laisse passer 10 minutes.
             let seconds = 10 * 60;
             set_apple_cooldown(&email, seconds);
             return Err(format!(
-                "Les serveurs d'Apple refusent les connexions en ce moment (erreur 429, qui touche tous les outils de sideload). \
-                 CordLauncher a déjà réessayé 10 fois : réessaie dans {}.",
+                "Apple refuse les connexions pour le moment (trop de tentatives). CordLauncher a déjà réessayé plusieurs fois : réessaie dans {}.",
                 duration_fr(seconds)
             ));
         }
@@ -386,7 +427,7 @@ pub async fn apple_login(
     state.connected.lock().unwrap().insert(profile_key(&email));
 
     if remember {
-        password_entry(&email)?.set_password(&password).map_err(|e| format!("Coffre Windows inaccessible : {e}"))?;
+        password_entry(&email)?.set_password(&password).map_err(|e| { log_error(&format!("coffre : {e}")); "Le coffre de Windows est inaccessible : impossible de garder le mot de passe Apple.".to_string() })?;
     } else {
         forget_password(&email);
     }
@@ -412,7 +453,7 @@ pub async fn apple_reset_device(state: State<'_, AppleState>) -> Result<(), Stri
     state.connected.lock().unwrap().clear();
     match keyring::Entry::new("isideload", "anisette_state").and_then(|e| e.delete_credential()) {
         Ok(()) | Err(keyring::Error::NoEntry) => {}
-        Err(e) => return Err(format!("Coffre Windows inaccessible : {e}")),
+        Err(e) => { log_error(&format!("coffre : {e}")); return Err("Le coffre de Windows est inaccessible.".into()) }
     }
     let dir = std::env::var_os("LOCALAPPDATA").map(|d| std::path::PathBuf::from(d).join("app.cordsuite.launcher"));
     for entry in dir.and_then(|d| std::fs::read_dir(d).ok()).into_iter().flatten().flatten() {
@@ -594,7 +635,7 @@ pub async fn iphone_sideload(
             .await?;
             (dest, true)
         }
-        (None, None) => return Err("Aucune app à installer : fournis une URL ou un fichier .ipa.".into()),
+        (None, None) => return Err("Aucune app à installer.".into()),
     };
 
     // 2 + 3. Signature et envoi, sur un fil dédié. Le compte y part et revient.

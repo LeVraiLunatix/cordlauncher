@@ -1,9 +1,9 @@
-import { Bell, ChartColumn, ExternalLink, History, House, KeyRound, LayoutGrid, LockKeyhole, LogOut, MonitorSmartphone, RefreshCw, Send, Server, ShieldCheck, Smartphone, UserRound, type LucideIcon } from "lucide-react";
+import { Bell, ChartColumn, ExternalLink, History, House, KeyRound, LayoutGrid, LockKeyhole, LogOut, MonitorSmartphone, RefreshCw, Send, ShieldCheck, Smartphone, UserRound, type LucideIcon } from "lucide-react";
 import { AnimatePresence, motion } from "motion/react";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { QrCode } from "../components/apps/QrCode";
 import { GlassButton, GlassCard, Skeleton } from "../components/glass";
-import { clearCord, cordAsset, CordError, cordRequest, refreshCord, setCordServer, useCordAccount, type CordChallenge } from "../lib/account";
+import { clearCord, cordAsset, CordError, cordRequest, refreshCord, useCordAccount, type CordChallenge } from "../lib/account";
 import { cn } from "../lib/cn";
 import { itemVariants, springSoft, viewVariants } from "../lib/motion";
 import { IS_TAURI, openExternal } from "../lib/platform";
@@ -50,7 +50,6 @@ export function AccountView() {
   return (
     <motion.div variants={viewVariants} initial="hidden" animate="show" exit="exit" className="mx-auto flex w-full max-w-[920px] flex-col gap-5 px-8 pt-4 pb-14">
       {loading && !account.user ? <LoadingState /> : account.user && account.dashboard ? <SignedIn /> : <SignedOut />}
-      <ServerSettings />
     </motion.div>
   );
 }
@@ -263,7 +262,7 @@ function SignedOut() {
               </div>
             </motion.div>
           </AnimatePresence>
-          {!IS_TAURI && <p className="mt-4 text-sm text-fg-muted">La session du launcher utilise le coffre Windows. Dans cet aperçu, ouvre le portail Cord pour essayer le compte.</p>}
+
         </div>
       </GlassCard>
     </>
@@ -362,19 +361,4 @@ function PasscordLogin({ email, onEmail, onDone, onCancel }: { email: string; on
   );
 }
 
-function ServerSettings() {
-  const account = useCordAccount();
-  const [server, setServer] = useState(account.server);
-  return (
-    <GlassCard variants={itemVariants} className="rounded-[22px] p-5">
-      <details className="relative z-[3]">
-        <summary className="flex cursor-pointer items-center gap-2 text-sm font-medium text-fg-muted"><Server className="size-4" />Serveur Compte Cord <span className="font-mono text-[12px] text-fg-subtle">{account.server.replace(/^https?:\/\//, "")}</span></summary>
-        <p className="mt-3 text-xs text-fg-muted">Par défaut : compte.cordsuite.app. En développement, un service local peut tourner sur le port 4319.</p>
-        <form className="mt-3 flex gap-2" onSubmit={e => { e.preventDefault(); try { setCordServer(server); } catch (err) { toast({ tone: "error", title: "Adresse refusée", description: (err as Error).message }); } }}>
-          <input className="cord-input" type="url" required aria-label="Adresse du service Compte Cord" value={server} onChange={e => setServer(e.target.value)} placeholder="https://compte.cordsuite.app" />
-          <GlassButton type="submit" variant="glass">Utiliser</GlassButton>
-        </form>
-      </details>
-    </GlassCard>
-  );
-}
+

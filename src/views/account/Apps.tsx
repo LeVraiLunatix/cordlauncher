@@ -17,7 +17,7 @@ const SCOPES: Record<string, { label: string; icon: typeof IdCard }> = {
   profile: { label: "Nom et photo", icon: UserRound },
   email: { label: "Adresse email", icon: AtSign },
 };
-const STATUS = { live: ["ok", "En ligne"], beta: ["warn", "En développement"], soon: ["muted", "Bientôt"] } as const;
+const STATUS = { live: ["ok", "En ligne"], beta: ["warn", "En préparation"], soon: ["muted", "Bientôt"] } as const;
 
 export function Apps() {
   const { d, reload, openModal } = useAccount();
@@ -85,7 +85,7 @@ export function Apps() {
                   </div>
                 </div>
                 <p className="text-[13px] leading-snug text-fg-muted">{app.description}</p>
-                {/* Sous la description : à côté du logo, « En développement » débordait des tuiles étroites. */}
+                {/* Sous la description : à côté du logo, le statut débordait des tuiles étroites. */}
                 <div><Pill tone={tone}>{label}</Pill></div>
               </div>
             </GlassCard>

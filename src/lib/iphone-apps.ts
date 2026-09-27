@@ -1,6 +1,7 @@
 import { invoke } from "@tauri-apps/api/core";
 import { appleSnapshot, canInstall, refreshApple, sideloadIphone, type IphoneDevice } from "./apple";
 import { cordSnapshot } from "./account";
+import { notifyDesktop } from "./notify";
 import { betaDownload, betaInfo, hasBeta } from "./beta";
 import type { CatalogApp } from "./catalog/types";
 import { IS_TAURI } from "./platform";
@@ -128,7 +129,7 @@ const deviceName = (app: IphoneApp) => store.get().devices.find(d => d.udid === 
 
 /** Re-signe et réinstalle l'app avec l'IPA gardée : 7 jours de plus en compte gratuit. */
 export async function renewIphoneApp(app: IphoneApp, quiet = false): Promise<boolean> {
-  if (!app.ipa) throw new Error("L’IPA de cette app n’a pas été gardée : réinstalle-la depuis sa fiche.");
+  if (!app.ipa) throw new Error("Le fichier de cette app n’a pas été gardé sur ce PC : réinstalle-la depuis sa fiche.");
   const ok = await sideloadIphone(app.id, app.name, { ipaPath: app.ipa }, app.udid, deviceName(app), { quiet });
   await refreshIphoneApps();
   return ok;
@@ -316,14 +317,7 @@ async function autoPass() {
 const REMINDED_KEY = "cordlauncher:iphone-reminded";
 const reminded = (): string[] => { try { return JSON.parse(localStorage.getItem(REMINDED_KEY) ?? "[]"); } catch { return []; } };
 
-/** Notification Windows (CordLauncher peut être réduit dans la zone de notification). */
-async function notifyDesktop(title: string, body: string) {
-  try {
-    const { isPermissionGranted, requestPermission, sendNotification } = await import("@tauri-apps/plugin-notification");
-    if (!(await isPermissionGranted()) && (await requestPermission()) !== "granted") return;
-    sendNotification({ title, body });
-  } catch { /* notifications indisponibles */ }
-}
+
 
 function leftLabel(ms: number) {
   const h = Math.max(1, Math.round(ms / 3_600_000));

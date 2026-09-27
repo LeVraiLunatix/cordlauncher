@@ -204,7 +204,7 @@ fn emit(app: &AppHandle, id: &str, phase: &str, received: u64, total: u64) {
 
 fn downloads_dir() -> Result<PathBuf, String> {
     let dir = std::env::temp_dir().join("CordLauncher");
-    std::fs::create_dir_all(&dir).map_err(|e| format!("Dossier temporaire inaccessible : {e}"))?;
+    std::fs::create_dir_all(&dir).map_err(|e| { eprintln!("[apps] temp : {e}"); "Windows refuse l’accès au dossier temporaire. Libère un peu de place, puis réessaie.".to_string() })?;
     Ok(dir)
 }
 
@@ -232,15 +232,15 @@ pub(crate) async fn download(
         .get(url)
         .send()
         .await
-        .map_err(|e| format!("Téléchargement impossible : {e}"))?;
+        .map_err(|e| { eprintln!("[apps] téléchargement : {e}"); "Téléchargement impossible : vérifie ta connexion Internet, puis réessaie.".to_string() })?;
     if !res.status().is_success() {
-        return Err(format!("Le serveur a répondu {}.", res.status()));
+        return Err(format!("Le téléchargement a échoué (code {}). Réessaie dans un moment.", res.status().as_u16()));
     }
     let total = res.content_length().or(expected_size).unwrap_or(0);
 
     let mut file = tokio::fs::File::create(dest)
         .await
-        .map_err(|e| format!("Écriture impossible : {e}"))?;
+        .map_err(|e| { eprintln!("[apps] écriture : {e}"); "Impossible d’enregistrer le fichier : vérifie qu’il reste de la place sur le disque.".to_string() })?;
     let mut hasher = Sha256::new();
     let mut received: u64 = 0;
     let mut last_emit = Instant::now() - Duration::from_secs(1);
@@ -252,9 +252,9 @@ pub(crate) async fn download(
             let _ = tokio::fs::remove_file(dest).await;
             return Err("__cancelled__".into());
         }
-        let chunk = chunk.map_err(|e| format!("Connexion interrompue : {e}"))?;
+        let chunk = chunk.map_err(|e| { eprintln!("[apps] téléchargement : {e}"); "Le téléchargement s’est interrompu. Vérifie ta connexion, puis réessaie.".to_string() })?;
         hasher.update(&chunk);
-        file.write_all(&chunk).await.map_err(|e| format!("Écriture impossible : {e}"))?;
+        file.write_all(&chunk).await.map_err(|e| { eprintln!("[apps] écriture : {e}"); "Impossible d’enregistrer le fichier : vérifie qu’il reste de la place sur le disque.".to_string() })?;
         received += chunk.len() as u64;
         if last_emit.elapsed() >= Duration::from_millis(100) {
             on_progress(received, total);
@@ -293,7 +293,7 @@ fn run_installer(path: &Path, req: &InstallRequest) -> Result<i32, String> {
         if e.raw_os_error() == Some(740) {
             "Cet installateur demande des droits administrateur, ce que CordLauncher ne fait pas.".to_string()
         } else {
-            format!("Impossible de lancer l'installateur : {e}")
+            { eprintln!("[apps] installateur : {e}"); "Windows n’a pas pu lancer l’installation. Réessaie ; si ça recommence, redémarre le PC.".to_string() }
         }
     })?;
 
@@ -405,7 +405,7 @@ pub fn app_uninstall(uninstall_key: String) -> Result<(), String> {
         c.arg("/S");
         c
     };
-    cmd.spawn().map_err(|e| format!("Impossible de lancer le désinstalleur : {e}"))?;
+    cmd.spawn().map_err(|e| { eprintln!("[apps] désinstalleur : {e}"); "Windows n’a pas pu lancer la désinstallation.".to_string() })?;
 
     let started = Instant::now();
     while read_uninstall_entry(&uninstall_key).is_some() {
@@ -430,7 +430,7 @@ pub fn app_launch(exe: String) -> Result<(), String> {
     // Détaché : l'app vit sa vie même si CordLauncher se ferme.
     #[cfg(windows)]
     cmd.creation_flags(0x0000_0008 /* DETACHED_PROCESS */ | 0x0000_0200 /* CREATE_NEW_PROCESS_GROUP */);
-    cmd.spawn().map(|_| ()).map_err(|e| format!("Lancement impossible : {e}"))
+    cmd.spawn().map(|_| ()).map_err(|e| { eprintln!("[apps] lancement : {e}"); "Impossible d’ouvrir l’app. Réinstalle-la si le problème continue.".to_string() })
 }
 
 #[cfg(test)]
@@ -446,4 +446,26 @@ mod tests {
         assert!(validate_id("drivecord-desktop").is_ok());
         for id in ["", "..", "../setup", "a\\b", "C:setup", "a/b"] { assert!(validate_id(id).is_err()); }
     }
+}
+
+/// Met CordLauncher à jour : télécharge l'installateur de la nouvelle version
+/// (empreinte vérifiée), le lance, puis ferme CordLauncher pour qu'il puisse
+/// remplacer les fichiers.
+#[tauri::command]
+pub async fn launcher_update(app: AppHandle, url: String, sha256: Option<String>) -> Result<(), String> {
+    let dest = downloads_dir()?.join("CordLauncher-mise-a-jour.exe");
+    let cancel = AtomicBool::new(false);
+    let emitter = app.clone();
+    let hash = download(&url, None, &dest, &cancel, move |received, total| emit(&emitter, "cordlauncher", "downloading", received, total)).await?;
+    if let Some(expected) = sha256.filter(|s| !s.is_empty()) {
+        if !hash.eq_ignore_ascii_case(&expected) {
+            let _ = std::fs::remove_file(&dest);
+            return Err("Le fichier téléchargé est incomplet ou modifié : mise à jour annulée.".into());
+        }
+    }
+    std::process::Command::new(&dest)
+        .spawn()
+        .map_err(|e| { eprintln!("[apps] mise à jour : {e}"); "Windows n’a pas pu lancer la mise à jour.".to_string() })?;
+    app.exit(0);
+    Ok(())
 }

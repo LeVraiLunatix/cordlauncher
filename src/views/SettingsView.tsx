@@ -21,24 +21,43 @@ import { IS_TAURI, openExternal, pickFolder } from "../lib/platform";
 import { AppleAccount } from "../components/apps/AppleAccount";
 import { updateSettings, useSettings, type ThemePref } from "../lib/settings";
 import { toast } from "../lib/toast";
+import type { LauncherRelease } from "../lib/catalog/types";
+import { checkLauncherUpdate, installLauncherUpdate } from "../lib/updates";
 
 /**
- * Réglages. Apparence et animations agissent tout de suite ; démarrage et
- * mises à jour mémorisent le choix, branché sur les plugins Tauri à l'étape
- * suivante (cf. lib/settings.ts).
+ * Réglages. Apparence et animations agissent tout de suite ; « Lancer avec
+ * Windows » passe par le plugin autostart ; les mises à jour des apps sont
+ * vérifiées au lancement puis toutes les 10 minutes (lib/updates.ts).
  */
 export function SettingsView() {
   const s = useSettings((x) => x);
   const [checking, setChecking] = useState(false);
+  const [release, setRelease] = useState<LauncherRelease | null>(null);
+  const [installing, setInstalling] = useState(false);
 
-  // Simulé tant que tauri-plugin-updater n'est pas branché (étape suivante) :
-  // la 0.1.0 est la seule version publiée, « à jour » est donc exact.
-  const checkNow = () => {
+  const checkNow = async () => {
     setChecking(true);
-    setTimeout(() => {
-      setChecking(false);
-      toast({ tone: "ok", title: "CordLauncher est à jour", description: `Version ${LAUNCHER_VERSION}` });
-    }, 1400);
+    const result = await checkLauncherUpdate();
+    setChecking(false);
+    if (result.status === "available") {
+      setRelease(result.release);
+      toast({ tone: "info", title: `CordLauncher ${result.release.version} est disponible`, description: result.release.notes ?? "Installe-la quand tu veux, en un clic." });
+    } else if (result.status === "latest") {
+      setRelease(null);
+      toast({ tone: "ok", title: "CordLauncher est à jour", description: `Tu as la dernière version (${LAUNCHER_VERSION}).` });
+    } else {
+      toast({ tone: "error", title: "Vérification impossible", description: "Pas de connexion au Compte Cord pour le moment. Réessaie plus tard." });
+    }
+  };
+  const install = async () => {
+    if (!release) return;
+    setInstalling(true);
+    try {
+      await installLauncherUpdate(release);
+    } catch (error) {
+      setInstalling(false);
+      toast({ tone: "error", title: "Mise à jour impossible", description: String(error) });
+    }
   };
 
   return (
@@ -121,8 +140,8 @@ export function SettingsView() {
       <Group title="Mises à jour">
         <Row
           icon={BellRing}
-          title="Vérifier automatiquement"
-          description="À chaque lancement de CordLauncher, en arrière-plan."
+          title="Me prévenir des mises à jour"
+          description="CordLauncher vérifie tes apps Windows en arrière-plan et te prévient quand une nouvelle version sort."
         >
           <GlassToggle
             label="Vérifier automatiquement les mises à jour"
@@ -132,8 +151,8 @@ export function SettingsView() {
         </Row>
         <Row
           icon={RefreshCw}
-          title="Installer sans demander"
-          description="Les mises à jour des apps s'installent dès qu'elles sont prêtes."
+          title="Les installer toutes seules"
+          description="Les nouvelles versions s’installent dès qu’elles sortent, sans te demander."
         >
           <GlassToggle
             label="Installer les mises à jour sans demander"
@@ -154,17 +173,23 @@ export function SettingsView() {
         <img src="/logos/cordsuite.png" alt="" draggable={false} className="relative z-[3] size-14 rounded-[16px]" />
         <div className="relative z-[3] flex-1">
           <p className="font-display text-[17px] font-semibold">CordLauncher</p>
-          <p className="font-mono text-[12px] text-fg-subtle">Version {LAUNCHER_VERSION} · canal stable</p>
+          <p className="font-mono text-[12px] text-fg-subtle">Version {LAUNCHER_VERSION} · bêta publique</p>
         </div>
         <div className="relative z-[3] flex gap-2">
-          <GlassButton
-            variant="glass"
-            icon={<RefreshCw className={checking ? "size-4 animate-spin" : "size-4"} />}
-            disabled={checking}
-            onClick={checkNow}
-          >
-            {checking ? "Recherche…" : "Rechercher une mise à jour"}
-          </GlassButton>
+          {release ? (
+            <GlassButton variant="primary" icon={<ArrowUpRight className="size-4" />} disabled={installing} onClick={() => void install()}>
+              {installing ? "Téléchargement…" : `Installer la ${release.version}`}
+            </GlassButton>
+          ) : (
+            <GlassButton
+              variant="glass"
+              icon={<RefreshCw className={checking ? "size-4 animate-spin" : "size-4"} />}
+              disabled={checking || !IS_TAURI}
+              onClick={() => void checkNow()}
+            >
+              {checking ? "Recherche…" : "Rechercher une mise à jour"}
+            </GlassButton>
+          )}
           <GlassButton
             variant="ghost"
             trailingIcon={<ArrowUpRight className="size-4" />}

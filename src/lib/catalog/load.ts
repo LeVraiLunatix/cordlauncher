@@ -4,17 +4,16 @@ import type { AppStatus, Catalog, CatalogApp } from "./types";
 /**
  * Chargement du catalogue.
  *
- * Aujourd'hui : `/apps.json`, servi par Vite en dev et embarqué dans l'exe en
- * prod (dossier `public/`). Le jour où l'API existe, il suffit de poser
- * `VITE_CATALOG_URL=https://cordsuite.app/api/apps.json` — le reste du code
- * ne change pas.
+ * Source : le Compte Cord (`/api/catalog`), pour publier une nouvelle version
+ * d'une app sans redistribuer CordLauncher. `VITE_CATALOG_URL` la remplace.
  *
- * Ordre de repli : source configurée → dernière copie valide en cache →
- * maquette embarquée. L'app affiche donc toujours la suite, même hors-ligne.
+ * Ordre de repli : source en ligne → dernière copie valide en cache → copie
+ * embarquée dans l'exe (`public/apps.json`). L'app affiche donc toujours la
+ * suite, même hors ligne.
  */
 
 const BUNDLED_URL = "/apps.json";
-export const CATALOG_URL = import.meta.env.VITE_CATALOG_URL || BUNDLED_URL;
+export const CATALOG_URL = import.meta.env.VITE_CATALOG_URL || "https://compte.cordsuite.app/api/catalog";
 const CACHE_KEY = "cordlauncher:catalog-cache";
 const FETCH_TIMEOUT_MS = 8000;
 
@@ -85,7 +84,8 @@ export function normalizeCatalog(raw: unknown, baseUrl: string): Catalog {
   }
   // Tri stable : dispo → bêta → bientôt, ordre du fichier ensuite.
   apps.sort((x, y) => STATUS_RANK[x.status] - STATUS_RANK[y.status]);
-  return { schemaVersion: 1, generatedAt: input.generatedAt, featured: input.featured, apps };
+  const launcher = input.launcher && typeof input.launcher.version === "string" ? input.launcher : undefined;
+  return { schemaVersion: 1, generatedAt: input.generatedAt, featured: input.featured, launcher, apps };
 }
 
 async function fetchCatalog(url: string): Promise<Catalog> {
@@ -94,7 +94,9 @@ async function fetchCatalog(url: string): Promise<Catalog> {
   try {
     const res = await fetch(url, { signal: ctrl.signal, cache: "no-cache" });
     if (!res.ok) throw new Error(`HTTP ${res.status}`);
-    return normalizeCatalog(await res.json(), url);
+    // Les images relatives (« /logos/… ») sont embarquées dans l'exe : on les
+    // résout localement, même quand le catalogue vient du Compte Cord.
+    return normalizeCatalog(await res.json(), BUNDLED_URL);
   } finally {
     clearTimeout(timer);
   }
@@ -103,7 +105,7 @@ async function fetchCatalog(url: string): Promise<Catalog> {
 function readCache(): Catalog | null {
   try {
     const raw = localStorage.getItem(CACHE_KEY);
-    return raw ? normalizeCatalog(JSON.parse(raw), CATALOG_URL) : null;
+    return raw ? normalizeCatalog(JSON.parse(raw), BUNDLED_URL) : null;
   } catch {
     return null;
   }

@@ -86,7 +86,7 @@ export function Profile() {
           <Field label="Adresse email" hint={u.emailVerified ? <span className="inline-flex items-center gap-1 text-ok"><BadgeCheck className="size-3.5" />Email vérifié</span> : "Pas encore confirmée : utilise la bannière en haut de page."}>
             <div className="flex gap-2"><input className="cord-input" value={u.email} readOnly aria-label="Adresse email" /><GlassButton icon={<Send className="size-3.5" />} onClick={changeEmail}>Modifier</GlassButton></div>
           </Field>
-          <Field label="Identifiant Cord" hint="Identifiant permanent partagé avec les apps connectées (« sub » OIDC).">
+          <Field label="Identifiant Cord" hint="Ton identifiant permanent : c’est lui que voient les apps connectées, jamais ton mot de passe.">
             <div className="flex items-center gap-2 rounded-[12px] bg-[var(--control)] px-3 py-2 ring-1 ring-inset ring-[var(--line)]">
               <code className="flex-1 truncate font-mono text-[12.5px]">{u.id}</code>
               <GlassButton size="icon-sm" variant="ghost" aria-label="Copier l’identifiant" onClick={() => void navigator.clipboard.writeText(u.id).then(() => toast({ tone: "ok", title: "Identifiant copié" }))}><Copy className="size-3.5" /></GlassButton>

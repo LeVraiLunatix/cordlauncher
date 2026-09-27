@@ -88,6 +88,7 @@ pub fn run() {
             iphone_apps::iphone_device_bundles,
             iphone_apps::iphone_app_adopt,
             sideload::iphone_set_wifi,
+            apps::launcher_update,
         ])
         .setup(|app| {
             let handle = app.handle().clone();

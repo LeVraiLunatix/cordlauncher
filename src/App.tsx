@@ -7,6 +7,7 @@ import { BetaKeySheet } from "./components/apps/BetaKeySheet";
 import { cordSnapshot, publishLauncherStatus, refreshCord } from "./lib/account";
 import { NAVIGATE_EVENT } from "./lib/beta";
 import { refreshIphoneApps, runIphoneAuto } from "./lib/iphone-apps";
+import { runAppUpdates } from "./lib/updates";
 import { IphoneView } from "./views/IphoneView";
 import { IphoneInstallSheet } from "./components/apps/IphoneInstallSheet";
 import { AnimatedGradientBackground } from "./components/glass";
@@ -41,7 +42,10 @@ async function boot() {
   // iPhone : nouvelles versions et renouvellements automatiques (si activés),
   // au lancement puis toutes les 10 minutes (dès que l'iPhone est branché).
   if (catalog) {
-    const tick = () => void runIphoneAuto(catalog.apps, cordSnapshot().user).catch(() => {});
+    const tick = () => {
+      void runIphoneAuto(catalog.apps, cordSnapshot().user).catch(() => {});
+      void runAppUpdates(catalog.apps).catch(() => {});
+    };
     tick();
     setInterval(tick, 10 * 60_000);
   }

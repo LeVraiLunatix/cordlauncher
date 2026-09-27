@@ -47,7 +47,7 @@ export function InstallSheet() {
       </label>
       <GlassButton variant="glass" icon={<FolderOpen className="size-4" />} disabled={!IS_TAURI} onClick={() => void browse()}>Parcourir…</GlassButton>
       <div className="flex items-center justify-between text-sm"><span>Créer un raccourci sur le Bureau</span><GlassToggle label="Créer un raccourci" checked={shortcut} onChange={desktopShortcut => updateSettings({ desktopShortcut })} /></div>
-      {!IS_TAURI && <p className="text-xs text-fg-muted">Aperçu navigateur : l’installation est simulée. Utilise l’application Windows pour installer réellement.</p>}
+
       <div className="flex justify-end gap-2"><GlassButton variant="glass" onClick={close}>Annuler</GlassButton><GlassButton variant="primary" disabled={!ready} onClick={() => { close(); void installApp(app, folder.trim() || null); }}>Installer</GlassButton></div>
     </div>}
   </GlassModal>;

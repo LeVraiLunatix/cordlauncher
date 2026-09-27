@@ -20,7 +20,7 @@ const NAV: { id: Route; label: string; icon: LucideIcon }[] = [
   { id: "settings", label: "Réglages", icon: Settings2 },
 ];
 
-export const LAUNCHER_VERSION = "0.1.0";
+export const LAUNCHER_VERSION = __APP_VERSION__;
 
 type SidebarProps = {
   route: Route;

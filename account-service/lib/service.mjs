@@ -10,6 +10,7 @@ import { renderMail } from './mail.mjs';
 import { SUITE, describeClient } from './catalog.mjs';
 import { BETA_PRODUCTS, generateBetaCode, githubReleases, normalizeBetaCode } from './beta.mjs';
 import { generateVapidKeys, sendPush } from './push.mjs';
+import { CATALOG } from './catalog-apps.mjs';
 
 /**
  * Cœur du service Compte Cord — sans dépendance à un moteur de base précis.
@@ -839,6 +840,16 @@ export function createService({
       const url = new URL(req.url, issuer);
       const path = url.pathname;
       const method = req.method;
+      // Catalogue public de la suite, lu par CordLauncher (fenêtre d'une autre origine).
+      if (path === '/api/catalog' && ['GET', 'HEAD', 'OPTIONS'].includes(method)) {
+        res.setHeader('Access-Control-Allow-Origin', '*');
+        res.setHeader('Cache-Control', 'public, max-age=300');
+        if (method === 'OPTIONS') {
+          res.writeHead(204);
+          return res.end();
+        }
+        return json(CATALOG);
+      }
       if (req.headers.origin && req.headers.origin !== issuer) throw error(403, 'Origine refusée.');
 
       if (method === 'GET' || method === 'HEAD') {

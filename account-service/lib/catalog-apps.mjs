@@ -1,5 +1,5 @@
-{
-  "$schema": "./apps.schema.json",
+// Catalogue de la suite — généré par scripts/sync-catalog.cjs depuis cordlauncher/public/apps.json, ne pas éditer.
+export const CATALOG = {
   "schemaVersion": 1,
   "launcher": {
     "version": "0.1.0",
@@ -20,10 +20,22 @@
       "downloadUrl": "https://github.com/LeVraiLunatix/drivecord-desktop/releases/download/v0.2.0/Drivecord-Setup-x64.exe",
       "downloadSize": 4636975,
       "sha256": "60f13a44215d60c1e45113e7f0eca8724b1d29b933f5e97e19d81a28db88bc71",
-      "installer": { "type": "nsis", "silentArgs": ["/S"], "scope": "user" },
-      "detect": { "uninstallKey": "Drivecord", "exe": "drivecord-desktop.exe" },
+      "installer": {
+        "type": "nsis",
+        "silentArgs": [
+          "/S"
+        ],
+        "scope": "user"
+      },
+      "detect": {
+        "uninstallKey": "Drivecord",
+        "exe": "drivecord-desktop.exe"
+      },
       "icon": "/logos/drivecord.png",
-      "iconGradient": ["#6D64F2", "#C64BF1"],
+      "iconGradient": [
+        "#6D64F2",
+        "#C64BF1"
+      ],
       "website": "https://drivecord.app",
       "requirements": "Windows 10 et 11, 64 bits",
       "ios": {
@@ -76,7 +88,10 @@
       "longDescription": "Un gestionnaire de mots de passe chiffré de bout en bout, taillé pour l'iPhone. Tes secrets restent tes secrets : la clé ne quitte jamais ton appareil. Passcord est en bêta fermée — inscris-toi pour faire partie des premiers testeurs.",
       "status": "closed-beta",
       "icon": "/logos/passcord.png",
-      "iconGradient": ["#126A84", "#1CC3E0"],
+      "iconGradient": [
+        "#126A84",
+        "#1CC3E0"
+      ],
       "website": "https://cordsuite.app/bientot/passcord",
       "betaUrl": "https://cordsuite.app/bientot/passcord",
       "eta": "courant novembre 2026",
@@ -100,7 +115,10 @@
       "longDescription": "Héberge et diffuse tes podcasts : flux RSS, stats d'écoute, tout au même endroit — sans plateforme au milieu. Une refonte complète est en cours ; l'app Windows arrivera ensuite.",
       "status": "coming-soon",
       "icon": "/logos/tunecord.png",
-      "iconGradient": ["#BD2F98", "#F65D63"],
+      "iconGradient": [
+        "#BD2F98",
+        "#F65D63"
+      ],
       "website": "https://tunecord.vercel.app"
     },
     {
@@ -110,7 +128,10 @@
       "description": "Des notes qui s'ouvrent vite, se synchronisent partout et se chiffrent en silence.",
       "status": "coming-soon",
       "icon": "/logos/notecord.png",
-      "iconGradient": ["#EB981F", "#EF6327"],
+      "iconGradient": [
+        "#EB981F",
+        "#EF6327"
+      ],
       "website": "https://cordsuite.app/bientot/notecord"
     },
     {
@@ -120,7 +141,10 @@
       "description": "Raccourcis de liens et une page « tous mes liens » qui ne te piste pas au passage.",
       "status": "coming-soon",
       "icon": "/logos/linkcord.png",
-      "iconGradient": ["#19A684", "#37CC94"],
+      "iconGradient": [
+        "#19A684",
+        "#37CC94"
+      ],
       "website": "https://cordsuite.app/bientot/linkcord"
     },
     {
@@ -130,7 +154,10 @@
       "description": "Une page de profil modulaire, façon grille bento — tes projets, tes liens, tes stats.",
       "status": "coming-soon",
       "icon": "/logos/bentocord.png",
-      "iconGradient": ["#F16C8E", "#F9A159"],
+      "iconGradient": [
+        "#F16C8E",
+        "#F9A159"
+      ],
       "website": "https://cordsuite.app/bientot/bentocord"
     },
     {
@@ -140,7 +167,10 @@
       "description": "Des go-links mémorisables : tape un mot, atterris sur le bon outil.",
       "status": "coming-soon",
       "icon": "/logos/gocord.png",
-      "iconGradient": ["#1E8FDC", "#1E61DC"],
+      "iconGradient": [
+        "#1E8FDC",
+        "#1E61DC"
+      ],
       "website": "https://cordsuite.app/bientot/gocord"
     },
     {
@@ -150,7 +180,10 @@
       "description": "Quiz et blind-tests multijoueurs en temps réel — pour les soirées Discord qui dérapent gentiment.",
       "status": "coming-soon",
       "icon": "/logos/quizcord.png",
-      "iconGradient": ["#F9B322", "#F16F38"],
+      "iconGradient": [
+        "#F9B322",
+        "#F16F38"
+      ],
       "website": "https://cordsuite.app/bientot/quizcord"
     },
     {
@@ -160,8 +193,11 @@
       "description": "Suivre son budget sans confier son historique bancaire à une app qui le revend.",
       "status": "coming-soon",
       "icon": "/logos/budgetcord.png",
-      "iconGradient": ["#1C9856", "#0C6340"],
+      "iconGradient": [
+        "#1C9856",
+        "#0C6340"
+      ],
       "website": "https://cordsuite.app/bientot/budgetcord"
     }
   ]
-}
+};

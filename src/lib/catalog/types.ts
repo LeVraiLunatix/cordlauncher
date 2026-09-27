@@ -105,9 +105,19 @@ export type CatalogApp = {
   ios?: IosSpec;
 };
 
+/** CordLauncher lui-même : dernière version publiée, pour se mettre à jour. */
+export type LauncherRelease = {
+  version: string;
+  /** Installateur de cette version (HTTPS), absent tant qu'elle n'est pas publiée. */
+  url?: string;
+  sha256?: string;
+  notes?: string;
+};
+
 export type Catalog = {
   schemaVersion: 1;
   generatedAt?: string;
+  launcher?: LauncherRelease;
   /** Id de l'app mise en avant sur l'écran d'accueil. */
   featured?: string;
   apps: CatalogApp[];

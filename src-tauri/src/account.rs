@@ -73,7 +73,7 @@ pub async fn cord_request(server: String, path: String, method: String, body: Op
         None => (path.clone(), None),
     };
     if !allowed(&method, &route) {
-        return Err("Cette version de CordLauncher ne connaît pas encore cette fonction du Compte Cord : ferme-le complètement et relance-le.".into());
+        return Err("Cette fonction demande une version plus récente de CordLauncher : mets-le à jour, puis réessaie.".into());
     }
     if query.as_deref().is_some_and(|q| !q.chars().all(|c| c.is_ascii_alphanumeric() || "=&_-.%".contains(c))) {
         return Err("Paramètres Cord invalides.".into());
@@ -91,7 +91,7 @@ pub async fn cord_request(server: String, path: String, method: String, body: Op
     let response = request
         .send()
         .await
-        .map_err(|e| format!("Service Compte Cord injoignable ({server}) : {e}. Vérifie l’adresse dans « Serveur Compte Cord »."))?;
+        .map_err(|e| { eprintln!("[cord] {server} : {e}"); "Impossible de joindre ton Compte Cord. Vérifie ta connexion Internet, puis réessaie.".to_string() })?;
     let status = response.status();
     let text = response.text().await.map_err(|e| e.to_string())?;
     let mut data: Value = serde_json::from_str(&text).map_err(|_| "Le serveur ne renvoie pas une réponse Compte Cord valide.")?;
@@ -110,7 +110,7 @@ pub async fn cord_request(server: String, path: String, method: String, body: Op
     }
     if matches!(route.as_str(), "/api/register" | "/api/login" | "/api/passcord/poll") {
         if let Some(token) = data.get("token").and_then(Value::as_str) {
-            entry.set_password(token).map_err(|e| format!("Session non enregistrée dans le coffre Windows : {e}"))?;
+            entry.set_password(token).map_err(|e| { eprintln!("[cord] coffre : {e}"); "Windows n’a pas pu garder ta session. Reconnecte-toi.".to_string() })?;
         }
     }
     if let Some(object) = data.as_object_mut() {
@@ -135,7 +135,7 @@ pub async fn cord_export(server: String) -> Result<String, String> {
         .bearer_auth(token)
         .send()
         .await
-        .map_err(|e| format!("Service Compte Cord injoignable : {e}"))?;
+        .map_err(|e| { eprintln!("[cord] {e}"); "Impossible de joindre ton Compte Cord. Vérifie ta connexion Internet, puis réessaie.".to_string() })?;
     if !response.status().is_success() {
         return Err("Export impossible : reconnecte-toi puis réessaie.".into());
     }

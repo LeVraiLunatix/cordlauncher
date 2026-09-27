@@ -295,7 +295,7 @@ export function IphoneView({ apps: catalog, onDiscover }: { apps: CatalogApp[]; 
                           onClick={() => void updateIphoneApp(a, upd)}>Mettre à jour</GlassButton>
                       )}
                       <GlassButton size="sm" variant={h === "ok" || upd ? "glass" : "primary"} icon={<RotateCw className="size-3.5" />} disabled={!renewable(a)}
-                        title={!a.ipa ? "IPA non gardée : réinstalle depuis la fiche" : !connected ? "Branche cet iPhone pour renouveler" : undefined}
+                        title={!a.ipa ? "Installée hors de CordLauncher : réinstalle-la depuis sa fiche pour pouvoir la renouveler" : !connected ? "Branche cet iPhone (ou active le Wi-Fi) pour renouveler" : undefined}
                         onClick={() => void renew(a)}>Renouveler</GlassButton>
                       <AnimatePresence mode="popLayout" initial={false}>
                         {confirm === key ? (
