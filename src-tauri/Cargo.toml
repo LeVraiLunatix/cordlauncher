@@ -33,6 +33,7 @@ keyring = { version = "3", features = ["windows-native"] }
 isideload = "0.4.0"
 idevice = { version = "0.1.68", default-features = false, features = ["ring", "usbmuxd", "installation_proxy"] }
 plist = "1"
+tauri-plugin-notification = "2"
 
 [target.'cfg(windows)'.dependencies]
 winreg = "0.55"

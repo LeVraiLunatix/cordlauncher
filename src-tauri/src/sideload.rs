@@ -436,9 +436,13 @@ pub struct IphoneDevice {
     connection: &'static str,
     /// Faux tant que l'iPhone n'a pas répondu « Se fier à cet ordinateur ».
     trusted: bool,
+    /// Visible en Wi-Fi (synchronisation sans câble activée sur l'iPhone).
+    wifi: Option<bool>,
 }
 
-async fn device_details(provider: &impl IdeviceProvider) -> Option<(String, Option<String>)> {
+const WIRELESS_DOMAIN: &str = "com.apple.mobile.wireless_lockdown";
+
+async fn device_details(provider: &impl IdeviceProvider) -> Option<(String, Option<String>, Option<bool>)> {
     let mut lockdown = LockdownClient::connect(provider).await.ok()?;
     let pairing = provider.get_pairing_file().await.ok()?;
     lockdown.start_session(&pairing).await.ok()?;
@@ -448,7 +452,31 @@ async fn device_details(provider: &impl IdeviceProvider) -> Option<(String, Opti
         .await
         .ok()
         .and_then(|v| v.as_string().map(str::to_string));
-    Some((name, version))
+    let wifi = lockdown
+        .get_value(Some("EnableWifiConnections"), Some(WIRELESS_DOMAIN))
+        .await
+        .ok()
+        .and_then(|v| v.as_boolean());
+    Some((name, version, wifi))
+}
+
+/// Active (ou coupe) la connexion Wi-Fi de l'iPhone avec ce PC : renouveler
+/// et mettre à jour sans câble, quand les deux sont sur le même réseau.
+#[tauri::command]
+pub async fn iphone_set_wifi(udid: String, enabled: bool) -> Result<(), String> {
+    on_own_thread(move || async move {
+        let mut mux = UsbmuxdConnection::default().await.map_err(short_error)?;
+        let device = mux.get_device(&udid).await.map_err(|_| "Branche l’iPhone avec un câble pour changer ce réglage.".to_string())?;
+        let provider = device.to_provider(UsbmuxdAddr::default(), "CordLauncher");
+        let mut lockdown = LockdownClient::connect(&provider).await.map_err(short_error)?;
+        let pairing = provider.get_pairing_file().await.map_err(|_| "Déverrouille l’iPhone et touche « Se fier » d’abord.".to_string())?;
+        lockdown.start_session(&pairing).await.map_err(short_error)?;
+        lockdown
+            .set_value("EnableWifiConnections", plist::Value::Boolean(enabled), Some(WIRELESS_DOMAIN))
+            .await
+            .map_err(short_error)
+    })
+    .await
 }
 
 #[tauri::command]
@@ -474,8 +502,9 @@ pub async fn iphone_list() -> Result<Vec<IphoneDevice>, String> {
             out.push(IphoneDevice {
                 udid: d.udid.clone(),
                 trusted: details.is_some(),
-                name: details.as_ref().map(|(n, _)| n.clone()),
-                ios_version: details.and_then(|(_, v)| v),
+                name: details.as_ref().map(|(n, _, _)| n.clone()),
+                wifi: details.as_ref().and_then(|(_, _, w)| *w),
+                ios_version: details.and_then(|(_, v, _)| v),
                 connection,
             });
         }

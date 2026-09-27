@@ -54,6 +54,7 @@ pub fn run() {
     }
 
     builder
+        .plugin(tauri_plugin_notification::init())
         .plugin(tauri_plugin_opener::init())
         .plugin(tauri_plugin_dialog::init())
         .manage(LaunchFlags {
@@ -85,6 +86,7 @@ pub fn run() {
             iphone_apps::iphone_app_forget,
             iphone_apps::iphone_device_bundles,
             iphone_apps::iphone_app_adopt,
+            sideload::iphone_set_wifi,
         ])
         .setup(|app| {
             let handle = app.handle().clone();

@@ -863,3 +863,80 @@ test('Passcord requests reach the iPhone: push, inbox, number matching and refus
   await request('/api/passcord/notify', { body: { id: fifth.id, pollToken: fifth.pollToken, email: 'luna@example.test' } });
   assert.equal(pushes.length - before2, 1);
 });
+
+test('new beta builds are announced once to testers; reminders, push devices and Passcord history', async (t) => {
+  let build = 13;
+  const source = { latest: async () => ({ build: `Build ${build}`, tag: `build-${build}`, publishedAt: '2026-09-27T16:00:00Z', assets: [] }) };
+  const pushes = [];
+  const pushFetch = async (url, init) => {
+    pushes.push({ url, init });
+    return new Response(null, { status: 201 });
+  };
+  const ctx = await setup(t, { admins: ['luna@example.test'], betaReleases: { passcord: source }, pushFetch });
+  const { request, token: admin, sql } = ctx;
+  const user = await tester(ctx, 'erin@example.test');
+  const [key] = (await request('/api/admin/beta/keys', { token: admin, body: { count: 1 } })).data.keys;
+  await request('/api/beta/redeem', { token: user, body: { code: key.code } });
+  const inbox = async (token) => (await request('/api/notifications', { token })).data.items.filter((n) => n.app === 'passcord');
+
+  // Premier build vu : point de départ, aucune annonce.
+  await request('/api/beta/passcord', { token: user });
+  assert.equal((await inbox(user)).length, 0);
+  // Nouveau build : une annonce par testeur (et l'administration), une seule fois.
+  build = 14;
+  await Promise.all([request('/api/beta/passcord', { token: user }), request('/api/beta/passcord', { token: admin })]);
+  await request('/api/beta/passcord', { token: user });
+  const [announce] = await inbox(user);
+  assert.match(announce.title, /Passcord Build 14 est disponible/);
+  assert.equal((await inbox(user)).length, 1);
+  assert.equal((await inbox(admin)).length, 1);
+
+  // Rappel d'une app de la suite : dédoublonné par son étiquette.
+  const reminder = { app: 'cordlauncher', title: 'Drivecord expire dans 5 h', body: 'Branche ton iPhone.', tag: 'expiry:drivecord:U1:123', url: '/#/apps' };
+  assert.equal((await request('/api/me/notify', { token: user, body: reminder })).data.sent, true);
+  assert.equal((await request('/api/me/notify', { token: user, body: reminder })).data.sent, false);
+  assert.equal((await request('/api/me/notify', { token: user, body: { ...reminder, tag: 'autre', url: '//evil.test' } })).data.sent, true);
+  const all = (await request('/api/notifications', { token: user })).data.items;
+  assert.equal(all.filter((n) => n.title === reminder.title).length, 2);
+  assert.equal(all.find((n) => n.title === reminder.title && n.url !== '/#/apps').url, null, 'lien externe refusé');
+
+  // Appareils abonnés : listés dans le compte, retirables.
+  const { createECDH } = await import('node:crypto');
+  const receiver = createECDH('prime256v1');
+  receiver.generateKeys();
+  const keys = { p256dh: receiver.getPublicKey().toString('base64url'), auth: randomBytes(16).toString('base64url') };
+  await request('/api/push/subscribe', { token: user, body: { endpoint: 'https://web.push.apple.com/device-1', keys } });
+  const [device] = (await request('/api/account', { token: user })).data.pushDevices;
+  assert.equal(device.service, 'web.push.apple.com');
+  assert.equal((await request('/api/push/devices', { token: admin, body: { id: device.id }, method: 'DELETE' })).status, 200);
+  assert.equal((await request('/api/account', { token: user })).data.pushDevices.length, 1, 'un autre compte ne peut pas le retirer');
+  await request('/api/push/devices', { token: user, body: { id: device.id }, method: 'DELETE' });
+  assert.equal((await request('/api/account', { token: user })).data.pushDevices.length, 0);
+
+  // Historique Passcord : approuvée, refusée, mauvais nombre.
+  const pair = (await request('/api/passcord/pair', { token: user, body: {} })).data;
+  const phone = generateKeyPairSync('ed25519');
+  const claimed = (await request('/api/passcord/claim', {
+    token: user,
+    body: { id: pair.id, challenge: pair.challenge, name: 'iPhone', publicKey: phone.publicKey.export({ format: 'jwk' }), signature: sign(null, Buffer.from(`cord-pair-v1:${issuer}:${pair.id}:${pair.challenge}`), phone.privateKey).toString('base64url') },
+  })).data;
+  const creds = { keyId: claimed.keyId, token: claimed.inboxToken };
+  const ask = async () => {
+    const login = (await request('/api/passcord/login', { body: {} })).data;
+    const { code } = (await request('/api/passcord/notify', { body: { id: login.id, pollToken: login.pollToken, email: 'erin@example.test' } })).data;
+    const url = new URL((await request('/api/passcord/inbox', { body: creds })).data.requests.find((r) => r.id === login.id).url);
+    const signature = sign(null, Buffer.from(`cord-login-v1:${issuer}:${login.id}:${url.searchParams.get('challenge')}`), phone.privateKey).toString('base64url');
+    return { login, code, choices: url.searchParams.get('choices').split(','), signature };
+  };
+  const a = await ask();
+  await request('/api/passcord/approve', { body: { id: a.login.id, keyId: creds.keyId, code: a.code, signature: a.signature } });
+  const b = await ask();
+  await request('/api/passcord/deny', { body: { id: b.login.id, ...creds } });
+  const c = await ask();
+  await request('/api/passcord/approve', { body: { id: c.login.id, keyId: creds.keyId, code: c.choices.find((n) => n !== c.code), signature: c.signature } });
+  const history = (await request('/api/passcord/history', { body: creds })).data.events;
+  assert.deepEqual(history.map((e) => e.kind), ['passcord_wrong_code', 'passcord_denied', 'passcord_approved', 'passcord_paired']);
+  assert.equal(history[0].device, 'Safari · macOS');
+  assert.equal((await request('/api/passcord/history', { body: { ...creds, token: 'faux' } })).status, 403);
+  void sql;
+});

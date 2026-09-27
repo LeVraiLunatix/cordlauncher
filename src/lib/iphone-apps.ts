@@ -274,31 +274,108 @@ export async function runIphoneAuto(catalog: CatalogApp[], user?: Parameters<typ
   try {
     await refreshIphoneApps();
     await scanIphones(catalog).catch(() => {});
-    const apps = store.get().apps ?? [];
-    if (!apps.length) return;
+    if (!(store.get().apps ?? []).length) return;
     if (opts.check !== false) await checkIphoneUpdates(catalog, user);
     // Mode manuel : on s'arrête à la détection (pastille + boutons dans l'onglet).
-    if (!store.get().auto) return;
-    const { updates } = store.get();
-    const autoUpdate = (a: IphoneApp) => { const u = updates[a.id]; return u && !autoInstalled.has(`${a.id}:${a.udid}:${u.label}`) ? u : null; };
-    const pending = apps.filter(a => autoUpdate(a) || health(a) !== "ok");
-    if (!pending.length) return;
-    const trusted = new Set(store.get().devices.filter(d => d.trusted).map(d => d.udid));
-    await refreshApple().catch(() => {});
-    const apple = appleSnapshot();
-    if (!canInstall(apple.status) || apple.busy) return;
-    const done: string[] = [];
-    for (const a of pending.filter(a => trusted.has(a.udid)).sort((x, y) => (x.expiresAt ?? 0) - (y.expiresAt ?? 0))) {
-      const upd = autoUpdate(a);
-      store.set(s => ({ ...s, autoRunning: `${upd ? "Mise à jour" : "Renouvellement"} de ${a.name}…` }));
-      const ok = upd ? await updateIphoneApp(a, upd, true).catch(() => false) : a.ipa ? await renewIphoneApp(a, true).catch(() => false) : false;
-      if (ok && upd) autoInstalled.add(`${a.id}:${a.udid}:${upd.label}`);
-      if (ok) done.push(upd ? `${a.name} ${upd.label}` : `${a.name} renouvelée`);
-      else break; // Apple a refusé ou l'iPhone a été débranché : on réessaiera plus tard.
-    }
-    if (done.length) toast({ tone: "ok", title: "iPhone à jour", description: done.join(" · ") });
+    if (store.get().auto) await autoPass();
+    // Ce qui n'a pas pu être renouvelé (iPhone absent, mode manuel) : un rappel.
+    await remindExpiring().catch(() => {});
   } finally {
     autoBusy = false;
     store.set(s => ({ ...s, autoRunning: null }));
   }
+}
+
+async function autoPass() {
+  const apps = store.get().apps ?? [];
+  const { updates } = store.get();
+  const autoUpdate = (a: IphoneApp) => { const u = updates[a.id]; return u && !autoInstalled.has(`${a.id}:${a.udid}:${u.label}`) ? u : null; };
+  const pending = apps.filter(a => autoUpdate(a) || health(a) !== "ok");
+  if (!pending.length) return;
+  const trusted = new Set(store.get().devices.filter(d => d.trusted).map(d => d.udid));
+  await refreshApple().catch(() => {});
+  const apple = appleSnapshot();
+  if (!canInstall(apple.status) || apple.busy) return;
+  const done: string[] = [];
+  for (const a of pending.filter(a => trusted.has(a.udid)).sort((x, y) => (x.expiresAt ?? 0) - (y.expiresAt ?? 0))) {
+    const upd = autoUpdate(a);
+    store.set(s => ({ ...s, autoRunning: `${upd ? "Mise à jour" : "Renouvellement"} de ${a.name}…` }));
+    const ok = upd ? await updateIphoneApp(a, upd, true).catch(() => false) : a.ipa ? await renewIphoneApp(a, true).catch(() => false) : false;
+    if (ok && upd) autoInstalled.add(`${a.id}:${a.udid}:${upd.label}`);
+    if (ok) done.push(upd ? `${a.name} ${upd.label}` : `${a.name} renouvelée`);
+    else break; // Apple a refusé ou l'iPhone a été débranché : on réessaiera plus tard.
+  }
+  if (done.length) {
+    toast({ tone: "ok", title: "iPhone à jour", description: done.join(" · ") });
+    void notifyDesktop("iPhone à jour", done.join(" · "));
+  }
+}
+
+// ── Rappels ─────────────────────────────────────────────────────────────────
+
+const REMINDED_KEY = "cordlauncher:iphone-reminded";
+const reminded = (): string[] => { try { return JSON.parse(localStorage.getItem(REMINDED_KEY) ?? "[]"); } catch { return []; } };
+
+/** Notification Windows (CordLauncher peut être réduit dans la zone de notification). */
+async function notifyDesktop(title: string, body: string) {
+  try {
+    const { isPermissionGranted, requestPermission, sendNotification } = await import("@tauri-apps/plugin-notification");
+    if (!(await isPermissionGranted()) && (await requestPermission()) !== "granted") return;
+    sendNotification({ title, body });
+  } catch { /* notifications indisponibles */ }
+}
+
+function leftLabel(ms: number) {
+  const h = Math.max(1, Math.round(ms / 3_600_000));
+  return h >= 24 ? "moins d’un jour" : `${h} h`;
+}
+
+/**
+ * App qui expire dans moins de 24 h sans avoir pu être renouvelée : rappel
+ * une seule fois par échéance, sur Windows et sur l'iPhone (notification du
+ * Compte Cord, si la web app est installée).
+ */
+async function remindExpiring() {
+  await refreshIphoneApps();
+  const now = Date.now();
+  const due = (store.get().apps ?? []).filter(a => a.expiresAt != null && a.expiresAt > now && a.expiresAt - now < DAY);
+  if (!due.length) return;
+  const already = reminded();
+  const connected = new Set(store.get().devices.filter(d => d.trusted).map(d => d.udid));
+  const sent: string[] = [];
+  for (const a of due) {
+    const key = `${a.id}:${a.udid}:${a.expiresAt}`;
+    if (already.includes(key)) continue;
+    const left = leftLabel(a.expiresAt! - now);
+    const where = a.deviceName ?? "ton iPhone";
+    const body = !a.ipa
+      ? `Réinstalle-la depuis CordLauncher (onglet iPhone) pour la garder.`
+      : connected.has(a.udid)
+        ? `Ouvre l’onglet iPhone de CordLauncher pour la renouveler.`
+        : `Branche ${where} (ou active le Wi-Fi dans l’onglet iPhone) pour que CordLauncher la renouvelle.`;
+    const title = `${a.name} expire dans ${left}`;
+    void notifyDesktop(title, body);
+    await import("./account").then(m => m.cordRequest("/api/me/notify", { app: "cordlauncher", title, body, tag: `expiry:${key}`, url: "/#/apps" })).catch(() => {});
+    sent.push(key);
+  }
+  if (sent.length) {
+    // On ne garde que les échéances récentes.
+    const keep = [...already, ...sent].slice(-50);
+    try { localStorage.setItem(REMINDED_KEY, JSON.stringify(keep)); } catch { /* stockage indisponible */ }
+  }
+}
+
+// ── Wi-Fi ───────────────────────────────────────────────────────────────────
+
+/** Active la connexion Wi-Fi de l'iPhone avec ce PC (réglage gardé sur l'iPhone). */
+export async function setIphoneWifi(udid: string, enabled: boolean) {
+  await invoke("iphone_set_wifi", { udid, enabled });
+  await scanIphones().catch(() => {});
+  toast({
+    tone: "ok",
+    title: enabled ? "Wi-Fi activé" : "Wi-Fi coupé",
+    description: enabled
+      ? "Sur le même réseau que ce PC, l’iPhone sera renouvelé et mis à jour sans câble."
+      : "CordLauncher ne verra plus cet iPhone sans câble.",
+  });
 }

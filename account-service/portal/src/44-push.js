@@ -16,6 +16,8 @@ messages({
     'push.request.title': 'Demande de connexion', 'push.request.desc': 'Un appareil veut se connecter à ton Compte Cord. Ouvre Passcord, choisis le nombre affiché sur l’autre écran et valide avec Face ID.',
     'push.request.open': 'Ouvrir Passcord', 'push.request.ignore': 'Tu n’as rien demandé ? Ignore-la : sans ton iPhone et Face ID, personne ne peut se connecter.',
     'push.request.account': 'Aller à mon compte',
+    'push.devices': 'Appareils qui reçoivent les notifications', 'push.thisDevice': 'Cet appareil', 'push.since': 'ajouté {when}',
+    'push.remove': 'Retirer', 'push.removed': 'Appareil retiré : il ne recevra plus de notifications.',
   },
   en: {
     'push.title': 'Notifications', 'push.desc': 'Get Passcord sign-in requests and suite news on this device.',
@@ -28,8 +30,28 @@ messages({
     'push.request.title': 'Sign-in request', 'push.request.desc': 'A device wants to sign in to your Cord Account. Open Passcord, pick the number shown on the other screen and approve with Face ID.',
     'push.request.open': 'Open Passcord', 'push.request.ignore': 'Didn’t ask for this? Ignore it: without your iPhone and Face ID, nobody can sign in.',
     'push.request.account': 'Go to my account',
+    'push.devices': 'Devices getting notifications', 'push.thisDevice': 'This device', 'push.since': 'added {when}',
+    'push.remove': 'Remove', 'push.removed': 'Device removed: it won’t get notifications anymore.',
   },
 });
+
+/** Identifiant serveur d'un abonnement (même calcul que le service : sha256 base64url). */
+async function pushId(endpoint) {
+  const digest = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(`push:${endpoint}`));
+  return bytesToB64u(digest);
+}
+
+function pushDevicesList(currentId) {
+  const devices = state.account?.pushDevices ?? [];
+  if (!devices.length) return '';
+  return html`<div class="push-devices"><p class="tiny subtle">${t('push.devices')}</p>
+    <ul class="list">${devices.map((d) => html`<li class="list-item">
+      <span class="icon-badge ${d.id === currentId ? 'grad' : 'tone-muted'}">${icon('bell')}</span>
+      <div class="body"><div class="title">${d.device || d.service}${d.id === currentId ? html`<span class="badge tone-ok"><span class="dot"></span>${t('push.thisDevice')}</span>` : ''}</div>
+        <div class="meta"><span>${t('push.since', { when: fmtRelative(d.createdAt) })}</span><span class="mono">${d.service}</span></div></div>
+      <div class="actions compact"><button type="button" class="btn btn-ghost btn-sm" data-action="push-remove" data-id="${d.id}">${icon('bell-off')}${t('push.remove')}</button></div>
+    </li>`)}</ul></div>`;
+}
 
 const pushSupported = () => 'serviceWorker' in navigator && 'PushManager' in window && 'Notification' in window;
 const isIos = () => /iPhone|iPad|iPod/.test(navigator.userAgent) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
@@ -76,15 +98,16 @@ async function mountPushCard(root) {
   const body = $('[data-push-body]', root);
   if (!body) return;
   if (isIos() && !isStandalone()) {
-    render(body, html`<div class="push-hint">${icon('smartphone')}<p>${t('push.iosInstall')}</p></div>`);
+    render(body, html`<div class="push-hint">${icon('smartphone')}<p>${t('push.iosInstall')}</p></div>${pushDevicesList(null)}`);
     return;
   }
   if (!pushSupported()) {
-    render(body, html`<p class="muted small">${t('push.unsupported')}</p>`);
+    render(body, html`<p class="muted small">${t('push.unsupported')}</p>${pushDevicesList(null)}`);
     return;
   }
   const subscription = await pushSubscription().catch(() => null);
   const on = Boolean(subscription) && Notification.permission === 'granted';
+  const currentId = subscription ? await pushId(subscription.endpoint).catch(() => null) : null;
   render(body, html`<div class="push-row">
       <span class="badge ${on ? 'tone-ok' : 'tone-muted'}"><span class="dot"></span>${on ? t('push.on') : t('push.off')}</span>
       <span class="spacer"></span>
@@ -92,19 +115,32 @@ async function mountPushCard(root) {
         ? html`<button type="button" class="btn btn-ghost btn-sm" data-action="push-disable">${icon('bell-off')}${t('push.disable')}</button>`
         : html`<button type="button" class="btn btn-primary btn-sm" data-action="push-enable">${icon('bell')}${t('push.enable')}</button>`}
     </div>
-    ${!on && !isIos() ? html`<p class="tiny subtle">${t('push.iosTip')}</p>` : ''}`);
+    ${!on && !isIos() ? html`<p class="tiny subtle">${t('push.iosTip')}</p>` : ''}
+    ${pushDevicesList(currentId)}`);
 }
 
 Object.assign(ACTIONS, {
   async 'push-enable'(button) {
     await busy(button, enablePush);
     toast(t('push.enabled'));
+    await loadAccount().catch(() => {});
     mountPushCard(button.closest('[data-push-card]') ?? document);
   },
   async 'push-disable'(button) {
     await busy(button, disablePush);
     toast(t('push.disabled'), { type: 'info' });
+    await loadAccount().catch(() => {});
     mountPushCard(button.closest('[data-push-card]') ?? document);
+  },
+  async 'push-remove'(button) {
+    const card = button.closest('[data-push-card]') ?? document;
+    await busy(button, () => api('/api/push/devices', { id: button.dataset.id }, 'DELETE'));
+    // Cet appareil-ci : on se désabonne aussi dans le navigateur.
+    const subscription = await pushSubscription().catch(() => null);
+    if (subscription && (await pushId(subscription.endpoint)) === button.dataset.id) await subscription.unsubscribe().catch(() => {});
+    toast(t('push.removed'), { type: 'info' });
+    await loadAccount().catch(() => {});
+    mountPushCard(card);
   },
 });
 

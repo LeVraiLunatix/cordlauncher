@@ -9,7 +9,7 @@ import { useCordAccount } from "../lib/account";
 import { activeProfile, refreshApple, useApple } from "../lib/apple";
 import type { CatalogApp } from "../lib/catalog/types";
 import { cn } from "../lib/cn";
-import { checkIphoneUpdates, daysLeft, forgetIphoneApp, health, refreshIphoneApps, renewIphoneApp, scanIphones, setIphoneAuto, updateIphoneApp, useIphoneApps, validity, type Health, type IphoneApp } from "../lib/iphone-apps";
+import { checkIphoneUpdates, daysLeft, forgetIphoneApp, health, refreshIphoneApps, renewIphoneApp, scanIphones, setIphoneAuto, setIphoneWifi, updateIphoneApp, useIphoneApps, validity, type Health, type IphoneApp } from "../lib/iphone-apps";
 import { formatBytes } from "../lib/format";
 import { itemVariants, springBouncy, springSoft, viewVariants } from "../lib/motion";
 import { IS_TAURI } from "../lib/platform";
@@ -65,6 +65,7 @@ export function IphoneView({ apps: catalog, onDiscover }: { apps: CatalogApp[]; 
   const { apps, devices, present, scanning, updates, checking, lastCheck, auto, autoRunning } = useIphoneApps();
   const { user } = useCordAccount();
   const [notesOpen, setNotesOpen] = useState<string | null>(null);
+  const [wifiBusy, setWifiBusy] = useState<string | null>(null);
   const apple = useApple();
   const [accountOpen, setAccountOpen] = useState(false);
   const [confirm, setConfirm] = useState<string | null>(null);
@@ -163,7 +164,7 @@ export function IphoneView({ apps: catalog, onDiscover }: { apps: CatalogApp[]; 
               <p className="text-[14px] font-semibold">Automatique</p>
               <p className="text-[12.5px] text-fg-muted">
                 {autoRunning ?? (auto
-                  ? "Dès que ton iPhone est branché, CordLauncher installe les nouvelles versions et renouvelle les apps à 2 jours de l’expiration."
+                  ? "Dès que ton iPhone est branché (ou sur le même Wi-Fi), CordLauncher installe les nouvelles versions et renouvelle les apps à 2 jours de l’expiration. Sinon, il te prévient la veille."
                   : "Désactivé : CordLauncher te prévient des nouvelles versions et des expirations, tu lances toi-même.")}
                 {lastCheck && !autoRunning ? ` · Vérifié ${Date.now() - lastCheck < 60_000 ? "à l’instant" : new Intl.RelativeTimeFormat("fr-FR", { numeric: "auto" }).format(Math.round((lastCheck - Date.now()) / 60000), "minute")}` : ""}
               </p>
@@ -186,10 +187,20 @@ export function IphoneView({ apps: catalog, onDiscover }: { apps: CatalogApp[]; 
                     <strong className="font-semibold">{d.name ?? "iPhone"}</strong>
                     <span className="flex items-center gap-1 text-fg-subtle">{d.connection === "usb" ? <Cable className="size-3" /> : <Wifi className="size-3" />}{d.iosVersion ? `iOS ${d.iosVersion}` : ""}</span>
                     {!d.trusted && <span className="text-warn">· touche « Se fier »</span>}
+                    {d.connection !== "usb" && <span className="text-fg-subtle">· sans câble</span>}
+                    {d.trusted && d.connection === "usb" && d.wifi != null && (
+                      <button type="button" disabled={wifiBusy === d.udid}
+                        onClick={() => { setWifiBusy(d.udid); void setIphoneWifi(d.udid, !d.wifi).catch(e => toast({ tone: "error", title: "Réglage Wi-Fi impossible", description: String(e) })).finally(() => setWifiBusy(null)); }}
+                        title={d.wifi ? "Renouvellement et mises à jour sans câble actifs (même réseau Wi-Fi que ce PC). Cliquer pour couper." : "Renouveler et mettre à jour sans câble quand l’iPhone est sur le même Wi-Fi que ce PC."}
+                        className={cn("ml-0.5 inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[11.5px] font-medium ring-1 ring-inset transition-colors disabled:opacity-50",
+                          d.wifi ? "bg-ok/12 text-ok ring-ok/25" : "text-fg-muted ring-[var(--line)] hover:bg-[var(--control-hover)] hover:text-fg")}>
+                        <Wifi className="size-3" />{d.wifi ? "Wi-Fi actif" : "Activer le Wi-Fi"}
+                      </button>
+                    )}
                   </span>
                 ))}
               </div>
-            ) : <p className="text-[13px] text-fg-muted">{scanning ? "Recherche…" : "Aucun iPhone branché. Branche-le avec un câble et déverrouille-le pour renouveler tes apps."}</p>}
+            ) : <p className="text-[13px] text-fg-muted">{scanning ? "Recherche…" : "Aucun iPhone branché. Branche-le avec un câble et déverrouille-le pour renouveler tes apps (ensuite, active le Wi-Fi pour t’en passer)."}</p>}
           </div>
         </GlassCard>
         <GlassCard className="rounded-[22px] p-4">

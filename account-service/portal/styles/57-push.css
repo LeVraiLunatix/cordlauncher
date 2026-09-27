@@ -48,3 +48,5 @@
 @media (prefers-reduced-motion: reduce) {
   .passcord-number, .passcord-number .digits { animation: none; }
 }
+.push-devices { display: grid; gap: 8px; margin-top: 14px; }
+.push-devices .list { margin: 0; }

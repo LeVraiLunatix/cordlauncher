@@ -28,6 +28,7 @@ fn allowed(method: &str, path: &str) -> bool {
                     | "/api/passcord/pair/status"
                     | "/api/passcord/login"
                     | "/api/passcord/notify"
+                    | "/api/me/notify"
                     | "/api/passcord/poll"
                     | "/api/beta/redeem"
                     | "/api/beta/passcord/download"

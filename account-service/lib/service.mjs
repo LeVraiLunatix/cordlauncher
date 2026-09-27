@@ -658,6 +658,7 @@ export function createService({
       betaAccess(u),
     ]);
     const unread = await one('SELECT COUNT(*) AS n FROM notifications WHERE user_id = $1 AND read_at IS NULL', [u.id]);
+    const pushDevices = await sql('SELECT id, device, endpoint, created_at FROM push_subscriptions WHERE user_id = $1 ORDER BY created_at DESC', [u.id]);
     return {
       user: { ...profile(u), beta },
       unread: Number(unread?.n ?? 0),
@@ -678,6 +679,7 @@ export function createService({
         scope: c.scope ?? 'openid profile email',
       })),
       activity: events.map(describeEvent),
+      pushDevices: pushDevices.map((p) => ({ id: p.id, device: p.device ?? null, service: new URL(p.endpoint).host, createdAt: Number(p.created_at) })),
     };
   }
 
@@ -710,6 +712,55 @@ export function createService({
       return results.filter((r) => r === 'sent').length;
     } catch {
       return 0;
+    }
+  }
+
+  /**
+   * Notification de la suite pour un compte (fil + push). `id` fixe = pas de
+   * doublon : renvoie false si elle existait déjà.
+   */
+  async function notifyUser(userId, { app, title, body = null, url = null, id = randomUUID() }) {
+    const inserted = await one(
+      'INSERT INTO notifications (id, user_id, app, title, body, url, created_at) VALUES ($1, $2, $3, $4, $5, $6, $7) ON CONFLICT (id) DO NOTHING RETURNING id',
+      [id, userId, app, title, body, url, now()],
+    );
+    if (!inserted) return false;
+    await sql('DELETE FROM notifications WHERE user_id = $1 AND id NOT IN (SELECT id FROM notifications WHERE user_id = $1 ORDER BY created_at DESC LIMIT 100)', [userId]);
+    await pushTo(userId, { title, body: body ?? '', url: url ?? '/#/inbox', tag: `n-${id}` });
+    return true;
+  }
+
+  /**
+   * Nouveau build de bêta : annoncé une seule fois à tous ses testeurs (et à
+   * l'administration). Le premier build vu sert de point de départ, sans annonce.
+   */
+  const buildNumber = (tag) => Number(String(tag ?? '').replace(/\D+/g, '')) || 0;
+  async function announceRelease(product, release) {
+    if (!release?.tag) return;
+    const key = `announced:${product}`;
+    const row = await one('SELECT value FROM service_settings WHERE key = $1', [key]);
+    if (!row) {
+      await sql('INSERT INTO service_settings (key, value, updated_at) VALUES ($1, $2, $3) ON CONFLICT (key) DO NOTHING', [key, release.tag, now()]);
+      return;
+    }
+    if (buildNumber(release.tag) <= buildNumber(row.value)) return;
+    // Plusieurs fonctions en parallèle : une seule gagne le droit d'annoncer.
+    const claimed = await one('UPDATE service_settings SET value = $2, updated_at = $3 WHERE key = $1 AND value = $4 RETURNING key', [key, release.tag, now(), row.value]);
+    if (!claimed) return;
+    const testers = new Set((await sql('SELECT user_id FROM beta_access WHERE product = $1', [product])).map((r) => r.user_id));
+    for (const email of adminEmails) {
+      const admin = await one('SELECT id, email_verified_at FROM users WHERE email = $1', [email]);
+      if (admin?.email_verified_at) testers.add(admin.id);
+    }
+    const name = BETA_PRODUCTS[product].name;
+    for (const userId of testers) {
+      await notifyUser(userId, {
+        id: `release:${product}:${release.tag}:${userId}`,
+        app: product,
+        title: `${name} ${release.build} est disponible`,
+        body: 'CordLauncher l’installe sur ton iPhone dès qu’il est branché (ou en Wi-Fi).',
+        url: '/#/apps',
+      });
     }
   }
 
@@ -940,7 +991,9 @@ export function createService({
         const { user } = await session(req);
         const product = betaProduct(path.slice('/api/beta/'.length));
         const access = (await betaAccess(user)).includes(product);
-        return json({ product, name: BETA_PRODUCTS[product].name, access, downloads: Boolean(await releasesFor(product)), release: access ? await releaseInfo(product) : null });
+        const release = access ? await releaseInfo(product) : null;
+        if (release) await announceRelease(product, release).catch((e) => console.error('[cord-account] annonce', e));
+        return json({ product, name: BETA_PRODUCTS[product].name, access, downloads: Boolean(await releasesFor(product)), release });
       }
       if (method === 'GET' && path === '/api/admin/beta') {
         const { user } = await session(req);
@@ -1619,6 +1672,36 @@ export function createService({
         const sent = await pushTo(user.id, { title: 'Notifications activées', body: 'Les demandes Passcord et les nouvelles de la suite arriveront ici.', url: '/', tag: 'push-welcome' });
         return json({ ok: true, sent });
       }
+      if (path === '/api/push/devices' && method === 'DELETE') {
+        const { user } = await session(req);
+        await sql('DELETE FROM push_subscriptions WHERE id = $1 AND user_id = $2', [field(data, 'id', 100), user.id]);
+        return json({ ok: true });
+      }
+      if (path === '/api/me/notify' && method === 'POST') {
+        // Rappels envoyés par les apps de la suite connectées au compte
+        // (CordLauncher : « Drivecord expire dans 5 h »). `tag` évite les doublons.
+        const { user } = await session(req);
+        if (await overLimit(`me-notify:${user.id}`, 20, 3600_000)) throw error(429, 'Trop de rappels.');
+        const app = FIRST_PARTY_STATUS.includes(data.app) ? data.app : 'cordlauncher';
+        const tag = typeof data.tag === 'string' && data.tag.trim() ? data.tag.trim().slice(0, 120) : randomUUID();
+        const sent = await notifyUser(user.id, {
+          id: `me:${hash(`${user.id}:${tag}`)}`,
+          app,
+          title: field(data, 'title', 80),
+          body: typeof data.body === 'string' && data.body.trim() ? data.body.trim().slice(0, 240) : null,
+          url: typeof data.url === 'string' && data.url.startsWith('/') && !data.url.startsWith('//') ? data.url.slice(0, 200) : null,
+        });
+        return json({ ok: true, sent });
+      }
+      if (path === '/api/passcord/history' && method === 'POST') {
+        // Historique affiché dans Passcord : ce que cet iPhone (et le compte) a validé ou refusé.
+        const k = await inboxKey(data);
+        const rows = await sql(
+          "SELECT kind, at, detail FROM account_events WHERE user_id = $1 AND kind IN ('passcord_approved', 'passcord_denied', 'passcord_wrong_code', 'passcord_paired') ORDER BY at DESC LIMIT 30",
+          [k.user_id],
+        );
+        return json({ events: rows.map((r) => ({ kind: r.kind, at: Number(r.at), device: r.detail ?? null })) });
+      }
       if (path === '/api/push/unsubscribe' && method === 'POST') {
         const { user } = await session(req);
         await sql('DELETE FROM push_subscriptions WHERE id = $1 AND user_id = $2', [hash(`push:${field(data, 'endpoint', 1000)}`), user.id]);
@@ -1771,7 +1854,8 @@ export function createService({
       }
       if (path === '/api/passcord/deny' && method === 'POST') {
         const k = await inboxKey(data);
-        await sql("UPDATE challenges SET approved = -1 WHERE id = $1 AND kind = 'login' AND user_id = $2 AND approved = 0", [field(data, 'id'), k.user_id]);
+        const denied = await one("UPDATE challenges SET approved = -1 WHERE id = $1 AND kind = 'login' AND user_id = $2 AND approved = 0 RETURNING payload", [field(data, 'id'), k.user_id]);
+        if (denied) await record(k.user_id, 'passcord_denied', null, challengePayload(denied)?.device ?? null);
         return json({ ok: true });
       }
       if (path === '/api/passcord/approve' && method === 'POST') {
@@ -1796,11 +1880,13 @@ export function createService({
         const p = challengePayload(c);
         if (p?.code && data.code != null && String(data.code) !== p.code) {
           await sql('UPDATE challenges SET approved = -1 WHERE id = $1 AND approved = 0', [c.id]);
+          await record(k.user_id, 'passcord_wrong_code', null, p.device ?? null);
           throw error(403, 'Ce n’est pas le bon nombre : la demande est annulée par sécurité.', 'wrong_code');
         }
         const approved = await one('UPDATE challenges SET approved = 1, user_id = $1 WHERE id = $2 AND approved = 0 AND (user_id IS NULL OR user_id = $1) RETURNING id', [k.user_id, c.id]);
         if (!approved) throw error(409, 'Demande déjà validée.');
         await sql('UPDATE passcord_keys SET last_used_at = $1 WHERE id = $2', [now(), k.id]);
+        await record(k.user_id, 'passcord_approved', null, p?.device ?? null);
         return json({ ok: true });
       }
       if (path === '/api/passcord/poll' && method === 'POST') {

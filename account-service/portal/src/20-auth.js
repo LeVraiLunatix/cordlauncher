@@ -79,8 +79,17 @@ messages({
  * `email` préremplit le champ (login_hint d'une app) ; après une inscription,
  * l'étape « verify » demande le code à 6 chiffres reçu par email.
  */
+/** Dernière adresse utilisée sur cet appareil : préremplie, et Passcord part tout seul. */
+const REMEMBERED_EMAIL = 'cord:email';
+function rememberedEmail() {
+  try { return localStorage.getItem(REMEMBERED_EMAIL) ?? ''; } catch { return ''; }
+}
+function rememberEmail(email) {
+  try { if (email) localStorage.setItem(REMEMBERED_EMAIL, email); } catch { /* stockage indisponible */ }
+}
+
 function mountAuth(host, { mode = 'login', email = '', resetToken, context, onSuccess }) {
-  const local = { mode, email: String(email ?? '').slice(0, 254), password: '', recovery: false, resetInfo: null, stop: [], passkeyAbort: null };
+  const local = { mode, email: String(email || (mode === 'login' ? rememberedEmail() : '') || '').slice(0, 254), password: '', recovery: false, resetInfo: null, stop: [], passkeyAbort: null };
   host.dataset.scope = 'auth';
 
   const cleanup = () => {
@@ -88,7 +97,11 @@ function mountAuth(host, { mode = 'login', email = '', resetToken, context, onSu
     if (local.passkeyAbort) { local.passkeyAbort.abort(); local.passkeyAbort = null; }
   };
   const go = (next) => { cleanup(); local.mode = next; local.interacted = true; draw(); };
-  const done = async (result, meta = {}) => { cleanup(); await onSuccess(result, meta); };
+  const done = async (result, meta = {}) => {
+    cleanup();
+    rememberEmail(result?.user?.email ?? local.email);
+    await onSuccess(result, meta);
+  };
 
   const head = (title, desc) => html`<div class="auth-head"><h2>${title}</h2>${desc ? html`<p>${desc}</p>` : ''}</div>`;
   const emailField = (autofocus = true) => html`<div class="field"><label for="a-email">${t('auth.email')}</label>

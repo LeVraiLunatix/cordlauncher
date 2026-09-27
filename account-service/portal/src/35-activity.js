@@ -13,6 +13,7 @@ messages({
     'ev.recovery_used': 'Code de secours utilisé', 'ev.recovery_regenerated': 'Codes de secours régénérés',
     'ev.passkey_added': 'Passkey ajoutée', 'ev.passkey_removed': 'Passkey supprimée',
     'ev.passcord_paired': 'iPhone associé à Passcord', 'ev.passcord_revoked': 'iPhone Passcord révoqué',
+    'ev.passcord_approved': 'Connexion approuvée dans Passcord', 'ev.passcord_denied': 'Connexion refusée dans Passcord', 'ev.passcord_wrong_code': 'Mauvais nombre choisi dans Passcord',
     'ev.app_authorized': 'App autorisée', 'ev.app_revoked': 'Accès d’une app révoqué',
     'ev.session_revoked': 'Session fermée à distance', 'ev.sessions_revoked': 'Autres sessions fermées',
     'ev.profile_updated': 'Profil mis à jour',
@@ -32,6 +33,7 @@ messages({
     'ev.recovery_used': 'Recovery code used', 'ev.recovery_regenerated': 'Recovery codes regenerated',
     'ev.passkey_added': 'Passkey added', 'ev.passkey_removed': 'Passkey removed',
     'ev.passcord_paired': 'iPhone paired with Passcord', 'ev.passcord_revoked': 'Passcord iPhone revoked',
+    'ev.passcord_approved': 'Sign-in approved in Passcord', 'ev.passcord_denied': 'Sign-in declined in Passcord', 'ev.passcord_wrong_code': 'Wrong number picked in Passcord',
     'ev.app_authorized': 'App authorized', 'ev.app_revoked': 'App access revoked',
     'ev.session_revoked': 'Session signed out remotely', 'ev.sessions_revoked': 'Other sessions signed out',
     'ev.profile_updated': 'Profile updated',
@@ -49,12 +51,13 @@ const EVENT_STYLE = {
   recovery_used: ['key', 'tone-warn'], recovery_regenerated: ['refresh-cw', 'tone-muted'],
   passkey_added: ['fingerprint-pattern', 'tone-ok'], passkey_removed: ['trash-2', 'tone-muted'],
   passcord_paired: ['smartphone', 'tone-ok'], passcord_revoked: ['trash-2', 'tone-muted'],
+  passcord_approved: ['smartphone', 'tone-ok'], passcord_denied: ['circle-x', 'tone-warn'], passcord_wrong_code: ['shield-alert', 'tone-danger'],
   app_authorized: ['app-window', ''], app_revoked: ['ban', 'tone-muted'],
   session_revoked: ['log-out', 'tone-muted'], sessions_revoked: ['log-out', 'tone-muted'], profile_updated: ['pencil', 'tone-muted'],
   beta_joined: ['key-round', 'tone-ok'], beta_download: ['download', 'tone-info'], beta_keys_created: ['key', 'tone-muted'], beta_downloads_configured: ['download', 'tone-ok'],
 };
 const EVENT_GROUPS = {
-  logins: ['register', 'login', 'login_failed', 'session_revoked', 'sessions_revoked'],
+  logins: ['register', 'login', 'login_failed', 'session_revoked', 'sessions_revoked', 'passcord_approved', 'passcord_denied', 'passcord_wrong_code'],
   security: ['password_changed', 'password_reset', 'password_reset_requested', 'mfa_enabled', 'mfa_disabled', 'recovery_used', 'recovery_regenerated', 'passkey_added', 'passkey_removed', 'passcord_paired', 'passcord_revoked', 'email_changed', 'email_verified'],
   apps: ['app_authorized', 'app_revoked', 'beta_joined', 'beta_download', 'beta_keys_created', 'beta_downloads_configured'],
 };

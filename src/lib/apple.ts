@@ -15,7 +15,7 @@ export type AppleProfile = {
   pausedFor: number | null;
 };
 export type AppleStatus = { active: string | null; profiles: AppleProfile[] };
-export type IphoneDevice = { udid: string; name: string | null; iosVersion: string | null; connection: string; trusted: boolean };
+export type IphoneDevice = { udid: string; name: string | null; iosVersion: string | null; connection: string; trusted: boolean; wifi: boolean | null };
 export type TrustedNumber = { id: number; numberWithDialCode: string; lastTwoDigits: string };
 export type TwoFactor = {
   email: string;

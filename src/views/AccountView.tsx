@@ -171,9 +171,14 @@ const useCordServer = () => useCordAccount().server;
 
 type Mode = "login" | "register" | "forgot" | "passcord";
 
+/** Dernière adresse du Compte Cord sur ce PC : préremplie, Passcord part tout seul. */
+const EMAIL_KEY = "cordlauncher:email";
+const rememberedEmail = () => { try { return localStorage.getItem(EMAIL_KEY) ?? ""; } catch { return ""; } };
+const rememberEmail = (email: string) => { try { if (email) localStorage.setItem(EMAIL_KEY, email); } catch { /* stockage indisponible */ } };
+
 function SignedOut() {
   const [mode, setMode] = useState<Mode>("login");
-  const [email, setEmail] = useState("");
+  const [email, setEmail] = useState(rememberedEmail);
   const [needsOtp, setNeedsOtp] = useState(false);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -203,6 +208,7 @@ function SignedOut() {
       email: addr, password: f.get("password"), name: f.get("name") ?? undefined, ...(otp ? { otp } : {}),
     });
     if (mode === "register") await cordRequest("/api/email/send").catch(() => {});
+    rememberEmail(addr);
     await refreshCord();
     toast({ tone: "ok", title: mode === "register" ? "Bienvenue dans la suite Cord !" : "Connecté à ton compte Cord" });
   });
@@ -273,6 +279,7 @@ function PasscordLogin({ email, onEmail, onDone, onCancel }: { email: string; on
   const [code, setCode] = useState<string | null>(null);
   const [sending, setSending] = useState(false);
   const [address, setAddress] = useState(email);
+  const sentTo = useRef("");
 
   // « Envoyer à mon iPhone » : la demande arrive dans Passcord (et en
   // notification), avec un nombre à retrouver sur l'iPhone.
@@ -281,6 +288,7 @@ function PasscordLogin({ email, onEmail, onDone, onCancel }: { email: string; on
     try {
       const r = await cordRequest<{ code: string }>("/api/passcord/notify", { id: c.id, pollToken: c.pollToken, email: to });
       onEmail(to);
+      sentTo.current = to;
       setCode(r.code);
     } catch (e) {
       toast({ tone: "error", title: "Envoi impossible", description: (e as Error).message });
@@ -301,7 +309,7 @@ function PasscordLogin({ email, onEmail, onDone, onCancel }: { email: string; on
         if (Date.now() >= c.expiresAt) { setError("La demande Passcord a expiré. Tu peux recommencer."); return; }
         try {
           const r = await cordRequest<{ pending?: boolean }>("/api/passcord/poll", { id: c.id, pollToken: c.pollToken });
-          if (!r.pending) { onDone(); return; }
+          if (!r.pending) { rememberEmail(sentTo.current); onDone(); return; }
         } catch (e) { if (active) setError((e as Error).message); return; }
         timer = setTimeout(() => void poll(), 2500);
       };
