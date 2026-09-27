@@ -3,7 +3,9 @@ export const CATALOG = {
   "schemaVersion": 1,
   "launcher": {
     "version": "0.1.0",
-    "notes": "Première bêta publique de CordLauncher."
+    "url": "https://github.com/LeVraiLunatix/cordlauncher-releases/releases/download/v0.1.0/CordLauncher-Setup.exe",
+    "sha256": "087d943ed4fa9830ba2753298491d5e4338213d44889e69f0807d746be427dfc",
+    "notes": "Première bêta publique de CordLauncher : installe et met à jour les apps de la suite Cord sur ton PC et ton iPhone (par câble ou en Wi-Fi), avec un accueil en trois étapes au premier lancement."
   },
   "generatedAt": "2026-09-18T12:00:00Z",
   "featured": "drivecord",
