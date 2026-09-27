@@ -886,13 +886,14 @@ export function createService({
       }
       if (method === 'GET' && path === '/api/account/export') {
         const { user } = await session(req);
-        const [passcord, passkeys, sessions, consents, events, codes] = await Promise.all([
+        const [passcord, passkeys, sessions, consents, events, codes, pushes] = await Promise.all([
           sql('SELECT id, name, public_key, created_at, last_used_at FROM passcord_keys WHERE user_id = $1 ORDER BY created_at', [user.id]),
           sql('SELECT id, name, alg, transports, backed_up, created_at, last_used_at FROM passkeys WHERE user_id = $1 ORDER BY created_at', [user.id]),
           sql('SELECT created_at, last_seen_at, expires, purpose, method, client_id, user_agent, ip FROM sessions WHERE user_id = $1 ORDER BY created_at DESC', [user.id]),
           sql('SELECT client_id, scope, granted_at, last_used_at FROM oauth_consents WHERE user_id = $1 ORDER BY last_used_at DESC', [user.id]),
           sql('SELECT kind, at, detail, ip, user_agent FROM account_events WHERE user_id = $1 ORDER BY at DESC', [user.id]),
           one('SELECT COUNT(*) AS n FROM recovery_codes WHERE user_id = $1 AND used_at IS NULL', [user.id]),
+          sql('SELECT device, endpoint, created_at FROM push_subscriptions WHERE user_id = $1 ORDER BY created_at', [user.id]),
         ]);
         const iso = (v) => (v ? new Date(Number(v)).toISOString() : null);
         const body = {
@@ -913,6 +914,7 @@ export function createService({
           },
           security: { twoFactor: Boolean(user.mfa_enabled_at), twoFactorSince: iso(user.mfa_enabled_at), recoveryCodesLeft: Number(codes?.n ?? 0) },
           passcordDevices: passcord.map((k) => ({ id: k.id, name: k.name, publicKey: JSON.parse(k.public_key), createdAt: iso(k.created_at), lastUsedAt: iso(k.last_used_at) })),
+          pushDevices: pushes.map((p) => ({ device: p.device, service: new URL(p.endpoint).host, createdAt: iso(p.created_at) })),
           passkeys: passkeys.map((p) => ({ id: p.id, name: p.name, algorithm: p.alg, transports: p.transports ? JSON.parse(p.transports) : [], synced: Boolean(p.backed_up), createdAt: iso(p.created_at), lastUsedAt: iso(p.last_used_at) })),
           sessions: sessions.map((s) => ({ kind: s.purpose === 'account' ? 'compte' : `app:${s.client_id ?? '?'}`, method: s.method, createdAt: iso(s.created_at), lastSeenAt: iso(s.last_seen_at), expiresAt: iso(s.expires), userAgent: s.user_agent, ip: s.ip })),
           connectedApps: consents.map((c) => ({ clientId: c.client_id, name: describeClient(c.client_id, clients[c.client_id]).name, scope: c.scope ?? 'openid profile email', grantedAt: iso(c.granted_at), lastUsedAt: iso(c.last_used_at) })),

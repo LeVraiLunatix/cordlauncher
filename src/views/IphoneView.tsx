@@ -72,13 +72,19 @@ export function IphoneView({ apps: catalog, onDiscover }: { apps: CatalogApp[]; 
   const [, tick] = useState(0);
 
   useEffect(() => {
-    void refreshIphoneApps().catch(() => {});
     void refreshApple().catch(() => {});
     void refreshIphoneApps().then(() => scanIphones(catalog)).then(() => checkIphoneUpdates(catalog, user)).catch(() => {});
     // Le compte à rebours avance tout seul.
     const t = setInterval(() => tick(n => n + 1), 60_000);
     return () => clearInterval(t);
   }, []);
+
+  // Session Cord arrivée après l'ouverture de l'onglet : les bêtas (Passcord) deviennent vérifiables.
+  const userId = user?.id;
+  useEffect(() => {
+    if (userId) void checkIphoneUpdates(catalog, user).catch(() => {});
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [userId]);
 
   const profile = activeProfile(apple.status);
   const trusted = useMemo(() => new Set(devices.filter(d => d.trusted).map(d => d.udid)), [devices]);

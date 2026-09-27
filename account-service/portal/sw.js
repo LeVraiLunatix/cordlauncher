@@ -30,9 +30,13 @@ self.addEventListener('notificationclick', (event) => {
     (async () => {
       const windows = await self.clients.matchAll({ type: 'window', includeUncontrolled: true });
       for (const client of windows) {
-        if (new URL(client.url).origin === self.location.origin && 'navigate' in client) {
-          await client.focus();
-          return client.navigate(target);
+        if (new URL(client.url).origin !== self.location.origin) continue;
+        try {
+          // navigate() échoue sur une fenêtre que ce service worker ne contrôle pas encore.
+          const navigated = await client.navigate(target);
+          if (navigated) return navigated.focus();
+        } catch {
+          /* on ouvre une nouvelle fenêtre ci-dessous */
         }
       }
       return self.clients.openWindow(target);

@@ -1,5 +1,6 @@
 import { invoke } from "@tauri-apps/api/core";
 import { appleSnapshot, canInstall, refreshApple, sideloadIphone, type IphoneDevice } from "./apple";
+import { cordSnapshot } from "./account";
 import { betaDownload, betaInfo, hasBeta } from "./beta";
 import type { CatalogApp } from "./catalog/types";
 import { IS_TAURI } from "./platform";
@@ -170,13 +171,26 @@ export async function latestIos(app: CatalogApp, cache = new Map<string, Promise
 
 const buildNumber = (tag: string | null) => (tag ? Number(tag.replace(/D+/g, "")) || 0 : 0);
 
-/** Cherche une nouvelle version pour chaque app suivie ; renvoie le nombre trouvé et ce qui n'a pas pu être vérifié. */
-export async function checkIphoneUpdates(catalog: CatalogApp[], user?: Parameters<typeof hasBeta>[0]): Promise<{ found: number; errors: string[] } | null> {
-  if (!IS_TAURI || store.get().checking) return null;
+type CheckResult = { found: number; errors: string[] };
+let checkInFlight: Promise<CheckResult> | null = null;
+
+/**
+ * Cherche une nouvelle version pour chaque app suivie ; renvoie le nombre
+ * trouvé et ce qui n'a pas pu être vérifié. Un appel pendant une vérification
+ * en cours en attend simplement le résultat.
+ */
+export function checkIphoneUpdates(catalog: CatalogApp[], user?: Parameters<typeof hasBeta>[0]): Promise<CheckResult | null> {
+  if (!IS_TAURI) return Promise.resolve(null);
+  checkInFlight ??= runCheck(catalog, user ?? cordSnapshot().user).finally(() => { checkInFlight = null; });
+  return checkInFlight;
+}
+
+async function runCheck(catalog: CatalogApp[], user: Parameters<typeof hasBeta>[0]): Promise<CheckResult> {
   const errors: string[] = [];
   store.set(s => ({ ...s, checking: true }));
   try {
     const apps = store.get().apps ?? [];
+    const previous = store.get().updates;
     const updates: Record<string, IphoneUpdate> = {};
     const cache = new Map<string, Promise<AltStoreSource | null>>();
     for (const id of new Set(apps.map(a => a.id))) {
@@ -192,12 +206,17 @@ export async function checkIphoneUpdates(catalog: CatalogApp[], user?: Parameter
       }
       // Bêta fermée (Passcord) : le dernier build privé via le Compte Cord.
       if (hasBeta(user, id)) {
-        const info = await betaInfo(id).catch((e: unknown) => { errors.push(`${cat.name} : ${e instanceof Error ? e.message : String(e)}`); return null; });
+        const info = await betaInfo(id).catch((e: unknown) => {
+          errors.push(`${cat.name} : ${e instanceof Error ? e.message : String(e)}`);
+          // Coupure passagère : on garde ce qu'on savait déjà.
+          if (previous[id]) updates[id] = previous[id];
+          return null;
+        });
         if (info && !info.downloads) errors.push(`${cat.name} : les builds bêta ne sont pas encore publiés (jeton GitHub manquant dans Admin › Bêta).`);
         const release = info?.downloads ? info.release : null;
         // Build inconnu (installée sans CordLauncher) : on propose le dernier.
         if (release && tracked.some(a => !a.build || buildNumber(release.tag) > buildNumber(a.build))) {
-          const asset = release.assets.find(x => x.name === tracked[0].asset) ?? release.assets[0];
+          const asset = release.assets.find(x => x.name === (tracked[0].asset ?? `${cat.name}.ipa`)) ?? release.assets[0];
           updates[id] = { id, label: release.build, notes: null, size: asset?.size ?? null, source: { kind: "beta", tag: release.tag } };
         }
       }
@@ -209,12 +228,12 @@ export async function checkIphoneUpdates(catalog: CatalogApp[], user?: Parameter
   }
 }
 
-/** Installe la nouvelle version d'une app sur son iPhone. */
 /** Réinstallée depuis CordLauncher : de nouveau suivie. */
 export function unignoreIphoneApp(id: string, udid: string) {
   try { localStorage.setItem(IGNORED_KEY, JSON.stringify(ignored().filter(k => k !== `${id}:${udid}`))); } catch { /* stockage indisponible */ }
 }
 
+/** Installe la nouvelle version d'une app sur son iPhone. */
 export async function updateIphoneApp(app: IphoneApp, update: IphoneUpdate, quiet = false): Promise<boolean> {
   let ok: boolean;
   if (update.source.kind === "url") {
