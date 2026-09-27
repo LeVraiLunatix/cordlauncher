@@ -204,7 +204,7 @@ export function IphoneView({ apps: catalog, onDiscover }: { apps: CatalogApp[]; 
             {devices.some(d => d.wifi) && (
               <p className="flex items-start gap-2 text-[12px] leading-relaxed text-fg-subtle">
                 <Wifi className="mt-0.5 size-3.5 shrink-0" />
-                <span>Sans câble, l’iPhone doit être sur le même Wi-Fi que ce PC, avec l’<strong className="font-semibold text-fg-muted">adresse Wi-Fi privée désactivée</strong> pour ce réseau (Réglages › Wi-Fi › ⓘ du réseau › Adresse Wi-Fi privée › Désactivée). Sinon Windows ne le reconnaît pas.</span>
+                <span>Sans câble : l’iPhone doit être sur le même Wi-Fi que ce PC (le premier contact peut prendre quelques secondes). S’il n’apparaît pas, désactive l’<strong className="font-semibold text-fg-muted">adresse Wi-Fi privée</strong> de ce réseau (Réglages › Wi-Fi › ⓘ).</span>
               </p>
             )}
           </div>

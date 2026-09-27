@@ -6,6 +6,7 @@ mod apps;
 mod account;
 mod iphone;
 mod sideload;
+mod wifi;
 mod iphone_apps;
 
 /// Délai au-delà duquel on affiche la fenêtre même si le front ne l'a pas

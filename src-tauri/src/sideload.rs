@@ -488,27 +488,35 @@ pub async fn iphone_list() -> Result<Vec<IphoneDevice>, String> {
         })?;
         let devices = mux.get_devices().await.map_err(short_error)?;
         let mut out = Vec::new();
-        for d in devices {
-            let connection = match d.connection_type {
-                Connection::Usb => "usb",
-                _ => "wifi",
-            };
-            // Un iPhone vu à la fois en USB et en Wi-Fi n'apparaît qu'une fois (USB d'abord).
+        // Par câble uniquement : les iPhone « réseau » d'Apple Mobile Device
+        // Service échouent souvent à se connecter ; le Wi-Fi passe par `wifi`.
+        for d in devices.iter().filter(|d| matches!(d.connection_type, Connection::Usb)) {
             if out.iter().any(|x: &IphoneDevice| x.udid == d.udid) {
                 continue;
             }
             let provider = d.to_provider(UsbmuxdAddr::default(), "CordLauncher");
             let details = device_details(&provider).await;
+            if let (Some((name, _, _)), Ok(pairing)) = (details.as_ref(), provider.get_pairing_file().await) {
+                crate::wifi::remember(&d.udid, Some(name), &pairing.wifi_mac_address);
+            }
             out.push(IphoneDevice {
                 udid: d.udid.clone(),
                 trusted: details.is_some(),
                 name: details.as_ref().map(|(n, _, _)| n.clone()),
                 wifi: details.as_ref().and_then(|(_, _, w)| *w),
                 ios_version: details.and_then(|(_, v, _)| v),
-                connection,
+                connection: "usb",
             });
         }
-        out.sort_by_key(|d| d.connection != "usb");
+        // iPhone déjà vus par câble, débranchés : on les cherche en Wi-Fi.
+        let missing: Vec<_> = crate::wifi::known().into_iter().filter(|k| !out.iter().any(|x| x.udid == k.udid)).collect();
+        for k in &missing {
+            let Some(provider) = crate::wifi::wifi_provider(&mut mux, k).await else { continue };
+            let details = tokio::time::timeout(std::time::Duration::from_secs(6), device_details(&provider)).await.ok().flatten();
+            if let Some((name, version, _)) = details {
+                out.push(IphoneDevice { udid: k.udid.clone(), trusted: true, name: Some(name), wifi: Some(true), ios_version: version, connection: "wifi" });
+            }
+        }
         Ok(out)
     })
     .await
@@ -628,12 +636,8 @@ async fn sign_and_install(
     };
 
     let result = async {
-        let mut mux = UsbmuxdConnection::default().await.map_err(short_error)?;
-        let device = mux
-            .get_device(&udid)
-            .await
-            .map_err(|_| "L'iPhone n'est plus connecté.".to_string())?;
-        let provider = device.to_provider(UsbmuxdAddr::default(), "CordLauncher");
+        // Par câble, ou en Wi-Fi si l'iPhone est débranché mais sur le même réseau.
+        let provider = crate::wifi::provider_for(&udid).await?;
 
         let mut sideloader = SideloaderBuilder::<isideload::util::callbacks::MaxCertsCallbackBox>::new(session, email)
             .team_selection(TeamSelection::First)

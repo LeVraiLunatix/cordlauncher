@@ -11,7 +11,7 @@ use std::path::{Path, PathBuf};
 use std::time::UNIX_EPOCH;
 
 use idevice::installation_proxy::InstallationProxyClient;
-use idevice::usbmuxd::{UsbmuxdAddr, UsbmuxdConnection};
+
 use idevice::IdeviceService;
 use serde::{Deserialize, Serialize};
 
@@ -172,9 +172,7 @@ pub struct DeviceBundle {
 #[tauri::command]
 pub async fn iphone_device_bundles(udid: String) -> Result<Vec<DeviceBundle>, String> {
     crate::sideload::on_own_thread(move || async move {
-        let mut mux = UsbmuxdConnection::default().await.map_err(|e| e.to_string())?;
-        let device = mux.get_device(&udid).await.map_err(|_| "L'iPhone n'est pas branché.".to_string())?;
-        let provider = device.to_provider(UsbmuxdAddr::default(), "CordLauncher");
+        let provider = crate::wifi::provider_for(&udid).await?;
         let mut proxy = InstallationProxyClient::connect(&provider).await.map_err(|e| e.to_string())?;
         let apps = proxy.get_apps(Some("User"), None).await.map_err(|e| e.to_string())?;
         Ok(apps
