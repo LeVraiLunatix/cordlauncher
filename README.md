@@ -289,4 +289,9 @@ npm run account:test   # tests (node --test)
 
 ## Licence
 
-Projet personnel de la suite Cord — tous droits réservés.
+Copyright © 2026 **Lunatix**.
+
+Le code est distribué sous licence **[GNU AGPL v3.0 ou ultérieure](LICENSE)** : tu peux le lire, l'utiliser, le modifier et le redistribuer, à condition de partager tes modifications sous la même licence, y compris si tu le fais tourner comme service en ligne. Les noms et logos de la suite Cord n'en font pas partie : voir [NOTICE.md](NOTICE.md). Envie de contribuer ? Lis [CONTRIBUTING.md](CONTRIBUTING.md).
+
+Voir [SECURITY.md](SECURITY.md) pour signaler une faille.
+

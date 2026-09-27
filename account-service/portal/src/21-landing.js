@@ -133,7 +133,7 @@ function showLanding({ mode = 'login', resetToken } = {}) {
       </section>
 
       <footer class="site-foot">
-        <span>© ${new Date().getFullYear()} Cord</span>
+        <span>© ${new Date().getFullYear()} Lunatix · Cord, logiciel libre (AGPL-3.0)</span>
         <a href="https://cordsuite.app" target="_blank" rel="noopener">${t('landing.footer.suite')}</a>
         <a href="https://cordsuite.app/status" target="_blank" rel="noopener">${t('landing.footer.status')}</a>
         <span class="spacer"></span>

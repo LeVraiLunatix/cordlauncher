@@ -173,7 +173,7 @@ export function SettingsView() {
         <img src="/logos/cordsuite.png" alt="" draggable={false} className="relative z-[3] size-14 rounded-[16px]" />
         <div className="relative z-[3] flex-1">
           <p className="font-display text-[17px] font-semibold">CordLauncher</p>
-          <p className="font-mono text-[12px] text-fg-subtle">Version {LAUNCHER_VERSION} · bêta publique</p>
+          <p className="font-mono text-[12px] text-fg-subtle">Version {LAUNCHER_VERSION} · bêta publique · © 2026 Lunatix, logiciel libre (AGPL-3.0)</p>
         </div>
         <div className="relative z-[3] flex gap-2">
           {release ? (

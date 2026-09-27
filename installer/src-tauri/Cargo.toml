@@ -1,6 +1,7 @@
 [package]
 name = "cordlauncher-setup"
 version = "0.1.0"
+license = "AGPL-3.0-or-later"
 description = "Installateur de CordLauncher"
 edition = "2021"
 
