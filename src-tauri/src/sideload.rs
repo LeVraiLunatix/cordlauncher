@@ -513,9 +513,15 @@ pub async fn iphone_list() -> Result<Vec<IphoneDevice>, String> {
         for k in &missing {
             let Some(provider) = crate::wifi::wifi_provider(&mut mux, k).await else { continue };
             let details = tokio::time::timeout(std::time::Duration::from_secs(6), device_details(&provider)).await.ok().flatten();
-            if let Some((name, version, _)) = details {
-                out.push(IphoneDevice { udid: k.udid.clone(), trusted: true, name: Some(name), wifi: Some(true), ios_version: version, connection: "wifi" });
+            match details {
+                Some((name, version, _)) => out.push(IphoneDevice { udid: k.udid.clone(), trusted: true, name: Some(name), wifi: Some(true), ios_version: version, connection: "wifi" }),
+                // Wi-Fi activé mais iPhone en veille ou ailleurs : affiché « hors de portée ».
+                None => {}
             }
+        }
+        let offline: Vec<_> = missing.iter().filter(|k| !out.iter().any(|x| x.udid == k.udid)).collect();
+        for k in offline {
+            out.push(IphoneDevice { udid: k.udid.clone(), trusted: false, name: k.name.clone(), wifi: Some(true), ios_version: None, connection: "offline" });
         }
         Ok(out)
     })

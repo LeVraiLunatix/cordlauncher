@@ -181,7 +181,14 @@ export function IphoneView({ apps: catalog, onDiscover }: { apps: CatalogApp[]; 
             <p className="flex items-center gap-2 text-[13px] font-semibold"><Smartphone className="size-4 text-fg-muted" />iPhone branchés</p>
             {devices.length ? (
               <div className="flex flex-wrap gap-2">
-                {devices.map(d => (
+                {devices.map(d => d.connection === "offline" ? (
+                  <span key={d.udid} className="inline-flex items-center gap-2 rounded-full bg-[var(--control)] py-1.5 pr-3.5 pl-2 text-[13px] text-fg-muted ring-1 ring-[var(--line)] ring-inset"
+                    title="Wi-Fi activé, mais l’iPhone ne répond pas : déverrouille-le (écran allumé) sur le même réseau que ce PC, ou branche-le.">
+                    <span className="grid size-6 place-items-center rounded-full bg-[var(--control-hover)]"><Wifi className="size-3.5 opacity-60" /></span>
+                    <strong className="font-semibold">{d.name ?? "iPhone"}</strong>
+                    <span className="text-fg-subtle">· hors de portée, déverrouille-le</span>
+                  </span>
+                ) : (
                   <span key={d.udid} className="inline-flex items-center gap-2 rounded-full bg-[var(--control)] py-1.5 pr-3.5 pl-2 text-[13px] ring-1 ring-[var(--line)] ring-inset">
                     <span className={cn("grid size-6 place-items-center rounded-full", d.trusted ? "bg-ok/15 text-ok" : "bg-warn/15 text-warn")}>{d.trusted ? <Check className="size-3.5" strokeWidth={3} /> : <AlertTriangle className="size-3.5" />}</span>
                     <strong className="font-semibold">{d.name ?? "iPhone"}</strong>
