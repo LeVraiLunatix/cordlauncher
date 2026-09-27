@@ -1,7 +1,8 @@
-import { ArrowUpRight, Compass, LayoutGrid, Settings2, UserRound, type LucideIcon } from "lucide-react";
+import { ArrowUpRight, Compass, LayoutGrid, Settings2, Smartphone, UserRound, type LucideIcon } from "lucide-react";
 import { AnimatePresence, motion } from "motion/react";
 import type { CatalogApp } from "../../lib/catalog/types";
 import { cn } from "../../lib/cn";
+import { useRenewCount } from "../../lib/iphone-apps";
 import { launchApp, useInstalledMap, useActiveJobCount, useJob, useUpdateCount } from "../../lib/installer";
 import { springSoft } from "../../lib/motion";
 import { openExternal } from "../../lib/platform";
@@ -9,11 +10,12 @@ import { JobProgress } from "../apps/AppAction";
 import { AppIcon } from "../apps/AppIcon";
 import { GlassCard } from "../glass";
 
-export type Route = "discover" | "library" | "settings" | "account";
+export type Route = "discover" | "library" | "iphone" | "settings" | "account";
 
 const NAV: { id: Route; label: string; icon: LucideIcon }[] = [
   { id: "discover", label: "Découvrir", icon: Compass },
   { id: "library", label: "Bibliothèque", icon: LayoutGrid },
+  { id: "iphone", label: "iPhone", icon: Smartphone },
   { id: "account", label: "Compte Cord", icon: UserRound },
   { id: "settings", label: "Réglages", icon: Settings2 },
 ];
@@ -35,6 +37,7 @@ export function Sidebar({ route, onRoute, apps }: SidebarProps) {
   const updates = useUpdateCount(apps);
   const activeJobs = useActiveJobCount();
   const installed = useInstalledMap();
+  const renew = useRenewCount();
 
   return (
     <GlassCard
@@ -94,6 +97,18 @@ export function Sidebar({ route, onRoute, apps }: SidebarProps) {
                     title={`${updates} mise(s) à jour disponible(s)`}
                   >
                     {updates}
+                  </motion.span>
+                )}
+                {item.id === "iphone" && renew > 0 && (
+                  <motion.span
+                    className="relative grid h-5 min-w-5 place-items-center rounded-full bg-warn px-1.5 text-[11px] font-bold text-[#1a1206]"
+                    initial={{ scale: 0 }}
+                    animate={{ scale: 1 }}
+                    exit={{ scale: 0 }}
+                    transition={{ type: "spring", stiffness: 500, damping: 18 }}
+                    title={`${renew} app(s) à renouveler bientôt`}
+                  >
+                    {renew}
                   </motion.span>
                 )}
               </AnimatePresence>

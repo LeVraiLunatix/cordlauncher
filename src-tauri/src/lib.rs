@@ -6,6 +6,7 @@ mod apps;
 mod account;
 mod iphone;
 mod sideload;
+mod iphone_apps;
 
 /// Délai au-delà duquel on affiche la fenêtre même si le front ne l'a pas
 /// demandé. La fenêtre démarre cachée (`visible: false`) pour éviter le flash
@@ -80,6 +81,9 @@ pub fn run() {
             sideload::apple_reset_device,
             sideload::iphone_list,
             sideload::iphone_sideload,
+            iphone_apps::iphone_apps,
+            iphone_apps::iphone_app_forget,
+            iphone_apps::iphone_device_bundles,
         ])
         .setup(|app| {
             let handle = app.handle().clone();

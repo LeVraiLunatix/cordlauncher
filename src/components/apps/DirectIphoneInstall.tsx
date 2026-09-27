@@ -81,11 +81,11 @@ export function DirectIphoneInstall({ app }: { app: CatalogApp }) {
   async function install() {
     if (!source || !selected) return;
     setError(null);
-    if (source !== "beta") return sideloadIphone(app.id, app.name, source, selected);
+    if (source !== "beta") return sideloadIphone(app.id, app.name, source, selected, device?.name ?? undefined);
     try {
       // Lien signé valable quelques minutes : demandé juste avant l'installation.
       const { url } = await betaDownload(app.id, variant);
-      await sideloadIphone(app.id, app.name, { ipaUrl: url }, selected);
+      await sideloadIphone(app.id, app.name, { ipaUrl: url }, selected, device?.name ?? undefined);
     } catch (e) {
       setError((e as Error).message);
     }
@@ -335,7 +335,7 @@ const DETAILS: Record<string, string> = {
   done: "Installée",
 };
 
-function InstallProgress({ app, phase, value, device }: { app: CatalogApp; phase: string; value: number; device: IphoneDevice | null }) {
+export function InstallProgress({ app, phase, value, device }: { app: { name: string }; phase: string; value: number; device: { name: string | null } | null }) {
   const stepKey = phase === "account" ? "preparing" : phase === "done" ? "installing" : phase;
   const index = Math.max(0, STEPS.findIndex(s => s.key === stepKey));
   // Pas de retour en arrière visuel si une étape émet encore après la suivante.

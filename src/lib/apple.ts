@@ -126,10 +126,12 @@ export async function respondApple(response: "Abort" | "SendToDevices" | "Resend
     if (response === "Abort") patch({ twoFactor: null, verify: "idle" });
   } catch (error) { patch({ error: String(error), twoFactor: null, verify: "idle" }); }
 }
-export async function sideloadIphone(id: string, name: string, source: { ipaUrl?: string; ipaPath?: string }, udid: string) {
+export async function sideloadIphone(id: string, name: string, source: { ipaUrl?: string; ipaPath?: string }, udid: string, deviceName?: string) {
   await operation(async () => {
     patch({ progress: { id, phase: source.ipaPath ? "preparing" : "downloading", progress: -1 } });
-    await invoke("iphone_sideload", { id, ipaUrl: source.ipaUrl ?? null, ipaPath: source.ipaPath ?? null, udid });
+    await invoke("iphone_sideload", { id, ipaUrl: source.ipaUrl ?? null, ipaPath: source.ipaPath ?? null, udid, name, deviceName: deviceName ?? null });
+    // Onglet iPhone : la nouvelle date d'expiration apparaît tout de suite.
+    void import("./iphone-apps").then(m => m.refreshIphoneApps()).catch(() => {});
     toast({ tone: "ok", title: `${name} installé sur l’iPhone`, description: "Active le mode développeur et autorise le profil dans les réglages iOS si nécessaire." });
   });
   void refreshApple().catch(() => {});

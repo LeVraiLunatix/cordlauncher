@@ -181,7 +181,7 @@ fn log_error(detail: &str) {
 }
 
 /// Exécute un futur non-`Send` sur un fil dédié et rend son résultat.
-async fn on_own_thread<F, Fut, T>(make: F) -> Result<T, String>
+pub(crate) async fn on_own_thread<F, Fut, T>(make: F) -> Result<T, String>
 where
     F: FnOnce() -> Fut + Send + 'static,
     Fut: Future<Output = Result<T, String>> + 'static,
@@ -508,6 +508,8 @@ pub async fn iphone_sideload(
     ipa_url: Option<String>,
     ipa_path: Option<String>,
     udid: String,
+    name: Option<String>,
+    device_name: Option<String>,
 ) -> Result<(), String> {
     crate::apps::validate_id(&id)?;
     // Compte actif : sa session ouverte, sinon reconnexion avec le mot de passe mémorisé.
@@ -552,9 +554,9 @@ pub async fn iphone_sideload(
 
     // 2 + 3. Signature et envoi, sur un fil dédié. Le compte y part et revient.
     let account = sessions.remove(&key).expect("session ouverte ci-dessus");
-    let (app2, id2, ipa2) = (app.clone(), id.clone(), ipa.clone());
+    let (app2, id2, ipa2, email2, udid2) = (app.clone(), id.clone(), ipa.clone(), email.clone(), udid.clone());
     let outcome = on_own_thread(move || async move {
-        let r = sign_and_install(&app2, &id2, account, email, ipa2, udid).await;
+        let r = sign_and_install(&app2, &id2, account, email2, ipa2, udid2).await;
         Ok(r)
     })
     .await;
@@ -563,6 +565,11 @@ pub async fn iphone_sideload(
         Ok((result, None)) => { state.connected.lock().unwrap().remove(&key); result }
         Err(e) => { state.connected.lock().unwrap().remove(&key); Err(e) }
     };
+    // Onglet iPhone : on note l'installation (et on garde l'IPA pour renouveler)
+    // avant de supprimer le téléchargement temporaire.
+    let result = result.map(|signed| {
+        crate::iphone_apps::record(&id, name.as_deref().unwrap_or(&id), &udid, device_name, &email, &ipa, signed);
+    });
     if remove_after {
         let _ = std::fs::remove_file(&ipa);
     }
@@ -576,7 +583,7 @@ async fn sign_and_install(
     email: String,
     ipa: PathBuf,
     udid: String,
-) -> (Result<(), String>, Option<AppleAccount>) {
+) -> (Result<crate::iphone_apps::SignedInfo, String>, Option<AppleAccount>) {
     let emit = |phase: &str, progress: f32| {
         let _ = app.emit(PROGRESS_EVENT, IphoneProgress { id, phase, progress });
     };
@@ -632,6 +639,7 @@ async fn sign_and_install(
             .await
             .map_err(short_error)?;
         emit("signing", 1.0);
+        let info = crate::iphone_apps::read_signed(&signed);
 
         emit("installing", 0.0);
         let installed = isideload::sideload::install::install_app(&provider, &signed, |pct: u64| {
@@ -642,7 +650,7 @@ async fn sign_and_install(
         let _ = std::fs::remove_dir_all(&signed);
         installed?;
         emit("done", 1.0);
-        Ok(())
+        Ok(info)
     }
     .await;
 

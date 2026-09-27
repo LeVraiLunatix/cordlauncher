@@ -31,7 +31,8 @@ keyring = { version = "3", features = ["windows-native"] }
 
 # ── iPhone : compte Apple, signature, installation par câble ────────────────
 isideload = "0.4.0"
-idevice = { version = "0.1.68", default-features = false, features = ["ring", "usbmuxd"] }
+idevice = { version = "0.1.68", default-features = false, features = ["ring", "usbmuxd", "installation_proxy"] }
+plist = "1"
 
 [target.'cfg(windows)'.dependencies]
 winreg = "0.55"

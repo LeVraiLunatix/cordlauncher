@@ -879,6 +879,7 @@ dependencies = [
  "idevice",
  "isideload",
  "keyring",
+ "plist",
  "reqwest",
  "serde",
  "serde_json",

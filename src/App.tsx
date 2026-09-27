@@ -6,6 +6,8 @@ import { AppleVerification } from "./components/apps/AppleAccount";
 import { BetaKeySheet } from "./components/apps/BetaKeySheet";
 import { publishLauncherStatus, refreshCord } from "./lib/account";
 import { NAVIGATE_EVENT } from "./lib/beta";
+import { refreshIphoneApps } from "./lib/iphone-apps";
+import { IphoneView } from "./views/IphoneView";
 import { IphoneInstallSheet } from "./components/apps/IphoneInstallSheet";
 import { AnimatedGradientBackground } from "./components/glass";
 import { LAUNCHER_VERSION, Sidebar, type Route } from "./components/shell/Sidebar";
@@ -29,6 +31,8 @@ const NO_APPS: CatalogApp[] = [];
 async function boot() {
   // Session Cord chargée dès le lancement : elle ouvre les bêtas (Passcord) dans le catalogue.
   const cord = refreshCord().catch(() => {});
+  // Registre des apps iPhone : la pastille « à renouveler » de la barre latérale.
+  void refreshIphoneApps().catch(() => {});
   const catalog = await loadCatalog();
   if (catalog) await detectInstalled(catalog.apps);
   // Le Compte Cord montre ce que ce PC a installé (tuile CordLauncher du hub).
@@ -148,6 +152,7 @@ function Shell() {
             {route === "library" && (
               <LibraryView key="library" apps={apps} onOpen={setSelectedId} onDiscover={() => setRoute("discover")} />
             )}
+            {route === "iphone" && <IphoneView key="iphone" apps={apps} onDiscover={() => setRoute("discover")} />}
             {route === "settings" && <SettingsView key="settings" />}
             {route === "account" && <AccountView key="account" />}
           </AnimatePresence>
