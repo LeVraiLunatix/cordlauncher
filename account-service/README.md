@@ -47,6 +47,7 @@ par des gabarits qui échappent toute interpolation (`html\`…\``). i18n FR/EN
 | `CORD_ISSUER` | Origine publique (`https://compte.cordsuite.app`) — aussi l'identifiant WebAuthn (rpId). |
 | `CORD_OIDC_KEY` | Clé RSA de signature (PEM ou base64). **Ne jamais la régénérer.** |
 | `CORD_CLIENTS` | Clients OAuth : `{"drivecord":{"name","secret","redirectUris":[…]},"sharecord":{…}}`. Les adresses de retour sont comparées à l’identique (ni joker, ni sous-domaine) et fixent aussi les domaines autorisés pour les liens de tuile de l’app. |
+| `CORD_CLIENT_<ID>` | *(optionnel)* un seul client, ex. `CORD_CLIENT_SHARECORD` = `{"name","secret","redirectUris":[…]}`. Fusionné avec `CORD_CLIENTS` sans jamais l’écraser. |
 | `DATABASE_URL` | Neon (posée par l'intégration Vercel). |
 | `RESEND_API_KEY`, `CORD_MAIL_FROM` | Envoi des emails. |
 | `CORD_ADMINS` | *(optionnel)* emails (séparés par des virgules) qui voient `#admin`. |

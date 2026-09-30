@@ -176,3 +176,14 @@ test('rate limiting counts per client address from X-Forwarded-For', async (t) =
   assert.equal((await attempt('203.0.113.7')).status, 429, 'the noisy client is throttled');
   assert.equal((await attempt('198.51.100.9')).status, 401, 'another client is not');
 });
+
+test('readClients merges CORD_CLIENT_<ID> entries without overriding CORD_CLIENTS', async () => {
+  const { readClients } = await import('./lib/config.mjs');
+  const sharecord = { name: 'Sharecord', secret: 's', redirectUris: ['https://share.cordsuite.app/api/auth/callback/cord'] };
+  const drivecord = { name: 'Drivecord', secret: 'd', redirectUris: ['https://drivecord.app/cb'] };
+  const clients = readClients({ CORD_CLIENTS: JSON.stringify({ drivecord }), CORD_CLIENT_SHARECORD: JSON.stringify(sharecord) });
+  assert.deepEqual(clients, { drivecord, sharecord });
+  assert.deepEqual(readClients({ CORD_CLIENTS: JSON.stringify({ drivecord }), CORD_CLIENT_DRIVECORD: JSON.stringify({ ...drivecord, secret: 'x' }) }).drivecord, drivecord, 'jamais d’écrasement');
+  assert.deepEqual(readClients({ CORD_CLIENTS: '{cassé', CORD_CLIENT_SHARECORD: '{cassé' }), {}, 'JSON invalide ignoré');
+  assert.deepEqual(readClients({ CORD_CLIENT_SHARECORD: '{"secret":"s"}' }), {}, 'entrée incomplète ignorée');
+});

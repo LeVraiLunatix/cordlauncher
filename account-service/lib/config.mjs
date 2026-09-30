@@ -6,13 +6,28 @@ import { generateKeyPairSync } from 'node:crypto';
  * (`server.mjs`) et la fonction Vercel (`api/index.mjs`).
  */
 
-export function readClients() {
+export function readClients(env = process.env) {
+  let clients = {};
   try {
-    return JSON.parse(process.env.CORD_CLIENTS ?? '{}');
+    clients = JSON.parse(env.CORD_CLIENTS ?? '{}');
   } catch {
     console.error('CORD_CLIENTS n’est pas un JSON valide — aucun client OAuth chargé.');
-    return {};
   }
+  // `CORD_CLIENT_<ID>` = l'entrée d'un seul client (`{"name","secret","redirectUris"}`) :
+  // permet d'en ajouter un sans rouvrir `CORD_CLIENTS` (variable masquée sur Vercel).
+  // Elle ne remplace jamais un client déjà déclaré dans `CORD_CLIENTS`.
+  for (const [key, raw] of Object.entries(env)) {
+    const id = /^CORD_CLIENT_([A-Z0-9_]+)$/.exec(key)?.[1]?.toLowerCase();
+    if (!id || !raw || Object.hasOwn(clients, id)) continue;
+    try {
+      const entry = JSON.parse(raw);
+      if (entry && typeof entry.secret === 'string' && Array.isArray(entry.redirectUris)) clients[id] = entry;
+      else console.error(`${key} ignorée : il faut { name, secret, redirectUris: [...] }.`);
+    } catch {
+      console.error(`${key} n’est pas un JSON valide — ce client n’est pas chargé.`);
+    }
+  }
+  return clients;
 }
 
 /** Emails des administrateurs (`CORD_ADMINS`, séparés par des virgules). */
