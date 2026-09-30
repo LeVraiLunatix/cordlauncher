@@ -42,6 +42,7 @@ async function setup(t, { admins = [], betaReleases, githubFetch, pushFetch } = 
     },
     clients: {
       drivecord: { name: 'Drivecord', secret: 'test-client-secret', redirectUris: ['http://localhost:3000/api/auth/callback/cord'] },
+      sharecord: { name: 'Sharecord', secret: 'test-sharecord-secret', redirectUris: ['https://share.cordsuite.app/api/auth/callback/cord', 'http://localhost:3100/api/auth/callback/cord'] },
     },
   });
   const server = http.createServer(handle);
@@ -296,6 +297,70 @@ test('email change goes through a confirmation link and warns the old address', 
   assert.equal(me.emailVerified, true);
   assert.equal(lastMail('email-changed').to, credentials.email);
   assert.equal((await request('/api/login', { body: { ...credentials, email: 'nova@example.test' } })).status, 200);
+});
+
+test('Sharecord signs in over OIDC (PKCE, nonce, client_secret_post) and publishes only to its own domain', async (t) => {
+  const { request, token, user } = await setup(t);
+  const secret = 'test-sharecord-secret';
+  const callback = 'https://share.cordsuite.app/api/auth/callback/cord';
+  const verifier = randomBytes(32).toString('base64url');
+  const params = {
+    client_id: 'sharecord', redirect_uri: callback, scope: 'openid profile email', response_type: 'code',
+    code_challenge_method: 'S256', code_challenge: createHash('sha256').update(verifier).digest('base64url'), state: 's', nonce: 'n-1',
+  };
+
+  // Adresses de retour strictes : ni wildcard, ni sous-domaine, ni chemin voisin, ni celle d'un autre client.
+  for (const redirect_uri of ['https://evil.example/api/auth/callback/cord', 'https://x.share.cordsuite.app/api/auth/callback/cord', 'https://share.cordsuite.app/api/auth/callback/cord/', 'http://localhost:3000/api/auth/callback/cord'])
+    assert.equal((await request('/api/authorize', { token, body: { ...params, redirect_uri } })).status, 400, redirect_uri);
+  assert.equal((await request('/api/authorize', { token, body: { ...params, code_challenge_method: 'plain' } })).status, 400, 'PKCE S256 obligatoire');
+  assert.equal((await request('/api/authorize', { token, body: { ...params, redirect_uri: 'http://localhost:3100/api/auth/callback/cord' } })).status, 200, 'retour de dev local');
+
+  const redirect = new URL((await request('/api/authorize', { token, body: params })).data.redirect);
+  assert.equal(redirect.origin + redirect.pathname, callback);
+  assert.equal(redirect.searchParams.get('state'), 's');
+  const grant = { client_id: 'sharecord', client_secret: secret, grant_type: 'authorization_code', redirect_uri: callback, code: redirect.searchParams.get('code'), code_verifier: verifier };
+  assert.equal((await request('/oauth/token', { body: { ...grant, client_secret: 'test-client-secret' } })).status, 401, 'le secret de Drivecord ne vaut pas pour Sharecord');
+  const result = await request('/oauth/token', { body: grant });
+  assert.equal(result.status, 200);
+  const claims = JSON.parse(Buffer.from(result.data.id_token.split('.')[1], 'base64url'));
+  assert.equal(claims.aud, 'sharecord');
+  assert.equal(claims.nonce, 'n-1');
+
+  // Sharecord lit le profil sur /oauth/userinfo (idToken: false).
+  const profile = (await request('/oauth/userinfo', { token: result.data.access_token })).data;
+  assert.equal(profile.sub, user.id);
+  assert.equal(typeof profile.name, 'string');
+  assert.equal(typeof profile.email, 'string');
+  assert.equal(typeof profile.email_verified, 'boolean');
+  await request('/api/me', { token, method: 'PATCH', body: { avatar: 'data:image/png;base64,iVBORw0KGgo=' } });
+  assert.match((await request('/oauth/userinfo', { token: result.data.access_token })).data.picture ?? '', /\/avatar\//);
+
+  // Interconnexion : le hub reçoit la tuile, avec les mêmes limites que Drivecord.
+  const status = { headline: 'h'.repeat(100), detail: 'd'.repeat(200), metrics: [1, 2, 3, 4, 5].map((i) => ({ label: `L${i}`.repeat(20), value: 'v'.repeat(40) })), url: 'https://share.cordsuite.app/dashboard' };
+  const publish = (client_id, client_secret, s = status) => request('/api/apps/status', { body: { client_id, client_secret, sub: user.id, status: s } });
+  assert.equal((await publish('sharecord', 'faux')).status, 401);
+  assert.equal((await publish('sharecord', secret)).status, 200);
+  const tile = (await request('/api/hub', { token })).data.apps.find((a) => a.slug === 'sharecord');
+  assert.equal(tile.connected, true);
+  assert.equal(tile.launch, 'https://share.cordsuite.app/dashboard');
+  assert.equal(tile.logo, '/assets/logos/sharecord.png');
+  assert.equal(tile.appStatus.headline.length, 80);
+  assert.equal(tile.appStatus.detail.length, 140);
+  assert.equal(tile.appStatus.metrics.length, 4);
+  assert.ok(tile.appStatus.metrics.every((m) => m.label.length <= 24 && m.value.length <= 24));
+
+  // Un client ne peut publier que vers son propre domaine.
+  for (const url of ['https://drivecord.app/drive', 'https://share.cordsuite.app.evil.example/', 'https://evil.example/', 'http://share.cordsuite.app/dashboard', 'https://share.cordsuite.app:8443/dashboard', 'https://cordsuite.app/'])
+    assert.equal((await publish('sharecord', secret, { ...status, url })).status, 400, url);
+  // Et Drivecord ne peut pas pointer vers Sharecord : chaque client a sa propre règle.
+  assert.equal((await request('/api/apps/status', { body: { client_id: 'drivecord', client_secret: 'test-client-secret', sub: user.id, status: { headline: 'x', url: 'https://share.cordsuite.app/dashboard' } } })).status, 404, 'Drivecord non autorisé par cet utilisateur');
+  await request('/api/authorize', { token, body: { ...params, client_id: 'drivecord', redirect_uri: 'http://localhost:3000/api/auth/callback/cord' } });
+  assert.equal((await request('/api/apps/status', { body: { client_id: 'drivecord', client_secret: 'test-client-secret', sub: user.id, status: { headline: 'x', url: 'https://share.cordsuite.app/dashboard' } } })).status, 400);
+  assert.equal((await request('/api/apps/status', { body: { client_id: 'drivecord', client_secret: 'test-client-secret', sub: user.id, status: { headline: 'x', url: 'http://localhost:3000/drive' } } })).status, 200, 'Drivecord inchangé');
+
+  // DELETE retire la tuile.
+  assert.equal((await request('/api/apps/status', { method: 'DELETE', body: { client_id: 'sharecord', client_secret: secret, sub: user.id } })).status, 200);
+  assert.equal((await request('/api/hub', { token })).data.apps.find((a) => a.slug === 'sharecord').appStatus, null);
 });
 
 test('connected apps are recorded on consent and revocation kills their tokens', async (t) => {
