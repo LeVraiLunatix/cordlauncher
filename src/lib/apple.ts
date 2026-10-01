@@ -32,17 +32,20 @@ export type TwoFactor = {
 /** idle → saisie ; verifying → code envoyé à Apple ; success → connecté, la fenêtre se ferme. */
 export type VerifyPhase = "idle" | "verifying" | "sending" | "success";
 type Progress = { id: string; phase: string; progress: number };
+/** Certificat de développement du compte Apple (liste montrée quand le maximum est atteint). */
+export type CertInfo = { serial: string; name: string | null; machine: string | null; own: boolean };
 type AppleModel = {
   status: AppleStatus;
   busy: boolean;
   twoFactor: TwoFactor | null;
+  certPrompt: CertInfo[] | null;
   verify: VerifyPhase;
   progress: Progress | null;
   error: string | null;
 };
 
 const empty: AppleStatus = { active: null, profiles: [] };
-const store = createStore<AppleModel>({ status: empty, busy: false, twoFactor: null, verify: "idle", progress: null, error: null });
+const store = createStore<AppleModel>({ status: empty, busy: false, twoFactor: null, certPrompt: null, verify: "idle", progress: null, error: null });
 const patch = (values: Partial<AppleModel>) => store.set(s => ({ ...s, ...values }));
 export const useApple = () => useStore(store, s => s);
 /** État Apple hors React (mode automatique de l'onglet iPhone). */
@@ -65,6 +68,7 @@ export async function initApple() {
     );
     const stops = [stopTwoFactor];
     try {
+      stops.push(await listen<CertInfo[]>("iphone://certs", e => patch({ certPrompt: e.payload })));
       stops.push(await listen<Progress>("iphone://progress", e => patch({ progress: e.payload })));
       stops.push(await listen<string>("apple://signed-in", () => {
         // Code accepté : l'animation de réussite se joue, puis la fenêtre se ferme.
@@ -121,6 +125,13 @@ export async function resetAppleDevice() {
     toast({ tone: "ok", title: "Appareil Apple réinitialisé", description: "Apple verra un nouvel appareil et te redemandera un code de vérification." });
   });
 }
+/** Réponse à « maximum de certificats » : numéros à révoquer, ou null pour annuler. */
+export async function respondCerts(serials: string[] | null) {
+  patch({ certPrompt: null });
+  try { await invoke("iphone_certs_respond", { serials }); }
+  catch (error) { patch({ error: String(error) }); }
+}
+
 export async function respondApple(response: "Abort" | "SendToDevices" | "ResendCode" | { SubmitCode: string } | { SendSms: number }) {
   const submitting = typeof response === "object" && "SubmitCode" in response;
   if (response !== "Abort") patch({ verify: submitting ? "verifying" : "sending" });
