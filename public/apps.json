@@ -2,10 +2,10 @@
   "$schema": "./apps.schema.json",
   "schemaVersion": 1,
   "launcher": {
-    "version": "0.1.0",
-    "url": "https://github.com/LeVraiLunatix/cordlauncher-releases/releases/download/v0.1.0/CordLauncher-Setup.exe",
-    "sha256": "087d943ed4fa9830ba2753298491d5e4338213d44889e69f0807d746be427dfc",
-    "notes": "Première bêta publique de CordLauncher : installe et met à jour les apps de la suite Cord sur ton PC et ton iPhone (par câble ou en Wi-Fi), avec un accueil en trois étapes au premier lancement."
+    "version": "0.1.1",
+    "url": "https://github.com/LeVraiLunatix/cordlauncher-releases/releases/download/v0.1.1/CordLauncher-Setup.exe",
+    "sha256": "1d38caba1194e4fb8ca7785b57367b0e137178f9e317e6765d9e8b9830edc3fd",
+    "notes": "Correctif iPhone : les mises à jour d'apps ne sont plus bloquées par « maximum de certificats » après une réinitialisation de l'appareil Apple (seuls les certificats créés par CordLauncher sont révoqués), et message clair pour la limite de 3 apps d'un compte gratuit."
   },
   "generatedAt": "2026-09-18T12:00:00Z",
   "featured": "drivecord",
