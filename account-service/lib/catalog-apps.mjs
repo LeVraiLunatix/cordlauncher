@@ -2,10 +2,10 @@
 export const CATALOG = {
   "schemaVersion": 1,
   "launcher": {
-    "version": "0.1.1",
-    "url": "https://github.com/LeVraiLunatix/cordlauncher-releases/releases/download/v0.1.1/CordLauncher-Setup.exe",
-    "sha256": "1d38caba1194e4fb8ca7785b57367b0e137178f9e317e6765d9e8b9830edc3fd",
-    "notes": "Correctif iPhone : les mises à jour d'apps ne sont plus bloquées par « maximum de certificats » après une réinitialisation de l'appareil Apple (seuls les certificats créés par CordLauncher sont révoqués), et message clair pour la limite de 3 apps d'un compte gratuit."
+    "version": "0.1.2",
+    "url": "https://github.com/LeVraiLunatix/cordlauncher-releases/releases/download/v0.1.2/CordLauncher-Setup.exe",
+    "sha256": "e32b1da5d94269984129d4d94905e9908367cb410359cc1136ebe6e764e25f85",
+    "notes": "Correctif iPhone : quand ton compte Apple gratuit a atteint son maximum de certificats (cas d'AltStore, Sideloadly…), CordLauncher te montre la liste et tu choisis lesquels révoquer pour pouvoir mettre à jour tes apps. Les certificats de CordLauncher sont révoqués automatiquement."
   },
   "generatedAt": "2026-09-18T12:00:00Z",
   "featured": "drivecord",

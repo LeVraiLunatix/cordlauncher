@@ -3,6 +3,7 @@ import { useCallback, useEffect, useRef, useState, type CSSProperties } from "re
 import { AppDetail } from "./components/apps/AppDetail";
 import { InstallSheet } from "./components/apps/InstallSheet";
 import { AppleVerification } from "./components/apps/AppleAccount";
+import { CertsDialog } from "./components/apps/CertsDialog";
 import { BetaKeySheet } from "./components/apps/BetaKeySheet";
 import { cordSnapshot, publishLauncherStatus, refreshCord } from "./lib/account";
 import { NAVIGATE_EVENT } from "./lib/beta";
@@ -183,6 +184,7 @@ function Shell() {
       <InstallSheet />
       <BetaKeySheet apps={apps} />
       <AppleVerification />
+      <CertsDialog />
     </div>
   );
 }
