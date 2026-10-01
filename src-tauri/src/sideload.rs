@@ -10,8 +10,11 @@
 //! 7 jours, 3 apps actives, 10 identifiants d'app par semaine.
 //!
 //! Choix délibérés :
-//!  - certificats pleins → on REFUSE (`MaxCertsBehavior::Error`) plutôt que
-//!    de révoquer : révoquer casserait les apps d'AltStore / Sideloadly ;
+//!  - certificats pleins → on ne révoque QUE ceux créés par CordLauncher
+//!    (machine « CordLauncher »), jamais ceux d'AltStore / Sideloadly. Cas typique :
+//!    la clé privée locale a été effacée (« Réinitialiser l'appareil Apple ») alors
+//!    qu'Apple garde le certificat → on ne peut plus ni le réutiliser ni en créer un
+//!    autre, donc plus aucune mise à jour. Sans certificat à nous : on refuse ;
 //!  - chaque opération isideload tourne sur son propre fil avec son propre
 //!    runtime : ses futures ne sont pas garanties `Send`, ce qu'exige une
 //!    commande Tauri asynchrone ;
@@ -188,8 +191,10 @@ pub(crate) fn humanize(chain: &str) -> String {
         "Active le mode développeur sur l’iPhone (Réglages › Confidentialité et sécurité › Mode développeur), puis réessaie."
     } else if has(&["maximum number of app", "app id limit", "maximum app id"]) {
         "Limite d’Apple atteinte : un compte gratuit peut créer 10 identifiants d’app par semaine. Réessaie dans quelques jours, ou utilise un autre compte Apple."
+    } else if has(&["maximum number of installed apps", "free developer profile"]) {
+        "Ton iPhone a déjà 3 apps installées avec un compte gratuit : iOS n’en accepte pas une 4e. Une MISE À JOUR passe seulement si l’app a le même identifiant que celle déjà installée ; ici l’app est vue comme nouvelle. Supprime d’abord l’une des 3 apps de l’iPhone (ou utilise un autre compte Apple), puis réessaie."
     } else if has(&["certificate"]) && has(&["max", "limit", "too many"]) {
-        "Ton compte Apple a déjà trop de certificats actifs. Réinitialise l’appareil Apple dans CordLauncher ou attends leur expiration."
+        "Ton compte Apple a déjà le maximum de certificats actifs, et ils ne viennent pas de CordLauncher (AltStore, Sideloadly…). Révoque-les depuis ces outils, ou attends leur expiration."
     } else if has(&["device lockdown", "socket io", "early eof", "connection refused", "connection reset", "no such device", "device not found", "broken pipe"]) {
         "Impossible de joindre l’iPhone. Déverrouille-le et vérifie le câble, ou qu’il est sur le même Wi-Fi que ce PC."
     } else if has(&["extract application archive", "open application archive", "invalid zip", "info.plist"]) {
@@ -662,6 +667,24 @@ pub async fn iphone_sideload(
     result
 }
 
+/// Choisit les certificats à révoquer quand Apple dit « maximum atteint » : uniquement
+/// ceux de CordLauncher. `None` (aucun) → l'erreur d'origine remonte.
+fn own_certs_only(
+    certs: Vec<isideload::dev::certificates::DevelopmentCertificate>,
+) -> isideload::util::callbacks::MaxCertsCallbackFuture {
+    Box::pin(async move {
+        let own: Vec<String> = certs
+            .iter()
+            .filter(|c| c.machine_name.as_deref().is_some_and(|m| m.to_lowercase().contains("cordlauncher")))
+            .filter_map(|c| c.serial_number.clone())
+            .collect();
+        if !own.is_empty() {
+            log_error(&format!("Certificat(s) CordLauncher révoqué(s) pour libérer la place : {}", own.join(", ")));
+        }
+        Ok(if own.is_empty() { None } else { Some(own) })
+    })
+}
+
 async fn sign_and_install(
     app: &AppHandle,
     id: &str,
@@ -688,7 +711,7 @@ async fn sign_and_install(
 
         let mut sideloader = SideloaderBuilder::<isideload::util::callbacks::MaxCertsCallbackBox>::new(session, email)
             .team_selection(TeamSelection::First)
-            .max_certs_behavior(MaxCertsBehavior::Error)
+            .max_certs_behavior(MaxCertsBehavior::Prompt(Box::new(own_certs_only)))
             .machine_name("CordLauncher".to_string())
             .build();
 
